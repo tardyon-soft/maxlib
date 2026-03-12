@@ -9,6 +9,11 @@
 
 Это спецификация публичного поведения, а не полная реализация.
 
+Текущее состояние (Sprint 4.2.2):
+- filter foundation реализован в `max-dispatcher`;
+- middleware contracts и chain executor foundation реализованы;
+- встраивание middleware в dispatcher runtime pipeline остаётся следующими шагами Sprint 4.
+
 ## Sprint 4 boundaries
 
 В scope Sprint 4:
@@ -166,4 +171,3 @@ MVP contract:
 - [filter-contract.md](filter-contract.md)
 - [middleware-contract.md](middleware-contract.md)
 - [di-model.md](di-model.md)
-

@@ -20,6 +20,7 @@ Java framework для разработки ботов на платформе MA
 - зафиксирован runtime contract Sprint 3 (`Dispatcher`, `Router`, `EventObserver`, `Handler`, `DispatchResult`);
 - реализован базовый observer layer в `max-dispatcher`: `EventObserver`, `EventHandler`, `DefaultEventObserver`, MVP observer types (`update/message/callback/error`);
 - реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not`, filter-aware handler registration в `Router` и built-in filters MVP (`Command`, `TextEquals`, `TextStartsWith`, `ChatType`, `FromUser`, `HasAttachment`, `StateFilter` placeholder);
+- реализованы middleware contracts foundation: `OuterMiddleware`, `InnerMiddleware`, `MiddlewareNext`, `RuntimeContext`/`ContextKey` и chain executor с short-circuit support;
 - ingestion target contract в `max-dispatcher`: `UpdateConsumer` (async, preferred) + `UpdateSink` (compat alias) + `UpdateHandlingResult`;
 - polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
 - long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/shutdown/isRunning`);
@@ -133,7 +134,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 
 Ограничения текущего этапа (Sprint 4 prep):
 - rich filter DSL ещё не реализован (доступен только базовый filter contract);
-- middleware runtime chain ещё не реализован;
+- middleware пока зафиксированы как контракты и chain foundation, но ещё не встроены в dispatcher execution pipeline;
 - DI runtime и FSM/scenes runtime ещё не реализованы;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media pipeline ещё не реализован;
