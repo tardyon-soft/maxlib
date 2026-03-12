@@ -9,10 +9,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Request-scoped typed container for runtime data used by invocation and parameter resolution.
+ *
+ * <p>Conflict policy: writing different value for the same logical key is rejected by
+ * {@link RuntimeDataConflictException}. Use {@link #replace(RuntimeDataKey, Object)} only for
+ * explicit override semantics.</p>
  */
 public final class RuntimeDataContainer {
     private final ConcurrentHashMap<String, Entry> data = new ConcurrentHashMap<>();
 
+    /**
+     * Puts value preserving conflict-safety semantics.
+     */
     public <T> RuntimeDataContainer put(RuntimeDataKey<T> key, T value) {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(value, "value");
@@ -31,6 +38,9 @@ public final class RuntimeDataContainer {
         return this;
     }
 
+    /**
+     * Replaces existing value for key (or creates new one if absent).
+     */
     public <T> RuntimeDataContainer replace(RuntimeDataKey<T> key, T value) {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(value, "value");
@@ -43,6 +53,9 @@ public final class RuntimeDataContainer {
         return this;
     }
 
+    /**
+     * Returns value for exact key (name + scope + type).
+     */
     public <T> Optional<T> get(RuntimeDataKey<T> key) {
         Objects.requireNonNull(key, "key");
         Entry entry = data.get(key.name());
@@ -55,12 +68,18 @@ public final class RuntimeDataContainer {
         return Optional.of(key.type().cast(entry.value()));
     }
 
+    /**
+     * Finds value by logical key name across all scopes.
+     */
     public Optional<Object> find(String name) {
         Objects.requireNonNull(name, "name");
         Entry entry = data.get(name);
         return entry == null ? Optional.empty() : Optional.of(entry.value());
     }
 
+    /**
+     * Finds and type-casts value by logical key name across all scopes.
+     */
     public <T> Optional<T> find(String name, Class<T> type) {
         Objects.requireNonNull(type, "type");
         return find(name).map(raw -> {
@@ -72,6 +91,11 @@ public final class RuntimeDataContainer {
         });
     }
 
+    /**
+     * Immutable snapshot filtered by scopes.
+     *
+     * <p>If no scopes provided, all scopes are included.</p>
+     */
     public Map<String, Object> snapshot(RuntimeDataScope... scopes) {
         Objects.requireNonNull(scopes, "scopes");
         EnumSet<RuntimeDataScope> expected = EnumSet.noneOf(RuntimeDataScope.class);

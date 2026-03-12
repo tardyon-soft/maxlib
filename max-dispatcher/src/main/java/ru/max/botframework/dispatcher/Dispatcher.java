@@ -30,14 +30,23 @@ public final class Dispatcher implements UpdateConsumer {
         this(new DefaultUpdateEventResolver(), DefaultHandlerInvoker.withDefaults());
     }
 
+    /**
+     * Creates dispatcher with custom update event resolver and default invocation engine.
+     */
     public Dispatcher(UpdateEventResolver eventResolver) {
         this(eventResolver, DefaultHandlerInvoker.withDefaults());
     }
 
+    /**
+     * Creates dispatcher with custom invocation engine and default update resolver.
+     */
     public Dispatcher(HandlerInvoker handlerInvoker) {
         this(new DefaultUpdateEventResolver(), handlerInvoker);
     }
 
+    /**
+     * Creates dispatcher with fully custom event resolver and invocation engine.
+     */
     public Dispatcher(UpdateEventResolver eventResolver, HandlerInvoker handlerInvoker) {
         this.eventResolver = Objects.requireNonNull(eventResolver, "eventResolver");
         this.handlerInvoker = Objects.requireNonNull(handlerInvoker, "handlerInvoker");
@@ -124,6 +133,7 @@ public final class Dispatcher implements UpdateConsumer {
      */
     public <T> Dispatcher registerService(Class<T> type, T service) {
         Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(service, "service");
         return registerApplicationData(RuntimeDataKey.application("service:" + type.getName(), type), service);
     }
 

@@ -6,6 +6,8 @@ import java.util.Objects;
 /**
  * Reflective descriptor for one handler parameter.
  *
+ * <p>This descriptor is immutable and may be cached by invocation engine.</p>
+ *
  * @param index parameter index in declaration order
  * @param parameter reflective parameter
  */

@@ -9,7 +9,8 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Sprint 2 (`Polling/Webhook ingestion`) завершён.
 - Sprint 3 (`Dispatcher/Router runtime foundation`) завершён.
 - Sprint 4 (`Filters/Middleware/context enrichment`) завершён.
-- Следующий этап: Sprint 5 (`DI / handler parameter resolution`).
+- Sprint 5 (`DI / handler parameter resolution`) завершён.
+- Следующий этап: Sprint 6 (`Messages/Keyboards/Callbacks ergonomics`).
 
 ## Sprint 0 — Spec/API Contract Freeze
 
@@ -79,10 +80,10 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 
 Основные результаты:
 - invocation contract (`HandlerInvoker`, `HandlerParameterResolver`, `ResolverRegistry`);
-- injection sources: context/update, framework services, filter data, middleware data, app container;
-- qualifiers (`FromFilter`, `FromContext`, container qualifiers);
-- диагностируемые resolution errors;
-- DI test coverage.
+- injection sources: context/update objects, filter data, middleware data, shared application services;
+- shared registration APIs: `Dispatcher.registerApplicationData(...)`, `Dispatcher.registerService(...)`;
+- диагностируемые resolution/invocation errors (`PARAMETER_RESOLUTION_FAILURE`, `INVOCATION_FAILURE`);
+- usage examples + DI regression safety net (unit + integration-style tests).
 
 ## Sprint 6 — Messages/Keyboards/Callbacks
 

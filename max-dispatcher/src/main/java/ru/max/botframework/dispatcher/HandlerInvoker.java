@@ -7,9 +7,14 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Invokes method-based handlers by resolving method parameters through resolver pipeline.
+ *
+ * <p>This is runtime SPI. Default implementation is {@link DefaultHandlerInvoker}.</p>
  */
 public interface HandlerInvoker {
 
+    /**
+     * Invokes method-based handler target with parameter resolution.
+     */
     CompletionStage<Void> invoke(Object target, Method method, HandlerInvocationContext context);
 
     /**

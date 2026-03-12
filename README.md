@@ -6,19 +6,18 @@ Java framework для разработки ботов на платформе MA
 
 ## Sprint status
 
-Текущий этап: `Sprint 5 — DI / handler parameter resolution`.
+Текущий этап: `Sprint 6 — messages / keyboards / callbacks ergonomics`.
 
 Завершённые этапы:
 - Sprint 1 (`client/DTO/errors`);
 - Sprint 2 (`polling + webhook ingestion layer`);
 - Sprint 3 (`dispatcher/router/runtime foundation`);
 - Sprint 4 (`filters/middleware/context enrichment`).
+- Sprint 5 (`DI / parameter resolution / invocation`).
 
-Текущая цель Sprint 5.1:
-- зафиксировать invocation/parameter-resolution contracts (`HandlerInvoker`, `HandlerParameterResolver`, `ResolverRegistry`)
-  поверх уже готового runtime pipeline.
-- ввести Java-friendly handler signature model через `ContextualEventHandler<TEvent>`
-  (`event + RuntimeContext`) как основу для будущих resolvers.
+Текущая цель Sprint 6:
+- builder-style message/callback ergonomics поверх уже готового runtime;
+- high-level API для send/edit/delete/reply и keyboard/callback flows без потери type-safety.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -150,10 +149,11 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 
 ## Current limitations
 
-Ограничения текущего этапа (Sprint 5 prep):
+Ограничения текущего этапа:
 - rich filter DSL ещё не реализован (доступен только базовый filter contract);
 - middleware встроены в dispatcher pipeline (`outer -> filters -> inner -> handler`), но без advanced inheritance/scoping;
-- DI runtime и FSM/scenes runtime ещё не реализованы;
+- DI/invocation есть, но resolution сейчас by-type (без annotation qualifiers);
+- FSM/scenes runtime ещё не реализованы;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media pipeline ещё не реализован;
 - webhook source runtime loop пока не реализован (есть receiver + pipeline foundation);
@@ -170,11 +170,20 @@ Sprint 4 завершён:
 - зафиксирована и реализована runtime error model для filter/middleware/enrichment/handler фаз;
 - добавлены usage examples и regression safety net (unit + integration-style tests).
 
-Следующий этап (Sprint 5):
-- DI / handler parameter resolution;
-- источники инъекции: runtime context, filter data, middleware data, framework services.
-- без полноценного IoC container и без Spring-specific integration на этом этапе.
-- runtime data model основан на request-scoped typed container (framework/filter/middleware/application scopes).
+## Sprint 5 Summary
+
+Sprint 5 завершён:
+- введён invocation contract: `HandlerInvoker`, `HandlerParameterResolver`, `ResolverRegistry`;
+- dispatch pipeline интегрирован с invocation engine (`outer -> filters -> inner -> invocation`);
+- реализованы built-in resolvers для runtime/update/event objects и enrichment/application data;
+- добавлены APIs shared injection: `Dispatcher.registerApplicationData(...)`, `Dispatcher.registerService(...)`;
+- зафиксирована и реализована error-модель DI/invocation:
+  `PARAMETER_RESOLUTION_FAILURE` и `INVOCATION_FAILURE` + typed resolution exceptions;
+- добавлены usage examples и regression safety net для resolver/invoker/full pipeline.
+
+Следующий этап (Sprint 6):
+- messages/keyboards/callbacks ergonomics;
+- high-level builders и callback-oriented DX поверх текущего runtime foundation.
 
 ## Shared Services Injection (Sprint 5.2.3)
 
