@@ -1,9 +1,18 @@
 package ru.max.botframework.ingestion;
 
 /**
- * Runtime loop boundary for long polling ingestion.
+ * Lifecycle contract for long-polling execution loop.
  */
-public interface LongPollingRunner {
+public interface LongPollingRunner extends AutoCloseable {
 
-    void run(PollingUpdateSource source, UpdateSink sink);
+    void start();
+
+    void stop();
+
+    boolean isRunning();
+
+    @Override
+    default void close() {
+        stop();
+    }
 }

@@ -16,6 +16,7 @@ Sprint 1 (`client/DTO/errors`) завершён.
 - `max-model` с базовыми DTO, typed value objects и enum-контрактами;
 - ingestion target contract в `max-dispatcher`: `UpdateSink` (async) + `UpdateHandlingResult` для unified polling/webhook flow;
 - polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
+- long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/isRunning`);
 - domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
 - тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
 
@@ -123,8 +124,49 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media pipeline ещё не реализован;
 - long-polling/webhook transport реализации как runtime-компоненты пока не завершены (зафиксирован контракт слоя ingestion);
-- long polling loop (`LongPollingRunner`) пока не реализован: есть только single-pull polling source;
+- webhook runtime source/receiver пока не реализованы;
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
+
+## Low-level Long Polling Example
+
+```java
+import java.time.Duration;
+import ru.max.botframework.ingestion.DefaultLongPollingRunner;
+import ru.max.botframework.ingestion.LongPollingRunner;
+import ru.max.botframework.ingestion.LongPollingRunnerConfig;
+import ru.max.botframework.ingestion.PollingFetchRequest;
+import ru.max.botframework.ingestion.SdkPollingUpdateSource;
+import ru.max.botframework.ingestion.UpdateSink;
+import ru.max.botframework.model.UpdateEventType;
+
+SdkPollingUpdateSource source = new SdkPollingUpdateSource(botClient);
+UpdateSink sink = update -> {
+    System.out.println("Update: " + update.updateId().value());
+    return java.util.concurrent.CompletableFuture.completedFuture(
+        ru.max.botframework.ingestion.UpdateHandlingResult.success()
+    );
+};
+
+LongPollingRunner runner = new DefaultLongPollingRunner(
+    source,
+    sink,
+    LongPollingRunnerConfig.builder()
+        .request(new PollingFetchRequest(
+            null,
+            30,
+            100,
+            java.util.List.of(UpdateEventType.MESSAGE_CREATED, UpdateEventType.MESSAGE_CALLBACK)
+        ))
+        .idleDelay(Duration.ofMillis(100))
+        .sourceErrorDelay(Duration.ofSeconds(1))
+        .sinkErrorDelay(Duration.ofMillis(200))
+        .build()
+);
+
+runner.start();
+// ...
+runner.stop();
+```
 
 ## Build and test
 

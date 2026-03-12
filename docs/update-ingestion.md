@@ -84,6 +84,17 @@
 - не принимает решения маршрутизации;
 - не реализует middleware/FSM.
 
+Контракт (минимальный):
+- `start()`
+- `stop()`
+- `isRunning()`
+
+Базовая execution модель:
+- runner запускается в отдельном single-thread executor;
+- один цикл выполняет `poll -> deliver to sink -> next poll`;
+- пустой batch обрабатывается как idle-итерация;
+- transient ошибки source/sink не останавливают runner автоматически.
+
 ### `WebhookReceiver`
 
 Назначение:
