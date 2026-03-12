@@ -2,136 +2,76 @@
 
 Java framework для разработки ботов на платформе MAX с DX в стиле aiogram 3.
 
-Важно: проект вдохновлён архитектурными паттернами aiogram 3, но не является его буквальной копией. Мы адаптируем идеи под реальные возможности MAX API и Java ecosystem.
+Важно: это не буквальная копия aiogram 3. Проект адаптирует лучшие архитектурные идеи под реальные возможности MAX API и Java ecosystem.
 
-## Product vision
+## Sprint 1 status
 
-Сделать production-ready framework, в котором разработчик пишет бизнес-логику бота, а не низкоуровневый JSON/HTTP код.
+Текущий этап: `Sprint 1 — client/DTO/errors`.
 
-## Goals
+Что уже реализовано:
+- multi-module Gradle проект (Kotlin DSL) на Java 21;
+- `max-client-core` foundation слой (transport, auth, serialization, errors, retry/rate-limit hooks, pagination);
+- `max-model` с базовыми DTO, typed value objects и enum-контрактами;
+- domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
+- тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
 
-- Дать удобный framework-level API для построения ботов на MAX.
-- Объединить polling и webhook в единый update pipeline.
-- Предоставить расширяемую архитектуру: dispatcher, router, filters, middleware, DI, FSM/scenes.
-- Сохранить типобезопасность и тестируемость как базовые свойства API.
-- Разделить client SDK и runtime framework по модулям.
+## Modules
 
-## Non-goals
+- `max-client-core` — Java SDK поверх MAX API.
+- `max-model` — DTO, enum и value objects для MAX domain.
+- `max-dispatcher` — заготовка runtime-слоя dispatcher/router.
+- `max-fsm` — заготовка FSM abstractions.
+- `max-spring-boot-starter` — заготовка Spring Boot integration.
+- `max-testkit` — заготовка framework test utilities.
 
-- Не делать 1:1 порт aiogram 3 на Java.
-- Не выдумывать возможности, которых нет в MAX API.
-- Не ограничиваться ролью "тонкого HTTP-клиента" без runtime-слоя.
-- Не жертвовать архитектурой ради быстрого увеличения surface area.
-
-## MVP
-
-- Базовый MAX client-core (транспорт, ошибки, базовые методы).
-- Unified update ingestion: polling + webhook в общий dispatcher pipeline.
-- Dispatcher + Router + базовые observer hooks.
-- Минимальный filter/middleware слой для маршрутизации и cross-cutting логики.
-- Базовые message/callback handling сценарии.
-- Рабочий testkit для unit/integration сценариев handler-логики.
-
-## V1
-
-- Зрелый filters DSL и middleware chain (outer/inner).
-- Context-based dependency injection для handler-параметров.
-- FSM storage abstraction + scenes/wizard.
-- Message/attachment builders и keyboard builders.
-- Upload abstraction для многошаговых MAX upload flow.
-- Spring Boot starter с автоконфигурацией и runtime wiring.
-- Документация и примеры production-oriented сценариев.
-
-## Later
-
-- Расширение покрываемых MAX API surface областей.
-- Дополнительные storage/adapters реализации для FSM и runtime.
-- Набор observability и reliability extensions (metrics, tracing, retries).
-- Больше готовых интеграций и эталонных sample apps.
-
-## Design principles
-
-- API-first DX: приоритет удобства публичного API framework.
-- Honest platform mapping: только реальные MAX возможности.
-- Layered architecture: client SDK отделён от framework runtime.
-- Type safety by default: явные и предсказуемые контракты.
-- Extensibility: новые слои строятся поверх существующих абстракций.
-- Testability: нетривиальная логика покрывается тестами.
-- Documentation as contract: README/docs синхронизированы с текущим состоянием.
-
-## Source of truth
-
-- MAX API docs: [dev.max.ru/docs-api](https://dev.max.ru/docs-api)
-- MAX methods: [dev.max.ru/docs-api/methods](https://dev.max.ru/docs-api/methods)
-- MAX objects: [dev.max.ru/docs-api/objects](https://dev.max.ru/docs-api/objects)
-- aiogram 3 reference (DX patterns): [docs.aiogram.dev](https://docs.aiogram.dev/)
-
-## Documentation
-
-- Product API specification: [docs/product-spec.md](docs/product-spec.md)
-- Core API contract: [docs/api-contract.md](docs/api-contract.md)
-- Filters contract specification: [docs/filter-contract.md](docs/filter-contract.md)
-- Middleware contract specification: [docs/middleware-contract.md](docs/middleware-contract.md)
-- Dependency injection model: [docs/di-model.md](docs/di-model.md)
-- Message API contract: [docs/message-api-contract.md](docs/message-api-contract.md)
-- Upload/media contract: [docs/upload-media-contract.md](docs/upload-media-contract.md)
-- FSM/scenes contract: [docs/fsm-scenes-contract.md](docs/fsm-scenes-contract.md)
-- Callback contract: [docs/callback-contract.md](docs/callback-contract.md)
-- Event model specification: [docs/event-model.md](docs/event-model.md)
-- Naming and package strategy: [docs/naming-package-strategy.md](docs/naming-package-strategy.md)
-- Contributing workflow: [docs/contributing.md](docs/contributing.md)
-- Sprint roadmap: [docs/roadmap.md](docs/roadmap.md)
-- Architecture ADR index: [docs/adr/README.md](docs/adr/README.md)
-- ADR-0001 Dispatcher/Router model: [docs/adr/0001-router-model.md](docs/adr/0001-router-model.md)
-- ADR-0002 Multi-module structure: [docs/adr/0002-multi-module-structure.md](docs/adr/0002-multi-module-structure.md)
-- ADR-0003 Client/runtime separation: [docs/adr/0003-client-runtime-separation.md](docs/adr/0003-client-runtime-separation.md)
-- ADR-0004 Unified polling/webhook pipeline: [docs/adr/0004-unified-update-pipeline.md](docs/adr/0004-unified-update-pipeline.md)
-
-## Current status
-
-Статус: `bootstrap`.
-
-Сейчас в репозитории:
-- стартовая multi-module структура Gradle (Kotlin DSL);
-- Java toolchain 21;
-- базовые межмодульные зависимости;
-- первичные скелеты контрактов;
-- `max-client-core` foundation layer: `MaxBotClient`, `MaxHttpClient`, `MaxRequest<T>`, `MaxApiClientConfig`;
-- builder-style конфигурация client SDK: `baseUrl`, `token`, `timeouts`, `user-agent`, `retry policy`;
-- базовый HTTP transport layer в `max-client-core` (GET/POST/PUT/PATCH/DELETE + JSON request/response pipeline), отделённый от domain-level `MaxBotClient`/`MaxRequest<T>` API;
-- auth layer в `max-client-core`: автоматический `Authorization` header через отдельный interceptor component;
-- централизованный JSON serialization layer в `max-client-core`: единый shared mapper и единые правила (non-null serialization, ISO dates, ignore unknown fields);
-- error model в `max-client-core`: иерархия `MaxApiException` + специализированные исключения (400/401/404/429/503 и generic 4xx/5xx) через единый `MaxApiErrorDecoder`, включая structured payload (`status`, `errorCode`, `message`, `details`, `rawBody`);
-- reusable pagination foundation в `max-client-core` для marker-based MAX API: `Page<T>`, `MarkerPage<T>`, `MarkerPageRequest`, `PaginationHelper` (query params + safe page traversal helpers);
-- базовый retry hook в transport pipeline (`RetryPolicy`): по умолчанию без retry (`maxAttempts=1`), при включении — консервативный retry для безопасных `GET` на временных сбоях (`429`/`503`) и transport errors;
-- rate-limit awareness в transport pipeline: корректная обработка `429` (включая `Retry-After`) и лёгкий client-side hook `RequestRateLimiter` (`noop`/`cooldown`) как задел под ограничение частоты запросов;
-- первый domain-level метод в `max-client-core`: `getMe()` (`GET /me`) поверх существующих transport/auth/serialization/error abstractions с типизированным `BotInfo` результатом;
-- foundation для message operations в `max-client-core`: `sendMessage`, `editMessage`, `deleteMessage`, `getMessage`, `getMessages` как typed domain-level методы поверх существующих DTO/transport abstractions;
-- поддержка callback answer в `max-client-core`: `answerCallback()` (`POST /answers`) с typed request/response API;
-- foundation для polling transport в `max-client-core`: `getUpdates()` (`GET /updates`) с typed request (`marker`, `timeout`, `limit`, `types`) и typed response (`updates`, `marker`);
-- foundation для webhook subscriptions в `max-client-core`: `getSubscriptions()` (`GET /subscriptions`), `createSubscription()` (`POST /subscriptions`), `deleteSubscription()` (`DELETE /subscriptions`);
-- test infrastructure для `max-client-core`: JSON fixtures (`max-client-core/src/test/resources/fixtures`) и общий helper `JsonFixtures` для serialization/transport тестов;
-- mocked HTTP test utilities в `max-client-core`: `MockHttpClientTestContext` для переиспользуемого `MockWebServer` lifecycle, client bootstrap и request assertions без низкоуровневого boilerplate;
-- базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
-- request DTO для message/callback API в `max-model`: `NewMessageBody`, `SendMessageRequest`, `EditMessageRequest`, `AnswerCallbackRequest`, минимальные attachment-related структуры;
-- typed value objects в `max-model` для id/reference-полей (`UserId`, `ChatId`, `MessageId`, `UpdateId`, `CallbackId`, `FileId`) вместо магических `String` в core DTO/request моделях;
-- дополнительные enum-контракты `ChatAction` и `ChatAdminPermission` с безопасным `UNKNOWN` fallback для forward compatibility;
-- JSON fixture tests для десериализации DTO в `max-model`;
-- serialization tests для request DTO и typed enum/value objects;
-- Gradle Wrapper и базовая тестовая конфигурация.
-
-## Module plan (current)
-
-- `max-model` — базовые DTO/enums контракты и JSON fixtures для десериализации.
-- `max-client-core` — Java SDK слой поверх MAX API (HTTP transport, auth, serialization, errors, pagination).
-- `max-dispatcher` — dispatcher/router orchestration runtime.
-- `max-fsm` — state management abstractions для диалогов.
-- `max-spring-boot-starter` — Spring Boot integration слой.
-- `max-testkit` — тестовые утилиты для framework-level сценариев.
-
-## Client Config Example
+## Quick start (client SDK foundation)
 
 ```java
+import java.time.Duration;
+import okhttp3.OkHttpClient;
+import ru.max.botframework.client.DefaultMaxBotClient;
+import ru.max.botframework.client.MaxApiClientConfig;
+import ru.max.botframework.client.MaxBotClient;
+import ru.max.botframework.client.http.MaxHttpClient;
+import ru.max.botframework.client.http.okhttp.OkHttpMaxHttpClient;
+import ru.max.botframework.client.serialization.JacksonJsonCodec;
+import ru.max.botframework.model.BotInfo;
+
+MaxApiClientConfig config = MaxApiClientConfig.builder()
+    .token("YOUR_BOT_TOKEN")
+    .connectTimeout(Duration.ofSeconds(5))
+    .readTimeout(Duration.ofSeconds(30))
+    .build();
+
+OkHttpClient okHttp = new OkHttpClient.Builder()
+    .connectTimeout(config.connectTimeout())
+    .readTimeout(config.readTimeout())
+    .build();
+
+MaxHttpClient httpClient = new OkHttpMaxHttpClient(config.baseUri(), okHttp);
+MaxBotClient botClient = new DefaultMaxBotClient(config, httpClient, new JacksonJsonCodec());
+
+BotInfo me = botClient.getMe();
+```
+
+## Client configuration
+
+`MaxApiClientConfig` поддерживает builder-style конфигурацию:
+- `baseUrl` / `baseUri` (по умолчанию `https://api.max.ru`);
+- `token` (обязательный);
+- `connectTimeout`, `readTimeout`;
+- `userAgent`;
+- `retryPolicy` (консервативный retry hook);
+- `rateLimiter` (легковесный hook для client-side pacing).
+
+Пример:
+
+```java
+import java.time.Duration;
+import ru.max.botframework.client.MaxApiClientConfig;
+import ru.max.botframework.client.RequestRateLimiter;
+import ru.max.botframework.client.RetryPolicy;
+
 MaxApiClientConfig config = MaxApiClientConfig.builder()
     .baseUrl("https://api.max.ru")
     .token("YOUR_BOT_TOKEN")
@@ -139,100 +79,67 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
     .readTimeout(Duration.ofSeconds(30))
     .userAgent("my-max-bot/1.0")
     .retryPolicy(RetryPolicy.fixed(2, Duration.ofMillis(200)))
-    .rateLimiter(RequestRateLimiter.cooldown(Duration.ofSeconds(1)))
+    .rateLimiter(RequestRateLimiter.cooldown(Duration.ofMillis(300)))
     .build();
 ```
 
-## Domain Method Example (`getMe`)
+## Supported operations (Sprint 1)
 
-```java
-MaxBotClient botClient = new DefaultMaxBotClient(config, transport, new JacksonJsonCodec());
-BotInfo me = botClient.getMe();
-System.out.println(me.username());
-```
+`MaxBotClient` сейчас предоставляет:
+- generic execution: `execute(MaxRequest<T>)` + `executeAsync(...)`;
+- bot info: `getMe`, `getMeAsync`;
+- messages:
+  - `sendMessage`, `sendMessageAsync`;
+  - `editMessage`, `editMessageAsync`;
+  - `deleteMessage`, `deleteMessageAsync`;
+  - `getMessage`, `getMessageAsync`;
+  - `getMessages(ChatId)` и `getMessages(List<MessageId>)`;
+- callbacks:
+  - `answerCallback`, `answerCallbackAsync`;
+- updates/polling foundation:
+  - `getUpdates`, `getUpdatesAsync` (`marker`, `timeout`, `limit`, `types`);
+- webhook subscriptions foundation:
+  - `getSubscriptions`;
+  - `createSubscription`, `createSubscriptionAsync`;
+  - `deleteSubscription`, `deleteSubscriptionAsync`.
 
-## Message Operations Example
+Сопутствующие foundation-возможности:
+- HTTP transport: GET/POST/PUT/PATCH/DELETE;
+- centralized JSON serialization (`JacksonJsonCodec` + shared mapper);
+- auth interceptor (`Authorization` header);
+- typed error hierarchy + structured MAX error payload;
+- marker-based pagination abstractions;
+- retry policy hook + rate-limit awareness (`429`, `Retry-After`).
 
-```java
-Message sent = botClient.sendMessage(new SendMessageRequest(
-    new ChatId("c-100"),
-    new NewMessageBody("Hello", TextFormat.PLAIN, List.of()),
-    true,
-    null
-));
+## Current limitations
 
-boolean edited = botClient.editMessage(new EditMessageRequest(
-    new ChatId("c-100"),
-    sent.messageId(),
-    new NewMessageBody("Hello, updated", TextFormat.MARKDOWN, List.of()),
-    true
-));
+Ограничения текущего этапа (Sprint 1):
+- framework runtime слой ещё не реализован: нет production-готовых `Dispatcher/Router`, filters DSL, middleware chain, DI runtime, FSM/scenes runtime;
+- Spring Boot starter и testkit пока на уровне скелетов модулей;
+- upload/media pipeline ещё не реализован;
+- long-polling/webhook runtime orchestration ещё не реализованы (есть только client foundation-методы);
+- surface MAX API покрыт частично и будет расширяться в следующих спринтах.
 
-Message fetched = botClient.getMessage(sent.messageId());
-List<Message> chatMessages = botClient.getMessages(new ChatId("c-100"));
-boolean deleted = botClient.deleteMessage(sent.messageId());
-```
+## Build and test
 
-## Callback Answer Example
-
-```java
-boolean answered = botClient.answerCallback(new AnswerCallbackRequest(
-    new CallbackId("cb-1"),
-    "Done",
-    false,
-    3
-));
-```
-
-## getUpdates Example (Polling Foundation)
-
-```java
-GetUpdatesResponse updates = botClient.getUpdates(new GetUpdatesRequest(
-    100L,
-    30,
-    100,
-    List.of(UpdateEventType.MESSAGE_CREATED, UpdateEventType.MESSAGE_CALLBACK)
-));
-
-Long nextMarker = updates.marker();
-List<Update> batch = updates.updates();
-```
-
-## Webhook Subscriptions Example
-
-```java
-List<Subscription> current = botClient.getSubscriptions();
-
-boolean created = botClient.createSubscription(new CreateSubscriptionRequest(
-    "https://example.com/webhook",
-    List.of(UpdateEventType.MESSAGE_CREATED, UpdateEventType.MESSAGE_CALLBACK),
-    "secret-1"
-));
-
-boolean deleted = botClient.deleteSubscription(
-    new DeleteSubscriptionRequest("https://example.com/webhook")
-);
-```
-
-## Build
-
-Требования:
-- JDK 21+
-
-Команда:
+Требование: JDK 21+
 
 ```bash
-./gradlew clean build
+./gradlew clean test
 ```
 
-## Test Fixtures
+## Documentation
 
-Для `max-client-core` добавлен единый слой тестовых JSON fixtures:
-- path: `max-client-core/src/test/resources/fixtures`;
-- helpers:
-- `ru.max.botframework.client.test.JsonFixtures` (fixture loading/MockResponse factory);
-- `ru.max.botframework.client.test.MockHttpClientTestContext` (готовый mocked HTTP context для client tests).
+- Product vision and target DX: [docs/product-spec.md](docs/product-spec.md)
+- Core API contract: [docs/api-contract.md](docs/api-contract.md)
+- Event model: [docs/event-model.md](docs/event-model.md)
+- Roadmap: [docs/roadmap.md](docs/roadmap.md)
+- Contributing workflow: [docs/contributing.md](docs/contributing.md)
+- ADR index: [docs/adr/README.md](docs/adr/README.md)
 
-Это позволяет использовать одни и те же sample MAX API responses в:
-- serialization tests (`JsonFixtures.read(...)`);
-- transport tests c `MockWebServer` без дублирования bootstrap/mocking boilerplate.
+## Source of truth
+
+- MAX API docs: [https://dev.max.ru/docs-api](https://dev.max.ru/docs-api)
+- MAX methods: [https://dev.max.ru/docs-api/methods](https://dev.max.ru/docs-api/methods)
+- MAX objects: [https://dev.max.ru/docs-api/objects](https://dev.max.ru/docs-api/objects)
+- aiogram 3 reference: [https://docs.aiogram.dev/](https://docs.aiogram.dev/)
