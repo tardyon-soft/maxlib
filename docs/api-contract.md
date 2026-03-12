@@ -34,13 +34,15 @@
 - `UpdateSink` (`UpdateConsumer`) — единая async-точка приёма normalized `Update`
   с `UpdateHandlingResult` (`SUCCESS`/`FAILURE`).
 - `LongPollingRunner` — lifecycle-контракт long polling loop (`start`/`stop`/`isRunning`).
+- `LongPollingRunnerConfig` — lifecycle/ownership настройки (`shutdownTimeout`, resource ownership).
 - `PollingMarkerState` — marker progression boundary (in-memory now, persistent later).
 - `WebhookRequest` — framework-agnostic raw webhook request (`body` + `headers`).
 - `WebhookSecretValidator` — контракт проверки `X-Max-Bot-Api-Secret`.
 - `WebhookSecretValidationResult`/`WebhookValidationError` — результат и причина отказа валидации.
 - `WebhookReceiver` — boundary между HTTP webhook endpoint и ingestion source
   (`WebhookRequest` -> `WebhookReceiveResult`).
-- `WebhookReceiveResult` — result contract для web adapter integration.
+- `WebhookReceiveResult` — result contract для web adapter integration (включая `OVERLOADED`).
+- `WebhookReceiverConfig` — базовый overload control (`maxInFlightRequests`).
 - `UpdatePipeline` — unified ingress контракт для downstream обработки.
 - `UpdatePipelineContext`/`UpdatePipelineResult` — transport context и результат pipeline delivery.
 - `UpdatePipelineHook` — internal extension point для logging/metrics/dispatcher bridge.

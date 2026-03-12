@@ -24,6 +24,10 @@ public record WebhookReceiveResult(
         return new WebhookReceiveResult(WebhookReceiveStatus.INVALID_SECRET, validation, "Webhook secret validation failed", null);
     }
 
+    public static WebhookReceiveResult overloaded(String message) {
+        return new WebhookReceiveResult(WebhookReceiveStatus.OVERLOADED, null, message, null);
+    }
+
     public static WebhookReceiveResult badPayload(String message, Throwable cause) {
         return new WebhookReceiveResult(WebhookReceiveStatus.BAD_PAYLOAD, null, message, cause);
     }

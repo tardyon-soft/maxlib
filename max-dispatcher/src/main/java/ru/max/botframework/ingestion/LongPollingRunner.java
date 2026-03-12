@@ -9,10 +9,12 @@ public interface LongPollingRunner extends AutoCloseable {
 
     void stop();
 
+    void shutdown();
+
     boolean isRunning();
 
     @Override
     default void close() {
-        stop();
+        shutdown();
     }
 }

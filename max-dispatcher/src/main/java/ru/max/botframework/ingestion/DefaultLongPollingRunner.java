@@ -2,8 +2,11 @@ package ru.max.botframework.ingestion;
 
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import ru.max.botframework.model.Update;
 
@@ -18,7 +21,9 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
     private final PollingMarkerState markerState;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private volatile Future<?> worker;
+
     public DefaultLongPollingRunner(PollingUpdateSource source, UpdateSink sink) {
         this(source, new DefaultUpdatePipeline(sink), LongPollingRunnerConfig.defaults());
     }
@@ -50,6 +55,9 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
 
     @Override
     public synchronized void start() {
+        if (shutdown.get()) {
+            throw new IllegalStateException("Runner is already shutdown");
+        }
         if (!running.compareAndSet(false, true)) {
             return;
         }
@@ -58,13 +66,32 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
 
     @Override
     public synchronized void stop() {
+        stopLoopAndAwait(config.shutdownTimeout());
+    }
+
+    @Override
+    public synchronized void shutdown() {
+        if (!shutdown.compareAndSet(false, true)) {
+            return;
+        }
+        stopLoopAndAwait(config.shutdownTimeout());
+        if (config.closeSourceOnShutdown()) {
+            safeCloseSource();
+        }
+        if (config.closeExecutorOnShutdown()) {
+            safeShutdownExecutor();
+        }
+    }
+
+    private void stopLoopAndAwait(Duration timeout) {
         if (!running.compareAndSet(true, false)) {
             return;
         }
         Future<?> localWorker = worker;
         if (localWorker != null) {
-            localWorker.cancel(true);
+            awaitWorker(localWorker, timeout);
         }
+        worker = null;
     }
 
     @Override
@@ -144,6 +171,49 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
         } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
             running.set(false);
+        }
+    }
+
+    private void awaitWorker(Future<?> localWorker, Duration timeout) {
+        long timeoutMillis = timeout.toMillis();
+        try {
+            if (timeoutMillis <= 0) {
+                localWorker.get();
+            } else {
+                localWorker.get(timeoutMillis, TimeUnit.MILLISECONDS);
+            }
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            localWorker.cancel(true);
+        } catch (TimeoutException timeoutException) {
+            localWorker.cancel(true);
+        } catch (ExecutionException ignored) {
+            // worker errors are treated as transient ingestion failures
+        }
+    }
+
+    private void safeCloseSource() {
+        try {
+            source.close();
+        } catch (Exception ignored) {
+            // source cleanup errors must not break shutdown flow
+        }
+    }
+
+    private void safeShutdownExecutor() {
+        executor.shutdown();
+        try {
+            long timeoutMillis = config.shutdownTimeout().toMillis();
+            if (timeoutMillis <= 0) {
+                executor.awaitTermination(0, TimeUnit.MILLISECONDS);
+            } else {
+                executor.awaitTermination(timeoutMillis, TimeUnit.MILLISECONDS);
+            }
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+        }
+        if (!executor.isTerminated()) {
+            executor.shutdownNow();
         }
     }
 }

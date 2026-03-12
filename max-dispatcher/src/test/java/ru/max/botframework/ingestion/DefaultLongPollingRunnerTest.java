@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
@@ -199,6 +201,43 @@ class DefaultLongPollingRunnerTest {
 
         verify(source, atLeast(2)).poll(any());
         verify(sink, atLeast(2)).handle(any());
+    }
+
+    @Test
+    void shutdownClosesOwnedExecutorAndSource() {
+        PollingUpdateSource source = Mockito.mock(PollingUpdateSource.class);
+        UpdateSink sink = Mockito.mock(UpdateSink.class);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        LongPollingRunnerConfig config = LongPollingRunnerConfig.builder()
+                .executor(executor, true)
+                .closeSourceOnShutdown(true)
+                .shutdownTimeout(Duration.ofMillis(100))
+                .build();
+        DefaultLongPollingRunner runner = new DefaultLongPollingRunner(source, sink, config);
+
+        runner.shutdown();
+
+        assertTrue(executor.isShutdown());
+        verify(source).close();
+    }
+
+    @Test
+    void shutdownDoesNotCloseExternalExecutorWhenOwnershipIsDisabled() {
+        PollingUpdateSource source = Mockito.mock(PollingUpdateSource.class);
+        UpdateSink sink = Mockito.mock(UpdateSink.class);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        LongPollingRunnerConfig config = LongPollingRunnerConfig.builder()
+                .executor(executor, false)
+                .closeSourceOnShutdown(false)
+                .shutdownTimeout(Duration.ofMillis(100))
+                .build();
+        DefaultLongPollingRunner runner = new DefaultLongPollingRunner(source, sink, config);
+
+        runner.shutdown();
+
+        assertFalse(executor.isShutdown());
+        verify(source, Mockito.never()).close();
+        executor.shutdownNow();
     }
 
     private static DefaultLongPollingRunner runner(PollingUpdateSource source, UpdateSink sink) {

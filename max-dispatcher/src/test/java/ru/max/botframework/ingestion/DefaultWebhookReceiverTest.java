@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import ru.max.botframework.client.serialization.JacksonJsonCodec;
@@ -90,6 +92,36 @@ class DefaultWebhookReceiverTest {
 
         assertEquals(WebhookReceiveStatus.INTERNAL_ERROR, result.status());
         assertFalse(result.isAccepted());
+    }
+
+    @Test
+    void returnsOverloadedWhenInFlightLimitReached() throws Exception {
+        UpdatePipeline pipeline = Mockito.mock(UpdatePipeline.class);
+        CompletableFuture<UpdatePipelineResult> firstRequestCompletion = new CompletableFuture<>();
+        CountDownLatch firstAccepted = new CountDownLatch(1);
+        when(pipeline.process(any(), any())).thenAnswer(invocation -> {
+            firstAccepted.countDown();
+            return firstRequestCompletion;
+        });
+        DefaultWebhookReceiver receiver = new DefaultWebhookReceiver(
+                new DefaultWebhookSecretValidator("secret-1"),
+                new JacksonJsonCodec(),
+                pipeline,
+                new WebhookReceiverConfig(1)
+        );
+
+        CompletableFuture<WebhookReceiveResult> first = receiver.receive(request(validPayload(), "secret-1"))
+                .toCompletableFuture();
+        assertTrue(firstAccepted.await(1, TimeUnit.SECONDS));
+
+        WebhookReceiveResult overloaded = receiver.receive(request(validPayload(), "secret-1"))
+                .toCompletableFuture()
+                .join();
+        assertEquals(WebhookReceiveStatus.OVERLOADED, overloaded.status());
+
+        firstRequestCompletion.complete(UpdatePipelineResult.accepted());
+        WebhookReceiveResult firstResult = first.join();
+        assertEquals(WebhookReceiveStatus.ACCEPTED, firstResult.status());
     }
 
     private static WebhookRequest request(String body, String secretHeader) {

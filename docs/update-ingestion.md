@@ -112,6 +112,7 @@
 Контракт (минимальный):
 - `start()`
 - `stop()`
+- `shutdown()`
 - `isRunning()`
 
 Базовая execution модель:
@@ -119,6 +120,11 @@
 - один цикл выполняет `poll -> deliver to sink -> next poll`;
 - пустой batch обрабатывается как idle-итерация;
 - transient ошибки source/sink не останавливают runner автоматически.
+
+Lifecycle semantics:
+- `stop()` — graceful остановка polling loop (без финального уничтожения внешних ресурсов);
+- `shutdown()` — финальная остановка с освобождением owned ресурсов (`source`, `executor`);
+- ownership executor/source задаётся через `LongPollingRunnerConfig`.
 
 Marker progression strategy (Sprint 2.2.3):
 - marker хранится в `PollingMarkerState` (по умолчанию in-memory);
@@ -145,8 +151,13 @@ Marker progression strategy (Sprint 2.2.3):
 `WebhookReceiveResult`:
 - `ACCEPTED` — update успешно принят sink;
 - `INVALID_SECRET` — webhook secret не прошёл проверку;
+- `OVERLOADED` — превышен лимит in-flight webhook requests;
 - `BAD_PAYLOAD` — body не удалось десериализовать в `Update`;
 - `INTERNAL_ERROR` — ошибка sink/внутренней обработки receiver.
+
+Overload control:
+- базовый backpressure реализуется через лимит `maxInFlightRequests` (`WebhookReceiverConfig`);
+- при превышении лимита receiver быстро возвращает `OVERLOADED` без блокировки transport thread.
 
 ### `UpdatePipeline` (unified ingestion contract)
 

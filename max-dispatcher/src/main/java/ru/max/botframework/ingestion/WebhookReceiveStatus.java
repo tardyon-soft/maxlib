@@ -6,6 +6,7 @@ package ru.max.botframework.ingestion;
 public enum WebhookReceiveStatus {
     ACCEPTED,
     INVALID_SECRET,
+    OVERLOADED,
     BAD_PAYLOAD,
     INTERNAL_ERROR
 }

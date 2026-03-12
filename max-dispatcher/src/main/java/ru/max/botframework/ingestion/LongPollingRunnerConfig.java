@@ -14,11 +14,15 @@ public record LongPollingRunnerConfig(
         Duration idleDelay,
         Duration sourceErrorDelay,
         Duration sinkErrorDelay,
-        ExecutorService executor
+        ExecutorService executor,
+        Duration shutdownTimeout,
+        boolean closeSourceOnShutdown,
+        boolean closeExecutorOnShutdown
 ) {
     private static final Duration DEFAULT_IDLE_DELAY = Duration.ofMillis(100);
     private static final Duration DEFAULT_SOURCE_ERROR_DELAY = Duration.ofSeconds(1);
     private static final Duration DEFAULT_SINK_ERROR_DELAY = Duration.ofMillis(200);
+    private static final Duration DEFAULT_SHUTDOWN_TIMEOUT = Duration.ofSeconds(5);
 
     public LongPollingRunnerConfig {
         Objects.requireNonNull(request, "request");
@@ -26,6 +30,7 @@ public record LongPollingRunnerConfig(
         sourceErrorDelay = requireNonNegative(sourceErrorDelay, "sourceErrorDelay");
         sinkErrorDelay = requireNonNegative(sinkErrorDelay, "sinkErrorDelay");
         Objects.requireNonNull(executor, "executor");
+        shutdownTimeout = requireNonNegative(shutdownTimeout, "shutdownTimeout");
     }
 
     public static Builder builder() {
@@ -42,6 +47,9 @@ public record LongPollingRunnerConfig(
         private Duration sourceErrorDelay = DEFAULT_SOURCE_ERROR_DELAY;
         private Duration sinkErrorDelay = DEFAULT_SINK_ERROR_DELAY;
         private ExecutorService executor = singleThreadExecutor();
+        private Duration shutdownTimeout = DEFAULT_SHUTDOWN_TIMEOUT;
+        private boolean closeSourceOnShutdown = true;
+        private boolean closeExecutorOnShutdown = true;
 
         public Builder request(PollingFetchRequest request) {
             this.request = Objects.requireNonNull(request, "request");
@@ -65,6 +73,28 @@ public record LongPollingRunnerConfig(
 
         public Builder executor(ExecutorService executor) {
             this.executor = Objects.requireNonNull(executor, "executor");
+            this.closeExecutorOnShutdown = false;
+            return this;
+        }
+
+        public Builder executor(ExecutorService executor, boolean closeOnShutdown) {
+            this.executor = Objects.requireNonNull(executor, "executor");
+            this.closeExecutorOnShutdown = closeOnShutdown;
+            return this;
+        }
+
+        public Builder shutdownTimeout(Duration shutdownTimeout) {
+            this.shutdownTimeout = requireNonNegative(shutdownTimeout, "shutdownTimeout");
+            return this;
+        }
+
+        public Builder closeSourceOnShutdown(boolean closeSourceOnShutdown) {
+            this.closeSourceOnShutdown = closeSourceOnShutdown;
+            return this;
+        }
+
+        public Builder closeExecutorOnShutdown(boolean closeExecutorOnShutdown) {
+            this.closeExecutorOnShutdown = closeExecutorOnShutdown;
             return this;
         }
 
@@ -74,7 +104,10 @@ public record LongPollingRunnerConfig(
                     idleDelay,
                     sourceErrorDelay,
                     sinkErrorDelay,
-                    executor
+                    executor,
+                    shutdownTimeout,
+                    closeSourceOnShutdown,
+                    closeExecutorOnShutdown
             );
         }
     }

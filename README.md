@@ -17,9 +17,11 @@ Sprint 1 (`client/DTO/errors`) завершён.
 - ingestion target contract в `max-dispatcher`: `UpdateSink` (async) + `UpdateHandlingResult` для unified polling/webhook flow;
 - polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
 - long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/isRunning`);
+- graceful lifecycle semantics для polling runner: `stop()` vs `shutdown()` + ownership-aware resource cleanup;
 - marker progression contract: monotonic marker state с продвижением только после успешного batch handling;
 - webhook secret validation foundation: `WebhookSecretValidator` + typed validation result/error contracts;
 - webhook receiver foundation: `DefaultWebhookReceiver` (`WebhookRequest` -> `WebhookReceiveResult`);
+- webhook overload control foundation: `WebhookReceiverConfig.maxInFlightRequests` + `OVERLOADED` result;
 - unified ingestion pipeline foundation: `UpdatePipeline` + `DefaultUpdatePipeline` + `UpdatePipelineContext`;
 - domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
 - тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
@@ -195,6 +197,21 @@ runner.stop();
 - контекст источника фиксируется через `UpdatePipelineContext` (`POLLING` / `WEBHOOK`);
 - расширение для observability: `UpdatePipelineHook` (`onBefore` / `onAfter`).
 
+## Lifecycle and Shutdown
+
+- `DefaultLongPollingRunner.stop()` — graceful stop цикла polling без финального закрытия компонентов;
+- `DefaultLongPollingRunner.shutdown()` — финальная остановка и cleanup ресурсов по `LongPollingRunnerConfig`;
+- ownership lifecycle управляется конфигом:
+- `closeExecutorOnShutdown`
+- `closeSourceOnShutdown`
+- `shutdownTimeout`
+
+## Webhook Overload Control
+
+- receiver использует `WebhookReceiverConfig(maxInFlightRequests)`;
+- при достижении лимита возвращается `WebhookReceiveStatus.OVERLOADED`;
+- это lightweight backpressure на transport-уровне без reactive engine.
+
 ## Low-level Webhook Handling Example
 
 ```java
@@ -231,6 +248,8 @@ if (result.status() == WebhookReceiveStatus.ACCEPTED) {
     // return HTTP 401/403
 } else if (result.status() == WebhookReceiveStatus.BAD_PAYLOAD) {
     // return HTTP 400
+} else if (result.status() == WebhookReceiveStatus.OVERLOADED) {
+    // return HTTP 429/503
 } else {
     // return HTTP 500
 }
