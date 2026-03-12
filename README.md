@@ -97,6 +97,7 @@ Java framework для разработки ботов на платформе MA
 - базовые межмодульные зависимости;
 - первичные скелеты контрактов;
 - `max-client-core` foundation layer: `MaxBotClient`, `MaxHttpClient`, `MaxRequest<T>`, `MaxApiClientConfig`;
+- builder-style конфигурация client SDK: `baseUrl`, `token`, `timeouts`, `user-agent`, `retry policy` (placeholder);
 - базовый HTTP transport layer в `max-client-core` (GET/POST/PUT/PATCH/DELETE + JSON request/response pipeline), отделённый от domain-level `MaxBotClient`/`MaxRequest<T>` API;
 - Gradle Wrapper и базовая тестовая конфигурация.
 
@@ -108,6 +109,19 @@ Java framework для разработки ботов на платформе MA
 - `max-fsm` — state management abstractions для диалогов.
 - `max-spring-boot-starter` — Spring Boot integration слой.
 - `max-testkit` — тестовые утилиты для framework-level сценариев.
+
+## Client Config Example
+
+```java
+MaxApiClientConfig config = MaxApiClientConfig.builder()
+    .baseUrl("https://api.max.ru")
+    .token("YOUR_BOT_TOKEN")
+    .connectTimeout(Duration.ofSeconds(5))
+    .readTimeout(Duration.ofSeconds(30))
+    .userAgent("my-max-bot/1.0")
+    .retryPolicy(RetryPolicy.none()) // placeholder for future retry behavior
+    .build();
+```
 
 ## Build
 

@@ -18,6 +18,7 @@ import ru.max.botframework.client.serialization.JsonCodec;
  */
 public final class DefaultMaxBotClient implements MaxBotClient {
     private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String USER_AGENT_HEADER = "User-Agent";
     private static final String CONTENT_TYPE_HEADER = "Content-Type";
     private static final String APPLICATION_JSON = "application/json";
 
@@ -61,9 +62,8 @@ public final class DefaultMaxBotClient implements MaxBotClient {
         byte[] requestBody = serializeBody(request.body());
 
         Map<String, String> headers = new LinkedHashMap<>(request.headers());
-        Optional.ofNullable(config.authProvider().authorizationHeaderValue())
-                .filter(value -> !value.isBlank())
-                .ifPresent(value -> headers.putIfAbsent(AUTHORIZATION_HEADER, value));
+        headers.putIfAbsent(USER_AGENT_HEADER, config.userAgent());
+        headers.putIfAbsent(AUTHORIZATION_HEADER, authorizationHeaderValue(config.token()));
 
         if (requestBody.length > 0) {
             headers.putIfAbsent(CONTENT_TYPE_HEADER, APPLICATION_JSON);
@@ -105,5 +105,13 @@ public final class DefaultMaxBotClient implements MaxBotClient {
 
     private static String encode(String value) {
         return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private static String authorizationHeaderValue(String token) {
+        String normalizedToken = token.trim();
+        if (normalizedToken.regionMatches(true, 0, "Bearer ", 0, "Bearer ".length())) {
+            return normalizedToken;
+        }
+        return "Bearer " + normalizedToken;
     }
 }

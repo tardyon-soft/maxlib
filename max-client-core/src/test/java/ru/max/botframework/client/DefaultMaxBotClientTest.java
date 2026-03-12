@@ -14,7 +14,6 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.max.botframework.client.auth.AuthProvider;
 import ru.max.botframework.client.error.MaxApiException;
 import ru.max.botframework.client.http.HttpMethod;
 import ru.max.botframework.client.http.MaxHttpClient;
@@ -31,12 +30,14 @@ class DefaultMaxBotClientTest {
         server = new MockWebServer();
         server.start();
 
-        MaxApiClientConfig config = MaxApiClientConfig.of(
-                URI.create(server.url("/").toString()),
-                () -> "Bearer test-token",
-                Duration.ofSeconds(2),
-                Duration.ofSeconds(2)
-        );
+        MaxApiClientConfig config = MaxApiClientConfig.builder()
+                .baseUri(URI.create(server.url("/").toString()))
+                .token("test-token")
+                .connectTimeout(Duration.ofSeconds(2))
+                .readTimeout(Duration.ofSeconds(2))
+                .userAgent("max-client-core-test/1.0")
+                .retryPolicy(RetryPolicy.none())
+                .build();
 
         MaxHttpClient transport = new OkHttpMaxHttpClient(
                 config.baseUri(),
@@ -66,6 +67,7 @@ class DefaultMaxBotClientTest {
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).isEqualTo("/v1/ping?limit=10");
         assertThat(recorded.getHeader("Authorization")).isEqualTo("Bearer test-token");
+        assertThat(recorded.getHeader("User-Agent")).isEqualTo("max-client-core-test/1.0");
         assertThat(recorded.getBodySize()).isZero();
 
         assertThat(response.ok()).isTrue();
@@ -86,6 +88,7 @@ class DefaultMaxBotClientTest {
             assertThat(recorded.getPath()).isEqualTo("/v1/ping?limit=10");
             assertThat(recorded.getHeader("Content-Type")).startsWith("application/json");
             assertThat(recorded.getHeader("Authorization")).isEqualTo("Bearer test-token");
+            assertThat(recorded.getHeader("User-Agent")).isEqualTo("max-client-core-test/1.0");
             assertThat(recorded.getBody().readUtf8()).contains("\"value\":\"hello\"");
             assertThat(response.message()).isEqualTo(method.name());
         }
