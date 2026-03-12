@@ -55,6 +55,31 @@
 - не определяет HTTP server stack (Spring, Netty и т.п.);
 - не отвечает за handler execution.
 
+### `WebhookUpdatePayload`
+
+Назначение:
+- framework-agnostic модель входящего webhook update;
+- переносит десериализованный `Update` и значение заголовка секрета.
+
+### `WebhookSecretValidator`
+
+Назначение:
+- проверка секрета из заголовка `X-Max-Bot-Api-Secret` до передачи update в sink.
+
+Контракт (минимальный):
+- `WebhookSecretValidationResult validate(WebhookUpdatePayload payload)`.
+
+`WebhookSecretValidationResult`:
+- `ACCEPTED` — секрет валиден;
+- `SKIPPED_NO_SECRET_CONFIGURED` — секрет в рантайме не настроен, проверка пропущена;
+- `REJECTED` — валидация не пройдена (`WebhookValidationError` с кодом причины).
+
+Поведение валидации:
+- если секрет не настроен: `SKIPPED_NO_SECRET_CONFIGURED`;
+- если секрет настроен, но header отсутствует: `REJECTED` + `SECRET_HEADER_MISSING`;
+- если секрет настроен, но не совпадает: `REJECTED` + `SECRET_MISMATCH`;
+- если секрет настроен и совпадает: `ACCEPTED`.
+
 ### `UpdateSink` / `UpdateConsumer`
 
 Назначение:

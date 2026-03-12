@@ -35,6 +35,9 @@
   с `UpdateHandlingResult` (`SUCCESS`/`FAILURE`).
 - `LongPollingRunner` — lifecycle-контракт long polling loop (`start`/`stop`/`isRunning`).
 - `PollingMarkerState` — marker progression boundary (in-memory now, persistent later).
+- `WebhookUpdatePayload` — framework-agnostic вход webhook update (`Update` + secret header).
+- `WebhookSecretValidator` — контракт проверки `X-Max-Bot-Api-Secret`.
+- `WebhookSecretValidationResult`/`WebhookValidationError` — результат и причина отказа валидации.
 - `WebhookReceiver` — boundary между HTTP webhook endpoint и ingestion source.
 - `UpdatePipeline` — unified ingress контракт для downstream обработки.
 

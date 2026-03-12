@@ -18,6 +18,7 @@ Sprint 1 (`client/DTO/errors`) завершён.
 - polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
 - long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/isRunning`);
 - marker progression contract: monotonic marker state с продвижением только после успешного batch handling;
+- webhook secret validation foundation: `WebhookSecretValidator` + typed validation result/error contracts;
 - domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
 - тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
 
@@ -125,7 +126,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media pipeline ещё не реализован;
 - long-polling/webhook transport реализации как runtime-компоненты пока не завершены (зафиксирован контракт слоя ingestion);
-- webhook runtime source/receiver пока не реализованы;
+- webhook runtime source/receiver пока не реализованы (доступен только framework-agnostic secret validator contract);
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
 
 ## Low-level Long Polling Example
@@ -175,6 +176,15 @@ runner.stop();
 - marker продвигается только после успешной обработки всего полученного batch;
 - при sink/source ошибках marker не двигается, чтобы сохранить at-least-once доставку;
 - marker не регрессирует даже если source вернул более старое значение.
+
+## Webhook Secret Validation
+
+- заголовок секрета: `X-Max-Bot-Api-Secret`;
+- контракт: `WebhookSecretValidator.validate(WebhookUpdatePayload)`;
+- outcomes:
+- `ACCEPTED`
+- `SKIPPED_NO_SECRET_CONFIGURED`
+- `REJECTED` (`SECRET_HEADER_MISSING` или `SECRET_MISMATCH`).
 
 ## Build and test
 
