@@ -72,6 +72,7 @@ Java framework для разработки ботов на платформе MA
 - Core API contract: [docs/api-contract.md](docs/api-contract.md)
 - Filters contract specification: [docs/filter-contract.md](docs/filter-contract.md)
 - Middleware contract specification: [docs/middleware-contract.md](docs/middleware-contract.md)
+- Dependency injection model: [docs/di-model.md](docs/di-model.md)
 - Event model specification: [docs/event-model.md](docs/event-model.md)
 - Router model ADR: [docs/adr/0001-router-model.md](docs/adr/0001-router-model.md)
 

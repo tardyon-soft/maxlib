@@ -203,6 +203,9 @@ router.message(F.message().text().startsWith("/help"), (Context ctx) -> {
 });
 ```
 
+Детальная модель dependency injection для handler аргументов:
+- [di-model.md](di-model.md)
+
 ## FSMContext
 
 ### Назначение
