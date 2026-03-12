@@ -63,6 +63,8 @@
 MVP implementation baseline:
 - `DefaultHandlerInvoker` (reflection + lightweight metadata cache);
 - supports method return types `void` and `CompletionStage<?>`.
+- runtime integration: `Dispatcher` использует `HandlerInvoker` как единый invocation entrypoint
+  для matched handlers в full pipeline (`outer -> filters -> inner -> handler`).
 
 ### `HandlerParameterResolver`
 

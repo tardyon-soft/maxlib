@@ -3,6 +3,7 @@ package ru.max.botframework.dispatcher;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import ru.max.botframework.model.Callback;
@@ -80,5 +81,23 @@ class RouterObserversTest {
         assertSame(router, returned);
         assertEquals(1, router.innerMiddlewares().size());
         assertSame(middleware, router.innerMiddlewares().getFirst());
+    }
+
+    @Test
+    void registrationApiSupportsReflectiveHandlers() throws Exception {
+        Router router = new Router("main");
+        Target target = new Target();
+        Method method = Target.class.getDeclaredMethod("onMessage", Message.class);
+
+        Router returned = router.message(target, method);
+
+        assertSame(router, returned);
+        assertEquals(1, router.messages().handlers().size());
+    }
+
+    private static final class Target {
+        public CompletableFuture<Void> onMessage(Message message) {
+            return CompletableFuture.completedFuture(null);
+        }
     }
 }

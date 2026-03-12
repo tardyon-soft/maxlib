@@ -1,5 +1,6 @@
 package ru.max.botframework.dispatcher;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -60,6 +61,14 @@ public final class Router {
     }
 
     /**
+     * Registers reflective update handler resolved by dispatcher invocation engine.
+     */
+    public Router update(Object target, Method method) {
+        updates.register(ReflectiveEventHandler.of(target, method));
+        return this;
+    }
+
+    /**
      * Registers generic update handler with explicit filter.
      */
     public Router update(Filter<Update> filter, EventHandler<Update> handler) {
@@ -72,6 +81,14 @@ public final class Router {
      */
     public Router update(Filter<Update> filter, ContextualEventHandler<Update> handler) {
         updates.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
+     * Registers reflective update handler with explicit filter.
+     */
+    public Router update(Filter<Update> filter, Object target, Method method) {
+        updates.register(Objects.requireNonNull(filter, "filter"), ReflectiveEventHandler.of(target, method));
         return this;
     }
 
@@ -99,6 +116,14 @@ public final class Router {
     }
 
     /**
+     * Registers reflective message handler resolved by dispatcher invocation engine.
+     */
+    public Router message(Object target, Method method) {
+        messages.register(ReflectiveEventHandler.of(target, method));
+        return this;
+    }
+
+    /**
      * Registers message handler with explicit filter.
      */
     public Router message(Filter<Message> filter, EventHandler<Message> handler) {
@@ -111,6 +136,14 @@ public final class Router {
      */
     public Router message(Filter<Message> filter, ContextualEventHandler<Message> handler) {
         messages.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
+     * Registers reflective message handler with explicit filter.
+     */
+    public Router message(Filter<Message> filter, Object target, Method method) {
+        messages.register(Objects.requireNonNull(filter, "filter"), ReflectiveEventHandler.of(target, method));
         return this;
     }
 
@@ -138,6 +171,14 @@ public final class Router {
     }
 
     /**
+     * Registers reflective callback handler resolved by dispatcher invocation engine.
+     */
+    public Router callback(Object target, Method method) {
+        callbacks.register(ReflectiveEventHandler.of(target, method));
+        return this;
+    }
+
+    /**
      * Registers callback handler with explicit filter.
      */
     public Router callback(Filter<Callback> filter, EventHandler<Callback> handler) {
@@ -150,6 +191,14 @@ public final class Router {
      */
     public Router callback(Filter<Callback> filter, ContextualEventHandler<Callback> handler) {
         callbacks.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
+     * Registers reflective callback handler with explicit filter.
+     */
+    public Router callback(Filter<Callback> filter, Object target, Method method) {
+        callbacks.register(Objects.requireNonNull(filter, "filter"), ReflectiveEventHandler.of(target, method));
         return this;
     }
 
@@ -177,6 +226,14 @@ public final class Router {
     }
 
     /**
+     * Registers reflective runtime error handler resolved by dispatcher invocation engine.
+     */
+    public Router error(Object target, Method method) {
+        errors.register(ReflectiveEventHandler.of(target, method));
+        return this;
+    }
+
+    /**
      * Registers runtime error handler with explicit filter.
      */
     public Router error(Filter<ErrorEvent> filter, EventHandler<ErrorEvent> handler) {
@@ -189,6 +246,14 @@ public final class Router {
      */
     public Router error(Filter<ErrorEvent> filter, ContextualEventHandler<ErrorEvent> handler) {
         errors.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
+     * Registers reflective runtime error handler with explicit filter.
+     */
+    public Router error(Filter<ErrorEvent> filter, Object target, Method method) {
+        errors.register(Objects.requireNonNull(filter, "filter"), ReflectiveEventHandler.of(target, method));
         return this;
     }
 

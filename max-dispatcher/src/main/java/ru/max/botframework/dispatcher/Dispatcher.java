@@ -24,13 +24,23 @@ public final class Dispatcher implements UpdateConsumer {
     private final List<OuterMiddleware> outerMiddlewares = new ArrayList<>();
     private final Map<RuntimeDataKey<?>, Object> applicationData = new java.util.concurrent.ConcurrentHashMap<>();
     private final UpdateEventResolver eventResolver;
+    private final HandlerInvoker handlerInvoker;
 
     public Dispatcher() {
-        this(new DefaultUpdateEventResolver());
+        this(new DefaultUpdateEventResolver(), DefaultHandlerInvoker.withDefaults());
     }
 
     public Dispatcher(UpdateEventResolver eventResolver) {
+        this(eventResolver, DefaultHandlerInvoker.withDefaults());
+    }
+
+    public Dispatcher(HandlerInvoker handlerInvoker) {
+        this(new DefaultUpdateEventResolver(), handlerInvoker);
+    }
+
+    public Dispatcher(UpdateEventResolver eventResolver, HandlerInvoker handlerInvoker) {
         this.eventResolver = Objects.requireNonNull(eventResolver, "eventResolver");
+        this.handlerInvoker = Objects.requireNonNull(handlerInvoker, "handlerInvoker");
     }
 
     /**
@@ -310,7 +320,7 @@ public final class Dispatcher implements UpdateConsumer {
         return MiddlewareChainExecutor.executeInner(
                         context,
                         router.innerMiddlewares(),
-                        () -> invokeHandler(handler, event, context, enrichment)
+                        () -> invokeHandler(handlerInvoker, handler, event, context, enrichment)
                 )
                 .handle((dispatchResult, throwable) -> {
                     if (throwable != null) {
@@ -329,20 +339,17 @@ public final class Dispatcher implements UpdateConsumer {
     }
 
     private static <TEvent> CompletionStage<DispatchResult> invokeHandler(
+            HandlerInvoker handlerInvoker,
             EventHandler<TEvent> handler,
             TEvent event,
             RuntimeContext context,
             Map<String, Object> enrichment
     ) {
         try {
-            CompletionStage<Void> stage;
-            if (handler instanceof ContextualEventHandler<?> contextualHandler) {
-                @SuppressWarnings("unchecked")
-                ContextualEventHandler<TEvent> typed = (ContextualEventHandler<TEvent>) contextualHandler;
-                stage = Objects.requireNonNull(typed.handle(event, context), "handler result");
-            } else {
-                stage = Objects.requireNonNull(handler.handle(event), "handler result");
-            }
+            CompletionStage<Void> stage = Objects.requireNonNull(
+                    handlerInvoker.invoke(handler, event, context),
+                    "handler result"
+            );
             return stage.handle((ignored, throwable) -> throwable == null
                     ? DispatchResult.handled(enrichment)
                     : DispatchResult.failed(HandlerInvocationException.wrap(unwrap(throwable))));

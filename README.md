@@ -34,6 +34,8 @@ Java framework для разработки ботов на платформе MA
 - добавлен application-level injection bridge:
   `Dispatcher.registerService(...)` и `Dispatcher.registerApplicationData(...)`
   + built-in `ApplicationDataParameterResolver` в default invoker chain;
+- dispatch pipeline теперь вызывает handler’ы через invocation engine (`HandlerInvoker`),
+  включая reflective method handlers с parameter resolution из runtime sources;
 - реализован базовый observer layer в `max-dispatcher`: `EventObserver`, `EventHandler`, `DefaultEventObserver`, MVP observer types (`update/message/callback/error`);
 - реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not`, filter-aware handler registration в `Router` и built-in filters MVP (`Command`, `TextEquals`, `TextStartsWith`, `ChatType`, `FromUser`, `HasAttachment`, `StateFilter` placeholder);
 - реализованы middleware contracts foundation: `OuterMiddleware`, `InnerMiddleware`, `MiddlewareNext`, `RuntimeContext`/`ContextKey` и chain executor с short-circuit support;
@@ -186,7 +188,7 @@ Method method = OrderHandlers.class.getDeclaredMethod(
     Message.class,
     OrderService.class
 );
-router.message(ReflectiveEventHandler.of(new OrderHandlers(), method, DefaultHandlerInvoker.withDefaults()));
+router.message(new OrderHandlers(), method);
 dispatcher.includeRouter(router);
 ```
 
@@ -194,6 +196,21 @@ dispatcher.includeRouter(router);
 - shared objects регистрируются явно на уровне `Dispatcher`;
 - resolution идёт по типу параметра (`ApplicationDataParameterResolver`);
 - framework не управляет lifecycle сервисов и не делает IoC/scopes.
+
+Пример mixed handler signature через invocation engine:
+
+```java
+public CompletionStage<Void> onMessage(
+    Message message,
+    Update update,
+    User user,
+    Chat chat,
+    RuntimeContext context,
+    String textSuffix,   // из BuiltInFilters.textStartsWith(...)
+    Integer attempt,     // из middleware enrichment
+    OrderService service // из Dispatcher.registerService(...)
+) { ... }
+```
 
 ## Sprint 2 Summary
 
