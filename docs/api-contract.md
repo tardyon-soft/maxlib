@@ -174,6 +174,9 @@ dispatcher.outerMiddleware((ctx, next) -> {
 });
 ```
 
+Детальный контракт outer/inner middleware, enrichment и error propagation:
+- [middleware-contract.md](middleware-contract.md)
+
 ## Context
 
 ### Назначение
