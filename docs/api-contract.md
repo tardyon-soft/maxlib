@@ -293,6 +293,9 @@ MessageBuilder msg = Messages.text("Выберите действие")
 ctx.reply(msg);
 ```
 
+Детальный контракт Message API (`send/edit/delete/reply`, formatting, notify, attachments, keyboard):
+- [message-api-contract.md](message-api-contract.md)
+
 ## KeyboardBuilder
 
 ### Назначение
