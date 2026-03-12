@@ -181,6 +181,9 @@ bot.send(
 - upload lifecycle (pre-upload/token/reference) скрыт за `uploadRef` abstraction;
 - attachment limits валидируются до отправки.
 
+Детальный upload/media contract (input abstractions и multi-step flow):
+- [upload-media-contract.md](upload-media-contract.md)
+
 ## Keyboard contract integration
 
 Message API интегрируется с `KeyboardBuilder`:

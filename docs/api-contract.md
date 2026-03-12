@@ -297,6 +297,8 @@ ctx.reply(msg);
 
 Детальный контракт Message API (`send/edit/delete/reply`, formatting, notify, attachments, keyboard):
 - [message-api-contract.md](message-api-contract.md)
+Детальный upload/media contract (input abstractions и multi-step upload flow):
+- [upload-media-contract.md](upload-media-contract.md)
 
 ## KeyboardBuilder
 
