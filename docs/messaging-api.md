@@ -121,6 +121,9 @@ Messages.text("Выберите действие")
 
 Рабочее имя контракта: `MessagingFacade` (финальное имя может быть скорректировано при реализации).
 
+Состояние реализации Sprint 6.2.1:
+- выбран и реализован `MessagingFacade`.
+
 Ответственность:
 - маппинг high-level builders -> SDK requests;
 - вызовы `MaxBotClient` (`sendMessage`, `editMessage`, `deleteMessage`, `answerCallback`, ...);

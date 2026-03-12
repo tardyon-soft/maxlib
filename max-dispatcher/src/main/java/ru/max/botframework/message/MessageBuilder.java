@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import ru.max.botframework.model.ChatId;
+import ru.max.botframework.model.MessageId;
 import ru.max.botframework.model.TextFormat;
+import ru.max.botframework.model.request.EditMessageRequest;
 import ru.max.botframework.model.request.NewMessageAttachment;
 import ru.max.botframework.model.request.NewMessageBody;
 import ru.max.botframework.model.request.SendMessageRequest;
@@ -131,17 +133,30 @@ public final class MessageBuilder {
     }
 
     public SendMessageRequest toSendRequest(ChatId chatId) {
+        return toSendRequest(chatId, null);
+    }
+
+    public SendMessageRequest toSendRequest(ChatId chatId, MessageId replyToMessageId) {
         return new SendMessageRequest(
                 Objects.requireNonNull(chatId, "chatId"),
                 toNewMessageBody(),
                 notify,
-                null
+                replyToMessageId
         );
     }
 
     public SendMessageRequest toSendRequest(MessageTarget target, MessageTarget.UserChatResolver resolver) {
         Objects.requireNonNull(target, "target");
         return toSendRequest(target.toChatId(resolver));
+    }
+
+    public EditMessageRequest toEditRequest(ChatId chatId, MessageId messageId) {
+        return new EditMessageRequest(
+                Objects.requireNonNull(chatId, "chatId"),
+                Objects.requireNonNull(messageId, "messageId"),
+                toNewMessageBody(),
+                notify
+        );
     }
 
     private String composeText() {

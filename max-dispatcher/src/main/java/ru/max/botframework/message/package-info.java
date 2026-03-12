@@ -1,5 +1,5 @@
 /**
  * High-level messaging abstractions used by runtime ergonomics layer:
- * targets, builders and messaging factories.
+ * targets, builders, factories and operation facades.
  */
 package ru.max.botframework.message;

@@ -193,6 +193,7 @@ Sprint 6.1 contracts:
 Sprint 6.1 foundation implemented:
 - `MessageTarget` abstraction (`ru.max.botframework.message.MessageTarget`) with `chat(...)` and `user(...)` targets.
 - immutable `MessageBuilder` + `Messages` factory (`ru.max.botframework.message`) as high-level adapter над `NewMessageBody`/`SendMessageRequest`.
+- `MessagingFacade` (`ru.max.botframework.message`) for high-level `send/edit/delete/reply` over existing `MaxBotClient`.
 
 Пример:
 
@@ -214,6 +215,12 @@ SendMessageRequest md = Messages.markdown("*Привет*")
 
 SendMessageRequest html = Messages.html("<b>Привет</b>")
     .toSendRequest(chatId);
+
+MessagingFacade messaging = new MessagingFacade(botClient, userId -> resolveUserChat(userId));
+Message sent = messaging.send(chatTarget, Messages.text("Привет").markdown());
+Message reply = messaging.reply(sent, Messages.html("<b>Принято</b>"));
+boolean edited = messaging.edit(sent, Messages.text("Обновлено"));
+boolean deleted = messaging.delete(sent);
 ```
 
 ## Shared Services Injection (Sprint 5.2.3)
