@@ -70,6 +70,7 @@ Java framework для разработки ботов на платформе MA
 
 - Product API specification: [docs/product-spec.md](docs/product-spec.md)
 - Core API contract: [docs/api-contract.md](docs/api-contract.md)
+- Event model specification: [docs/event-model.md](docs/event-model.md)
 
 ## Current status
 
