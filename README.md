@@ -329,6 +329,9 @@ First-match and propagation rules:
 - обход идёт deterministic: root routers в порядке include, внутри root — DFS pre-order по router tree;
 - если handler не найден во всей цепочке, результат `DispatchResult.IGNORED`;
 - если handler падает, результат `DispatchResult.FAILED`, и вызывается `error` observer текущего router.
+- при регистрации handler с filter учитываются только handler-ы с `FilterResult.MATCHED`;
+- filter `NOT_MATCHED` оставляет dispatch в поиске следующего handler-а по first-match правилам;
+- filter enrichment сохраняется в `DispatchResult.enrichment()` для будущего context/DI enrichment.
 
 Runtime error boundary:
 - runtime dispatch ошибки классифицируются как `HANDLER_FAILURE`, `EVENT_MAPPING_FAILURE`, `OBSERVER_EXECUTION_FAILURE`;

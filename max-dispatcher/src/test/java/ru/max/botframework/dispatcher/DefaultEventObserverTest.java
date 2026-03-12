@@ -66,7 +66,7 @@ class DefaultEventObserverTest {
             firstCount.incrementAndGet();
             return CompletableFuture.completedFuture(null);
         });
-        observer.register(Filter.of(event -> true), event -> {
+        observer.register(event -> CompletableFuture.completedFuture(FilterResult.matched(java.util.Map.of("route", "ok"))), event -> {
             secondCount.incrementAndGet();
             return CompletableFuture.completedFuture(null);
         });
@@ -76,6 +76,7 @@ class DefaultEventObserverTest {
         assertEquals(HandlerExecutionStatus.HANDLED, result.status());
         assertEquals(0, firstCount.get());
         assertEquals(1, secondCount.get());
+        assertEquals("ok", result.enrichment().get("route"));
     }
 
     @Test

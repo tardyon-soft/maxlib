@@ -86,6 +86,76 @@ class DispatcherTest {
     }
 
     @Test
+    void feedUpdateExecutesHandlerWhenFilterMatches() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger handled = new AtomicInteger();
+        router.message(Filter.of(message -> "ping".equals(message.text())), message -> {
+            handled.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("ping")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, handled.get());
+    }
+
+    @Test
+    void feedUpdateSkipsHandlerWhenFilterDoesNotMatch() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger handled = new AtomicInteger();
+        router.message(Filter.of(message -> "ping".equals(message.text())), message -> {
+            handled.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("pong")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.IGNORED, result.status());
+        assertEquals(0, handled.get());
+    }
+
+    @Test
+    void feedUpdateSelectsFirstMatchingHandlerAmongFilteredHandlers() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger first = new AtomicInteger();
+        AtomicInteger second = new AtomicInteger();
+        router.message(Filter.of(message -> false), message -> {
+            first.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        router.message(Filter.of(message -> message.text().startsWith("pay:")), message -> {
+            second.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("pay:1")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(0, first.get());
+        assertEquals(1, second.get());
+    }
+
+    @Test
+    void feedUpdatePreservesFilterEnrichmentInDispatchResult() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        router.message(BuiltInFilters.textStartsWith("pay:"), message -> CompletableFuture.completedFuture(null));
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("pay:42")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals("42", result.enrichment().get(BuiltInFilters.TEXT_SUFFIX_KEY));
+    }
+
+    @Test
     void feedUpdateUsesResolverFallbackForUnknownTypeWithMessagePayload() {
         Dispatcher dispatcher = new Dispatcher();
         Router router = new Router("main");
@@ -316,10 +386,14 @@ class DispatcherTest {
     }
 
     private static Update messageUpdate() {
+        return messageUpdateWithText("hello");
+    }
+
+    private static Update messageUpdateWithText(String text) {
         return new Update(
                 new UpdateId("u-1"),
                 UpdateType.MESSAGE,
-                message(),
+                message(text),
                 null,
                 null,
                 Instant.parse("2026-03-12T00:00:00Z")
@@ -344,11 +418,15 @@ class DispatcherTest {
     }
 
     private static Message message() {
+        return message("hello");
+    }
+
+    private static Message message(String text) {
         return new Message(
                 new MessageId("m-1"),
                 new Chat(new ChatId("c-1"), ChatType.PRIVATE, "title", null, null),
                 user(),
-                "hello",
+                text,
                 Instant.parse("2026-03-12T00:00:00Z"),
                 null,
                 java.util.List.of(),

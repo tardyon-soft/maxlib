@@ -81,15 +81,19 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
                     if (result.status() == FilterStatus.NOT_MATCHED) {
                         return notifyFromRegistration(event, index + 1);
                     }
-                    return invokeHandler(registration.handler(), event);
+                    return invokeHandler(registration.handler(), event, result.enrichment());
                 });
     }
 
-    private CompletionStage<HandlerExecutionResult> invokeHandler(EventHandler<TEvent> handler, TEvent event) {
+    private CompletionStage<HandlerExecutionResult> invokeHandler(
+            EventHandler<TEvent> handler,
+            TEvent event,
+            java.util.Map<String, Object> enrichment
+    ) {
         try {
             CompletionStage<Void> stage = Objects.requireNonNull(handler.handle(event), "handler result");
             return stage.handle((ignored, throwable) -> throwable == null
-                    ? HandlerExecutionResult.handled()
+                    ? HandlerExecutionResult.handled(enrichment)
                     : HandlerExecutionResult.failed(unwrap(throwable)));
         } catch (Throwable throwable) {
             return CompletableFuture.completedFuture(HandlerExecutionResult.failed(throwable));

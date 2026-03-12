@@ -171,7 +171,7 @@ public final class Dispatcher implements UpdateConsumer {
                     }
                     HandlerExecutionResult result = outcome.result();
                     if (result.status() == HandlerExecutionStatus.HANDLED) {
-                        return CompletableFuture.completedFuture(DispatchResult.handled());
+                        return CompletableFuture.completedFuture(DispatchResult.handled(result.enrichment()));
                     }
                     if (result.status() == HandlerExecutionStatus.FAILED) {
                         Throwable failure = result.errorOpt().orElseGet(() -> new IllegalStateException("handler failed without error"));
