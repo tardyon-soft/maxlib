@@ -1,0 +1,9 @@
+{
+  "id": "u-1",
+  "username": "alice",
+  "firstName": "Alice",
+  "lastName": "Smith",
+  "displayName": "Alice S.",
+  "bot": false,
+  "languageCode": "ru"
+}

@@ -1,0 +1,32 @@
+{
+  "messageId": "m-100",
+  "chat": {
+    "id": "c-100",
+    "type": "group",
+    "title": "Payments"
+  },
+  "from": {
+    "id": "u-1",
+    "username": "alice",
+    "firstName": "Alice",
+    "bot": false
+  },
+  "text": "/pay 100",
+  "createdAt": "2026-01-01T11:00:00Z",
+  "entities": [
+    {
+      "type": "bot_command",
+      "offset": 0,
+      "length": 4,
+      "value": "/pay"
+    }
+  ],
+  "attachments": [
+    {
+      "type": "document",
+      "fileId": "f-1",
+      "mimeType": "application/pdf",
+      "size": 1024
+    }
+  ]
+}

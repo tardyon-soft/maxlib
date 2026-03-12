@@ -1,11 +1,21 @@
 package ru.max.botframework.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Normalized update coming from MAX transports (polling or webhook).
+ * Normalized update DTO used across client/runtime contracts.
  */
-public record Update(String updateId, String type) {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record Update(
+        String updateId,
+        UpdateType type,
+        Message message,
+        Callback callback,
+        ChatMember chatMember,
+        Instant eventAt
+) {
     public Update {
         Objects.requireNonNull(updateId, "updateId");
         Objects.requireNonNull(type, "type");

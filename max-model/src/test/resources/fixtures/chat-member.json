@@ -1,0 +1,16 @@
+{
+  "chat": {
+    "id": "c-100",
+    "type": "group",
+    "title": "Payments"
+  },
+  "user": {
+    "id": "u-1",
+    "username": "alice",
+    "firstName": "Alice",
+    "bot": false
+  },
+  "status": "member",
+  "joinedAt": "2026-01-01T10:00:00Z",
+  "updatedAt": "2026-01-02T10:00:00Z"
+}

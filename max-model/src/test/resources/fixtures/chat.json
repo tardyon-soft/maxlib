@@ -1,0 +1,7 @@
+{
+  "id": "c-100",
+  "type": "group",
+  "title": "Payments",
+  "username": "payments_group",
+  "description": "Payment operations"
+}

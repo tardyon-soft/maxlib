@@ -101,11 +101,13 @@ Java framework для разработки ботов на платформе MA
 - базовый HTTP transport layer в `max-client-core` (GET/POST/PUT/PATCH/DELETE + JSON request/response pipeline), отделённый от domain-level `MaxBotClient`/`MaxRequest<T>` API;
 - auth layer в `max-client-core`: автоматический `Authorization` header через отдельный interceptor component;
 - централизованный JSON serialization layer в `max-client-core`: единый shared mapper и единые правила (non-null serialization, ISO dates, ignore unknown fields);
+- базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
+- JSON fixture tests для десериализации DTO в `max-model`;
 - Gradle Wrapper и базовая тестовая конфигурация.
 
 ## Module plan (current)
 
-- `max-model` — базовые DTO/enums контракты.
+- `max-model` — базовые DTO/enums контракты и JSON fixtures для десериализации.
 - `max-client-core` — Java SDK слой поверх MAX API (HTTP transport, auth, serialization, errors, pagination).
 - `max-dispatcher` — dispatcher/router orchestration runtime.
 - `max-fsm` — state management abstractions для диалогов.

@@ -1,0 +1,21 @@
+{
+  "updateId": "upd-1",
+  "type": "message",
+  "eventAt": "2026-01-01T11:00:05Z",
+  "message": {
+    "messageId": "m-100",
+    "chat": {
+      "id": "c-100",
+      "type": "group",
+      "title": "Payments"
+    },
+    "from": {
+      "id": "u-1",
+      "username": "alice",
+      "firstName": "Alice",
+      "bot": false
+    },
+    "text": "hello",
+    "createdAt": "2026-01-01T11:00:00Z"
+  }
+}
