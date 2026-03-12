@@ -57,4 +57,16 @@ class RouterObserversTest {
         assertEquals(1, router.messages().handlers().size());
         assertSame(messageHandler, router.messages().handlers().getFirst());
     }
+
+    @Test
+    void routerSupportsInnerMiddlewareRegistration() {
+        Router router = new Router("main");
+        InnerMiddleware middleware = (ctx, next) -> next.proceed();
+
+        Router returned = router.innerMiddleware(middleware);
+
+        assertSame(router, returned);
+        assertEquals(1, router.innerMiddlewares().size());
+        assertSame(middleware, router.innerMiddlewares().getFirst());
+    }
 }

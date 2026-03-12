@@ -3,6 +3,7 @@ package ru.max.botframework.dispatcher;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -20,6 +21,7 @@ import ru.max.botframework.model.Update;
  */
 public final class Dispatcher implements UpdateConsumer {
     private final List<Router> rootRouters = new ArrayList<>();
+    private final List<OuterMiddleware> outerMiddlewares = new ArrayList<>();
     private final UpdateEventResolver eventResolver;
 
     public Dispatcher() {
@@ -63,6 +65,18 @@ public final class Dispatcher implements UpdateConsumer {
     }
 
     /**
+     * Registers dispatcher-scoped outer middleware.
+     */
+    public Dispatcher outerMiddleware(OuterMiddleware middleware) {
+        outerMiddlewares.add(Objects.requireNonNull(middleware, "middleware"));
+        return this;
+    }
+
+    public List<OuterMiddleware> outerMiddlewares() {
+        return Collections.unmodifiableList(outerMiddlewares);
+    }
+
+    /**
      * Backward-compatible ingestion adapter for APIs that still require {@link UpdateSink}.
      */
     @Deprecated(forRemoval = false)
@@ -75,7 +89,12 @@ public final class Dispatcher implements UpdateConsumer {
      */
     public CompletionStage<DispatchResult> feedUpdate(Update update) {
         Objects.requireNonNull(update, "update");
-        return dispatchFromRoots(update, 0);
+        RuntimeContext context = new RuntimeContext(update);
+        return MiddlewareChainExecutor.executeOuter(
+                context,
+                outerMiddlewares,
+                () -> dispatchFromRoots(update, context, 0)
+        );
     }
 
     /**
@@ -101,33 +120,38 @@ public final class Dispatcher implements UpdateConsumer {
         });
     }
 
-    private CompletionStage<DispatchResult> dispatchFromRoots(Update update, int rootIndex) {
+    private CompletionStage<DispatchResult> dispatchFromRoots(Update update, RuntimeContext context, int rootIndex) {
         if (rootIndex >= rootRouters.size()) {
             return CompletableFuture.completedFuture(DispatchResult.ignored());
         }
         Router root = rootRouters.get(rootIndex);
-        return dispatchRouterTree(root, update).thenCompose(result -> result.status() == DispatchStatus.IGNORED
-                ? dispatchFromRoots(update, rootIndex + 1)
+        return dispatchRouterTree(root, update, context).thenCompose(result -> result.status() == DispatchStatus.IGNORED
+                ? dispatchFromRoots(update, context, rootIndex + 1)
                 : CompletableFuture.completedFuture(result));
     }
 
-    private CompletionStage<DispatchResult> dispatchRouterTree(Router root, Update update) {
+    private CompletionStage<DispatchResult> dispatchRouterTree(Router root, Update update, RuntimeContext context) {
         List<Router> routers = root.traversalOrder();
-        return dispatchInOrder(routers, update, 0);
+        return dispatchInOrder(routers, update, context, 0);
     }
 
-    private CompletionStage<DispatchResult> dispatchInOrder(List<Router> routers, Update update, int index) {
+    private CompletionStage<DispatchResult> dispatchInOrder(
+            List<Router> routers,
+            Update update,
+            RuntimeContext context,
+            int index
+    ) {
         if (index >= routers.size()) {
             return CompletableFuture.completedFuture(DispatchResult.ignored());
         }
         Router router = routers.get(index);
-        return notifyRouter(router, update).thenCompose(result -> result.status() == DispatchStatus.IGNORED
-                ? dispatchInOrder(routers, update, index + 1)
+        return notifyRouter(router, update, context).thenCompose(result -> result.status() == DispatchStatus.IGNORED
+                ? dispatchInOrder(routers, update, context, index + 1)
                 : CompletableFuture.completedFuture(result));
     }
 
-    private CompletionStage<DispatchResult> notifyRouter(Router router, Update update) {
-        return notifyObserver(router.updates(), update, router, update)
+    private CompletionStage<DispatchResult> notifyRouter(Router router, Update update, RuntimeContext context) {
+        return notifyObserver(router.updates(), update, router, update, context)
                 .thenCompose(genericResult -> {
                     if (genericResult.status() != DispatchStatus.IGNORED) {
                         return CompletableFuture.completedFuture(genericResult);
@@ -143,7 +167,7 @@ public final class Dispatcher implements UpdateConsumer {
                                 RuntimeDispatchErrorType.EVENT_MAPPING_FAILURE
                         );
                     }
-                    return notifyResolvedObserver(router, update, resolution);
+                    return notifyResolvedObserver(router, update, resolution, context);
                 });
     }
 
@@ -151,11 +175,13 @@ public final class Dispatcher implements UpdateConsumer {
             EventObserver<TEvent> observer,
             TEvent event,
             Router router,
-            Update update
+            Update update,
+            RuntimeContext context
     ) {
         CompletionStage<HandlerExecutionResult> stage;
         try {
-            stage = observer.notify(event);
+            stage = observer.notify(event, (handler, handlerEvent, enrichment) ->
+                    executeHandlerWithInnerMiddleware(router, context, handler, handlerEvent, enrichment));
         } catch (Throwable throwable) {
             return handleFailure(router, update, throwable, RuntimeDispatchErrorType.OBSERVER_EXECUTION_FAILURE);
         }
@@ -171,7 +197,8 @@ public final class Dispatcher implements UpdateConsumer {
                     }
                     HandlerExecutionResult result = outcome.result();
                     if (result.status() == HandlerExecutionStatus.HANDLED) {
-                        return CompletableFuture.completedFuture(DispatchResult.handled(result.enrichment()));
+                        mergeEnrichment(context, result.enrichment());
+                        return CompletableFuture.completedFuture(DispatchResult.handled(context.enrichment()));
                     }
                     if (result.status() == HandlerExecutionStatus.FAILED) {
                         Throwable failure = result.errorOpt().orElseGet(() -> new IllegalStateException("handler failed without error"));
@@ -184,21 +211,73 @@ public final class Dispatcher implements UpdateConsumer {
     private CompletionStage<DispatchResult> notifyResolvedObserver(
             Router router,
             Update update,
-            UpdateEventResolution resolution
+            UpdateEventResolution resolution,
+            RuntimeContext context
     ) {
         if (resolution.eventType() == ResolvedUpdateEventType.MESSAGE) {
             if (update.message() == null) {
                 return CompletableFuture.completedFuture(DispatchResult.ignored());
             }
-            return notifyObserver(router.messages(), update.message(), router, update);
+            return notifyObserver(router.messages(), update.message(), router, update, context);
         } else if (resolution.eventType() == ResolvedUpdateEventType.CALLBACK) {
             if (update.callback() == null) {
                 return CompletableFuture.completedFuture(DispatchResult.ignored());
             }
-            return notifyObserver(router.callbacks(), update.callback(), router, update);
+            return notifyObserver(router.callbacks(), update.callback(), router, update, context);
         } else {
             return CompletableFuture.completedFuture(DispatchResult.ignored());
         }
+    }
+
+    private <TEvent> CompletionStage<HandlerExecutionResult> executeHandlerWithInnerMiddleware(
+            Router router,
+            RuntimeContext context,
+            EventHandler<TEvent> handler,
+            TEvent event,
+            Map<String, Object> enrichment
+    ) {
+        mergeEnrichment(context, enrichment);
+        return MiddlewareChainExecutor.executeInner(
+                        context,
+                        router.innerMiddlewares(),
+                        () -> invokeHandler(handler, event, enrichment)
+                )
+                .handle((dispatchResult, throwable) -> {
+                    if (throwable != null) {
+                        return HandlerExecutionResult.failed(unwrap(throwable));
+                    }
+                    if (dispatchResult.status() == DispatchStatus.HANDLED) {
+                        return HandlerExecutionResult.handled(dispatchResult.enrichment());
+                    }
+                    if (dispatchResult.status() == DispatchStatus.FAILED) {
+                        return HandlerExecutionResult.failed(
+                                dispatchResult.errorOpt().orElseGet(() -> new IllegalStateException("inner middleware failed"))
+                        );
+                    }
+                    return HandlerExecutionResult.ignored();
+                });
+    }
+
+    private static <TEvent> CompletionStage<DispatchResult> invokeHandler(
+            EventHandler<TEvent> handler,
+            TEvent event,
+            Map<String, Object> enrichment
+    ) {
+        try {
+            CompletionStage<Void> stage = Objects.requireNonNull(handler.handle(event), "handler result");
+            return stage.handle((ignored, throwable) -> throwable == null
+                    ? DispatchResult.handled(enrichment)
+                    : DispatchResult.failed(unwrap(throwable)));
+        } catch (Throwable throwable) {
+            return CompletableFuture.completedFuture(DispatchResult.failed(throwable));
+        }
+    }
+
+    private static void mergeEnrichment(RuntimeContext context, Map<String, Object> enrichment) {
+        if (enrichment == null || enrichment.isEmpty()) {
+            return;
+        }
+        context.putAllEnrichment(enrichment);
     }
 
     private CompletionStage<DispatchResult> handleFailure(

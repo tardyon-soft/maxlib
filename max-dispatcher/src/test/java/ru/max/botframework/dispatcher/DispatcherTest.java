@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -153,6 +155,127 @@ class DispatcherTest {
 
         assertEquals(DispatchStatus.HANDLED, result.status());
         assertEquals("42", result.enrichment().get(BuiltInFilters.TEXT_SUFFIX_KEY));
+    }
+
+    @Test
+    void feedUpdateRunsOuterAndInnerMiddlewareInExpectedOrder() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        List<String> order = new ArrayList<>();
+
+        dispatcher.outerMiddleware((ctx, next) -> {
+            order.add("outer-1-pre");
+            return next.proceed().thenApply(result -> {
+                order.add("outer-1-post");
+                return result;
+            });
+        });
+        dispatcher.outerMiddleware((ctx, next) -> {
+            order.add("outer-2-pre");
+            return next.proceed().thenApply(result -> {
+                order.add("outer-2-post");
+                return result;
+            });
+        });
+
+        router.innerMiddleware((ctx, next) -> {
+            order.add("inner-1-pre");
+            return next.proceed().thenApply(result -> {
+                order.add("inner-1-post");
+                return result;
+            });
+        });
+        router.innerMiddleware((ctx, next) -> {
+            order.add("inner-2-pre");
+            return next.proceed().thenApply(result -> {
+                order.add("inner-2-post");
+                return result;
+            });
+        });
+        router.message(message -> {
+            order.add("handler");
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(
+                List.of(
+                        "outer-1-pre", "outer-2-pre",
+                        "inner-1-pre", "inner-2-pre",
+                        "handler",
+                        "inner-2-post", "inner-1-post",
+                        "outer-2-post", "outer-1-post"
+                ),
+                order
+        );
+    }
+
+    @Test
+    void outerMiddlewareCanShortCircuitDispatchBeforeHandler() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger handled = new AtomicInteger();
+        dispatcher.outerMiddleware((ctx, next) -> CompletableFuture.completedFuture(DispatchResult.ignored()));
+        router.message(message -> {
+            handled.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.IGNORED, result.status());
+        assertEquals(0, handled.get());
+    }
+
+    @Test
+    void innerMiddlewareCanShortCircuitMatchedHandlerExecution() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger handled = new AtomicInteger();
+        router.message(Filter.of(message -> true), message -> {
+            handled.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        router.innerMiddleware((ctx, next) -> CompletableFuture.completedFuture(DispatchResult.ignored()));
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.IGNORED, result.status());
+        assertEquals(0, handled.get());
+    }
+
+    @Test
+    void innerMiddlewareCanReadFilterEnrichmentFromRuntimeContext() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger handled = new AtomicInteger();
+        ContextKey<String> suffixKey = ContextKey.of("suffix", String.class);
+
+        router.message(BuiltInFilters.textStartsWith("pay:"), message -> {
+            handled.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        router.innerMiddleware((ctx, next) -> {
+            ctx.enrichmentValue(BuiltInFilters.TEXT_SUFFIX_KEY)
+                    .map(String::valueOf)
+                    .ifPresent(value -> ctx.put(suffixKey, value));
+            return next.proceed().thenApply(result -> {
+                assertEquals("42", ctx.get(suffixKey).orElse(null));
+                return result;
+            });
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("pay:42")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals("42", result.enrichment().get(BuiltInFilters.TEXT_SUFFIX_KEY));
+        assertEquals(1, handled.get());
     }
 
     @Test

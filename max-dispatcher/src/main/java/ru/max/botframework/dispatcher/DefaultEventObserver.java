@@ -47,14 +47,24 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
 
     @Override
     public CompletionStage<HandlerExecutionResult> notify(TEvent event) {
+        return notify(event, HandlerExecutionStrategy.direct());
+    }
+
+    @Override
+    public CompletionStage<HandlerExecutionResult> notify(TEvent event, HandlerExecutionStrategy<TEvent> strategy) {
+        Objects.requireNonNull(strategy, "strategy");
         if (registrations.isEmpty()) {
             return CompletableFuture.completedFuture(HandlerExecutionResult.ignored());
         }
 
-        return notifyFromRegistration(event, 0);
+        return notifyFromRegistration(event, 0, strategy);
     }
 
-    private CompletionStage<HandlerExecutionResult> notifyFromRegistration(TEvent event, int index) {
+    private CompletionStage<HandlerExecutionResult> notifyFromRegistration(
+            TEvent event,
+            int index,
+            HandlerExecutionStrategy<TEvent> strategy
+    ) {
         if (index >= registrations.size()) {
             return CompletableFuture.completedFuture(HandlerExecutionResult.ignored());
         }
@@ -79,22 +89,23 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
                         );
                     }
                     if (result.status() == FilterStatus.NOT_MATCHED) {
-                        return notifyFromRegistration(event, index + 1);
+                        return notifyFromRegistration(event, index + 1, strategy);
                     }
-                    return invokeHandler(registration.handler(), event, result.enrichment());
+                    return invokeHandler(registration.handler(), event, result.enrichment(), strategy);
                 });
     }
 
     private CompletionStage<HandlerExecutionResult> invokeHandler(
             EventHandler<TEvent> handler,
             TEvent event,
-            java.util.Map<String, Object> enrichment
+            java.util.Map<String, Object> enrichment,
+            HandlerExecutionStrategy<TEvent> strategy
     ) {
         try {
-            CompletionStage<Void> stage = Objects.requireNonNull(handler.handle(event), "handler result");
-            return stage.handle((ignored, throwable) -> throwable == null
-                    ? HandlerExecutionResult.handled(enrichment)
-                    : HandlerExecutionResult.failed(unwrap(throwable)));
+            return Objects.requireNonNull(strategy.execute(handler, event, enrichment), "handler execution strategy result")
+                    .handle((result, throwable) -> throwable == null
+                            ? Objects.requireNonNull(result, "handler execution result")
+                            : HandlerExecutionResult.failed(unwrap(throwable)));
         } catch (Throwable throwable) {
             return CompletableFuture.completedFuture(HandlerExecutionResult.failed(throwable));
         }

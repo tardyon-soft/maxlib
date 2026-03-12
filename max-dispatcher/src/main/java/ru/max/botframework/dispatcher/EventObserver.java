@@ -34,4 +34,9 @@ public interface EventObserver<TEvent> {
      * Notifies observer about one event and returns handler execution outcome.
      */
     CompletionStage<HandlerExecutionResult> notify(TEvent event);
+
+    /**
+     * Notifies observer about one event using custom matched-handler execution strategy.
+     */
+    CompletionStage<HandlerExecutionResult> notify(TEvent event, HandlerExecutionStrategy<TEvent> strategy);
 }

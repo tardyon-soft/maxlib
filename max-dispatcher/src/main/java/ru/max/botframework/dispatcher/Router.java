@@ -19,6 +19,7 @@ public final class Router {
     private final EventObserver<Callback> callbacks;
     private final EventObserver<ErrorEvent> errors;
     private final ArrayList<Router> children;
+    private final ArrayList<InnerMiddleware> innerMiddlewares;
     private Router parent;
 
     public Router(String name) {
@@ -28,6 +29,7 @@ public final class Router {
         this.callbacks = new DefaultEventObserver<>(ObserverType.CALLBACK);
         this.errors = new DefaultEventObserver<>(ObserverType.ERROR);
         this.children = new ArrayList<>();
+        this.innerMiddlewares = new ArrayList<>();
     }
 
     public String name() {
@@ -127,6 +129,14 @@ public final class Router {
     }
 
     /**
+     * Registers router-scoped inner middleware.
+     */
+    public Router innerMiddleware(InnerMiddleware middleware) {
+        innerMiddlewares.add(Objects.requireNonNull(middleware, "middleware"));
+        return this;
+    }
+
+    /**
      * Includes child router into this router tree.
      *
      * <p>Rules:
@@ -159,6 +169,13 @@ public final class Router {
      */
     public List<Router> children() {
         return Collections.unmodifiableList(children);
+    }
+
+    /**
+     * Immutable snapshot of inner middleware chain in registration order.
+     */
+    public List<InnerMiddleware> innerMiddlewares() {
+        return Collections.unmodifiableList(innerMiddlewares);
     }
 
     /**

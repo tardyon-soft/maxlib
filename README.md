@@ -313,7 +313,10 @@ router
 
 ```java
 Dispatcher dispatcher = new Dispatcher()
+    .outerMiddleware((ctx, next) -> next.proceed())
     .includeRouter(router);
+
+router.innerMiddleware((ctx, next) -> next.proceed());
 
 DispatchResult result = dispatcher.feedUpdate(update).toCompletableFuture().join();
 ```

@@ -12,7 +12,9 @@
 Текущее состояние (Sprint 4.2.2):
 - filter foundation реализован в `max-dispatcher`;
 - middleware contracts и chain executor foundation реализованы;
-- встраивание middleware в dispatcher runtime pipeline остаётся следующими шагами Sprint 4.
+- middleware встроены в dispatcher runtime pipeline:
+  - outer middleware на уровне `Dispatcher`;
+  - inner middleware на уровне `Router` вокруг matched handler execution.
 
 ## Sprint 4 boundaries
 
