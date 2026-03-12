@@ -16,6 +16,7 @@ Java framework для разработки ботов на платформе MA
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
 - `max-client-core` foundation слой (transport, auth, serialization, errors, retry/rate-limit hooks, pagination);
 - `max-model` с базовыми DTO, typed value objects и enum-контрактами;
+- зафиксирован runtime contract Sprint 3 (`Dispatcher`, `Router`, `EventObserver`, `Handler`, `DispatchResult`);
 - ingestion target contract в `max-dispatcher`: `UpdateConsumer` (async, preferred) + `UpdateSink` (compat alias) + `UpdateHandlingResult`;
 - polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
 - long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/shutdown/isRunning`);
@@ -128,7 +129,10 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 ## Current limitations
 
 Ограничения текущего этапа (Sprint 3 prep):
-- framework runtime слой ещё не реализован: нет production-готовых `Dispatcher/Router`, filters DSL, middleware chain, DI runtime, FSM/scenes runtime;
+- runtime Sprint 3 пока на уровне контракта: каркас `Dispatcher/Router` pipeline только начинается;
+- filters полноценного уровня ещё не реализованы;
+- middleware runtime chain ещё не реализован;
+- DI runtime и FSM/scenes runtime ещё не реализованы;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media pipeline ещё не реализован;
 - webhook source runtime loop пока не реализован (есть receiver + pipeline foundation);
@@ -291,6 +295,7 @@ if (result.status() == WebhookReceiveStatus.ACCEPTED) {
 
 - Product vision and target DX: [docs/product-spec.md](docs/product-spec.md)
 - Core API contract: [docs/api-contract.md](docs/api-contract.md)
+- Runtime contract (Sprint 3): [docs/runtime-contract.md](docs/runtime-contract.md)
 - Event model: [docs/event-model.md](docs/event-model.md)
 - Update ingestion contract (Sprint 2): [docs/update-ingestion.md](docs/update-ingestion.md)
 - Roadmap: [docs/roadmap.md](docs/roadmap.md)

@@ -56,6 +56,21 @@
 Детальная спецификация ingestion contracts:
 - [update-ingestion.md](update-ingestion.md)
 
+## Runtime layer (Sprint 3)
+
+### Назначение
+
+Контракты runtime-слоя фиксируют минимальный dispatch pipeline поверх ingestion layer:
+`Dispatcher` + `Router` + observer/handler execution semantics.
+
+### Границы Sprint 3
+
+- В scope: dispatcher/router foundation, observer registration, first-match dispatch.
+- Вне scope: полноценный filter DSL, middleware runtime, FSM/scenes runtime.
+
+Детальная спецификация runtime contracts:
+- [runtime-contract.md](runtime-contract.md)
+
 ## MaxBotClient
 
 ### Назначение
