@@ -269,6 +269,21 @@ Router admin = new Router("admin")
 router.includeRouter(admin);
 ```
 
+## Dispatcher Role (Sprint 3 foundation)
+
+`Dispatcher` — корневой runtime orchestrator над root routers.
+
+- хранит root routing graph (`includeRouter`, `includeRouters`);
+- даёт единую dispatch entrypoint: `dispatch(Update) -> DispatchResult`;
+- реализует ingestion boundary `UpdateConsumer` через `handle(Update)`.
+
+```java
+Dispatcher dispatcher = new Dispatcher()
+    .includeRouter(router);
+
+DispatchResult result = dispatcher.dispatch(update).toCompletableFuture().join();
+```
+
 ## Low-level Webhook Handling Example
 
 ```java
