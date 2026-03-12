@@ -33,12 +33,15 @@ import ru.max.botframework.model.MessageId;
 import ru.max.botframework.model.TextFormat;
 import ru.max.botframework.model.CallbackId;
 import ru.max.botframework.model.request.AnswerCallbackRequest;
+import ru.max.botframework.model.request.CreateSubscriptionRequest;
+import ru.max.botframework.model.request.DeleteSubscriptionRequest;
 import ru.max.botframework.model.request.EditMessageRequest;
 import ru.max.botframework.model.request.GetUpdatesRequest;
 import ru.max.botframework.model.request.NewMessageBody;
 import ru.max.botframework.model.request.SendMessageRequest;
 import ru.max.botframework.model.response.GetUpdatesResponse;
 import ru.max.botframework.model.UpdateEventType;
+import ru.max.botframework.model.Subscription;
 
 class DefaultMaxBotClientTest {
 
@@ -361,6 +364,68 @@ class DefaultMaxBotClientTest {
         assertThat(response.marker()).isEqualTo(101L);
         assertThat(response.updates()).hasSize(1);
         assertThat(response.updates().getFirst().updateId().value()).isEqualTo("upd-1");
+    }
+
+    @Test
+    void shouldGetWebhookSubscriptions() {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("""
+                        {
+                          "subscriptions": [
+                            {
+                              "url": "https://example.com/webhook",
+                              "update_types": ["message_created", "message_callback"]
+                            }
+                          ]
+                        }
+                        """));
+
+        List<Subscription> subscriptions = client.getSubscriptions();
+
+        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        assertThat(recorded.getMethod()).isEqualTo("GET");
+        assertThat(recorded.getPath()).isEqualTo("/subscriptions");
+        assertThat(subscriptions).hasSize(1);
+        assertThat(subscriptions.getFirst().url()).isEqualTo("https://example.com/webhook");
+        assertThat(subscriptions.getFirst().updateTypes())
+                .containsExactly(UpdateEventType.MESSAGE_CREATED, UpdateEventType.MESSAGE_CALLBACK);
+    }
+
+    @Test
+    void shouldCreateWebhookSubscription() {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"success\":true}"));
+
+        boolean success = client.createSubscription(new CreateSubscriptionRequest(
+                "https://example.com/webhook",
+                List.of(UpdateEventType.MESSAGE_CREATED),
+                "secret-1"
+        ));
+
+        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        assertThat(recorded.getMethod()).isEqualTo("POST");
+        assertThat(recorded.getPath()).isEqualTo("/subscriptions");
+        String body = recorded.getBody().readUtf8();
+        assertThat(body).contains("\"url\":\"https://example.com/webhook\"");
+        assertThat(body).contains("\"update_types\":[\"message_created\"]");
+        assertThat(body).contains("\"secret\":\"secret-1\"");
+        assertThat(success).isTrue();
+    }
+
+    @Test
+    void shouldDeleteWebhookSubscription() {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"success\":true}"));
+
+        boolean success = client.deleteSubscription(new DeleteSubscriptionRequest("https://example.com/webhook"));
+
+        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        assertThat(recorded.getMethod()).isEqualTo("DELETE");
+        assertThat(recorded.getPath()).isEqualTo("/subscriptions?url=https%3A%2F%2Fexample.com%2Fwebhook");
+        assertThat(success).isTrue();
     }
 
     @Test

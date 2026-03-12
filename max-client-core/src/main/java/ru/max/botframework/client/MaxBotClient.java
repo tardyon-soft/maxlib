@@ -4,11 +4,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.List;
 import ru.max.botframework.client.method.AnswerCallbackMethodRequest;
+import ru.max.botframework.client.method.CreateSubscriptionMethodRequest;
 import ru.max.botframework.client.method.DeleteMessageMethodRequest;
+import ru.max.botframework.client.method.DeleteSubscriptionMethodRequest;
 import ru.max.botframework.client.method.EditMessageMethodRequest;
 import ru.max.botframework.client.method.GetMeRequest;
 import ru.max.botframework.client.method.GetMessageMethodRequest;
 import ru.max.botframework.client.method.GetMessagesMethodRequest;
+import ru.max.botframework.client.method.GetSubscriptionsMethodRequest;
 import ru.max.botframework.client.method.GetUpdatesMethodRequest;
 import ru.max.botframework.client.method.SendMessageMethodRequest;
 import ru.max.botframework.model.BotInfo;
@@ -16,10 +19,13 @@ import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.Message;
 import ru.max.botframework.model.MessageId;
 import ru.max.botframework.model.request.AnswerCallbackRequest;
+import ru.max.botframework.model.request.CreateSubscriptionRequest;
+import ru.max.botframework.model.request.DeleteSubscriptionRequest;
 import ru.max.botframework.model.request.EditMessageRequest;
 import ru.max.botframework.model.request.GetUpdatesRequest;
 import ru.max.botframework.model.request.SendMessageRequest;
 import ru.max.botframework.model.response.GetUpdatesResponse;
+import ru.max.botframework.model.Subscription;
 
 /**
  * High-level entry point for executing typed MAX API requests.
@@ -90,6 +96,26 @@ public interface MaxBotClient {
 
     default CompletionStage<GetUpdatesResponse> getUpdatesAsync(GetUpdatesRequest request) {
         return executeAsync(new GetUpdatesMethodRequest(request));
+    }
+
+    default List<Subscription> getSubscriptions() {
+        return execute(GetSubscriptionsMethodRequest.INSTANCE).subscriptions();
+    }
+
+    default boolean createSubscription(CreateSubscriptionRequest request) {
+        return execute(new CreateSubscriptionMethodRequest(request)).success();
+    }
+
+    default CompletionStage<Boolean> createSubscriptionAsync(CreateSubscriptionRequest request) {
+        return executeAsync(new CreateSubscriptionMethodRequest(request)).thenApply(response -> response.success());
+    }
+
+    default boolean deleteSubscription(DeleteSubscriptionRequest request) {
+        return execute(new DeleteSubscriptionMethodRequest(request)).success();
+    }
+
+    default CompletionStage<Boolean> deleteSubscriptionAsync(DeleteSubscriptionRequest request) {
+        return executeAsync(new DeleteSubscriptionMethodRequest(request)).thenApply(response -> response.success());
     }
 
     default <T> CompletionStage<T> executeAsync(MaxRequest<T> request) {

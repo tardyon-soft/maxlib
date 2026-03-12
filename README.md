@@ -109,6 +109,7 @@ Java framework для разработки ботов на платформе MA
 - foundation для message operations в `max-client-core`: `sendMessage`, `editMessage`, `deleteMessage`, `getMessage`, `getMessages` как typed domain-level методы поверх существующих DTO/transport abstractions;
 - поддержка callback answer в `max-client-core`: `answerCallback()` (`POST /answers`) с typed request/response API;
 - foundation для polling transport в `max-client-core`: `getUpdates()` (`GET /updates`) с typed request (`marker`, `timeout`, `limit`, `types`) и typed response (`updates`, `marker`);
+- foundation для webhook subscriptions в `max-client-core`: `getSubscriptions()` (`GET /subscriptions`), `createSubscription()` (`POST /subscriptions`), `deleteSubscription()` (`DELETE /subscriptions`);
 - базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
 - request DTO для message/callback API в `max-model`: `NewMessageBody`, `SendMessageRequest`, `EditMessageRequest`, `AnswerCallbackRequest`, минимальные attachment-related структуры;
 - typed value objects в `max-model` для id/reference-полей (`UserId`, `ChatId`, `MessageId`, `UpdateId`, `CallbackId`, `FileId`) вместо магических `String` в core DTO/request моделях;
@@ -193,6 +194,22 @@ GetUpdatesResponse updates = botClient.getUpdates(new GetUpdatesRequest(
 
 Long nextMarker = updates.marker();
 List<Update> batch = updates.updates();
+```
+
+## Webhook Subscriptions Example
+
+```java
+List<Subscription> current = botClient.getSubscriptions();
+
+boolean created = botClient.createSubscription(new CreateSubscriptionRequest(
+    "https://example.com/webhook",
+    List.of(UpdateEventType.MESSAGE_CREATED, UpdateEventType.MESSAGE_CALLBACK),
+    "secret-1"
+));
+
+boolean deleted = botClient.deleteSubscription(
+    new DeleteSubscriptionRequest("https://example.com/webhook")
+);
 ```
 
 ## Build
