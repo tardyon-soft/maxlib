@@ -27,6 +27,13 @@ import ru.max.botframework.client.http.MaxHttpResponse;
 import ru.max.botframework.client.http.okhttp.OkHttpMaxHttpClient;
 import ru.max.botframework.client.serialization.JacksonJsonCodec;
 import ru.max.botframework.model.BotInfo;
+import ru.max.botframework.model.ChatId;
+import ru.max.botframework.model.Message;
+import ru.max.botframework.model.MessageId;
+import ru.max.botframework.model.TextFormat;
+import ru.max.botframework.model.request.EditMessageRequest;
+import ru.max.botframework.model.request.NewMessageBody;
+import ru.max.botframework.model.request.SendMessageRequest;
 
 class DefaultMaxBotClientTest {
 
@@ -137,6 +144,152 @@ class DefaultMaxBotClientTest {
         assertThat(botInfo.id().value()).isEqualTo("b-1");
         assertThat(botInfo.username()).isEqualTo("max_helper_bot");
         assertThat(botInfo.displayName()).isEqualTo("MAX Helper Bot");
+    }
+
+    @Test
+    void shouldSendMessageViaDomainMethod() throws Exception {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("""
+                        {
+                          "message": {
+                            "messageId": "m-101",
+                            "chat": {"id": "c-100", "type": "group", "title": "Team"},
+                            "from": {"id": "u-1", "username": "alice", "displayName": "Alice", "bot": false},
+                            "text": "hello",
+                            "createdAt": "2026-01-01T00:00:00Z",
+                            "entities": [],
+                            "attachments": []
+                          }
+                        }
+                        """));
+
+        Message message = client.sendMessage(new SendMessageRequest(
+                new ChatId("c-100"),
+                new NewMessageBody("hello", TextFormat.PLAIN, List.of()),
+                false,
+                null
+        ));
+
+        RecordedRequest recorded = server.takeRequest();
+        assertThat(recorded.getMethod()).isEqualTo("POST");
+        assertThat(recorded.getPath()).isEqualTo("/messages?chat_id=c-100");
+        String body = recorded.getBody().readUtf8();
+        assertThat(body).contains("\"text\":\"hello\"");
+        assertThat(body).contains("\"notify\":false");
+        assertThat(message.messageId().value()).isEqualTo("m-101");
+    }
+
+    @Test
+    void shouldEditMessageViaDomainMethod() {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"success\":true}"));
+
+        boolean success = client.editMessage(new EditMessageRequest(
+                new ChatId("c-100"),
+                new MessageId("m-101"),
+                new NewMessageBody("edited", TextFormat.MARKDOWN, List.of()),
+                true
+        ));
+
+        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        assertThat(recorded.getMethod()).isEqualTo("PUT");
+        assertThat(recorded.getPath()).isEqualTo("/messages?message_id=m-101");
+        assertThat(recorded.getBody().readUtf8()).contains("\"text\":\"edited\"");
+        assertThat(success).isTrue();
+    }
+
+    @Test
+    void shouldDeleteMessageViaDomainMethod() {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"success\":true}"));
+
+        boolean success = client.deleteMessage(new MessageId("m-102"));
+
+        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        assertThat(recorded.getMethod()).isEqualTo("DELETE");
+        assertThat(recorded.getPath()).isEqualTo("/messages?message_id=m-102");
+        assertThat(success).isTrue();
+    }
+
+    @Test
+    void shouldGetMessageViaDomainMethod() {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("""
+                        {
+                          "messageId": "m-200",
+                          "chat": {"id": "c-100", "type": "group", "title": "Team"},
+                          "from": {"id": "u-1", "username": "alice", "displayName": "Alice", "bot": false},
+                          "text": "single",
+                          "createdAt": "2026-01-01T00:00:00Z",
+                          "entities": [],
+                          "attachments": []
+                        }
+                        """));
+
+        Message message = client.getMessage(new MessageId("m-200"));
+
+        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        assertThat(recorded.getMethod()).isEqualTo("GET");
+        assertThat(recorded.getPath()).isEqualTo("/messages/m-200");
+        assertThat(message.text()).isEqualTo("single");
+    }
+
+    @Test
+    void shouldGetMessagesByChatIdViaDomainMethod() {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("""
+                        {
+                          "messages": [
+                            {
+                              "messageId": "m-1",
+                              "chat": {"id": "c-100", "type": "group", "title": "Team"},
+                              "from": {"id": "u-1", "username": "alice", "displayName": "Alice", "bot": false},
+                              "text": "one",
+                              "createdAt": "2026-01-01T00:00:00Z",
+                              "entities": [],
+                              "attachments": []
+                            },
+                            {
+                              "messageId": "m-2",
+                              "chat": {"id": "c-100", "type": "group", "title": "Team"},
+                              "from": {"id": "u-2", "username": "bob", "displayName": "Bob", "bot": false},
+                              "text": "two",
+                              "createdAt": "2026-01-01T00:00:01Z",
+                              "entities": [],
+                              "attachments": []
+                            }
+                          ]
+                        }
+                        """));
+
+        List<Message> messages = client.getMessages(new ChatId("c-100"));
+
+        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        assertThat(recorded.getMethod()).isEqualTo("GET");
+        assertThat(recorded.getPath()).isEqualTo("/messages?chat_id=c-100");
+        assertThat(messages).hasSize(2);
+        assertThat(messages.getFirst().messageId().value()).isEqualTo("m-1");
+    }
+
+    @Test
+    void shouldGetMessagesByIdsViaDomainMethod() {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("""
+                        {"messages":[]}
+                        """));
+
+        List<Message> messages = client.getMessages(List.of(new MessageId("m-1"), new MessageId("m-2")));
+
+        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        assertThat(recorded.getMethod()).isEqualTo("GET");
+        assertThat(recorded.getPath()).isEqualTo("/messages?message_ids=m-1%2Cm-2");
+        assertThat(messages).isEmpty();
     }
 
     @Test
@@ -272,6 +425,15 @@ class DefaultMaxBotClientTest {
                         .readTimeout(config.readTimeout())
                         .build()
         );
+    }
+
+    private RecordedRequest takeRecordedRequestUnchecked() {
+        try {
+            return server.takeRequest();
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(interruptedException);
+        }
     }
 
     private DefaultMaxBotClient createClient(MaxApiClientConfig config, MaxHttpClient transport) {
