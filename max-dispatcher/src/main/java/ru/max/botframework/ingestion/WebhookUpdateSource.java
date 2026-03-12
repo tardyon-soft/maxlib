@@ -1,7 +1,10 @@
 package ru.max.botframework.ingestion;
 
 /**
- * Update source that ingests events from webhook transport.
+ * Reserved transport source abstraction for webhook runtime implementations.
+ *
+ * <p>Current webhook ingress entrypoint is {@link WebhookReceiver}.</p>
  */
+@Deprecated(forRemoval = false)
 public interface WebhookUpdateSource extends UpdateSource {
 }

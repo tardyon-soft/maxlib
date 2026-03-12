@@ -7,7 +7,7 @@ import ru.max.botframework.client.serialization.JacksonJsonCodec;
 import ru.max.botframework.ingestion.DefaultWebhookReceiver;
 import ru.max.botframework.ingestion.DefaultWebhookSecretValidator;
 import ru.max.botframework.ingestion.UpdateHandlingResult;
-import ru.max.botframework.ingestion.UpdateSink;
+import ru.max.botframework.ingestion.UpdateConsumer;
 import ru.max.botframework.ingestion.WebhookReceiveResult;
 import ru.max.botframework.ingestion.WebhookReceiveStatus;
 import ru.max.botframework.ingestion.WebhookReceiverConfig;
@@ -18,7 +18,7 @@ public final class WebhookHandlingExample {
     private final DefaultWebhookReceiver receiver;
 
     public WebhookHandlingExample() {
-        UpdateSink sink = update -> {
+        UpdateConsumer sink = update -> {
             System.out.println("Webhook update " + update.updateId().value());
             return CompletableFuture.completedFuture(UpdateHandlingResult.success());
         };

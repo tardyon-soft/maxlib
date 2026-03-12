@@ -24,8 +24,16 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private volatile Future<?> worker;
 
+    public DefaultLongPollingRunner(PollingUpdateSource source, UpdateConsumer consumer) {
+        this(source, wrap(consumer), LongPollingRunnerConfig.defaults());
+    }
+
     public DefaultLongPollingRunner(PollingUpdateSource source, UpdateSink sink) {
         this(source, new DefaultUpdatePipeline(sink), LongPollingRunnerConfig.defaults());
+    }
+
+    public DefaultLongPollingRunner(PollingUpdateSource source, UpdateConsumer consumer, LongPollingRunnerConfig config) {
+        this(source, wrap(consumer), config, new InMemoryPollingMarkerState(config.request().marker()));
     }
 
     public DefaultLongPollingRunner(PollingUpdateSource source, UpdateSink sink, LongPollingRunnerConfig config) {
@@ -215,5 +223,10 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
         if (!executor.isTerminated()) {
             executor.shutdownNow();
         }
+    }
+
+    private static UpdateSink wrap(UpdateConsumer consumer) {
+        Objects.requireNonNull(consumer, "consumer");
+        return consumer::handle;
     }
 }

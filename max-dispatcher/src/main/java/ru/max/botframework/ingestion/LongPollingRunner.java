@@ -5,10 +5,19 @@ package ru.max.botframework.ingestion;
  */
 public interface LongPollingRunner extends AutoCloseable {
 
+    /**
+     * Starts polling loop execution.
+     */
     void start();
 
+    /**
+     * Gracefully stops polling loop without final resource disposal.
+     */
     void stop();
 
+    /**
+     * Final shutdown including optional owned resource cleanup.
+     */
     void shutdown();
 
     boolean isRunning();

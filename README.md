@@ -6,17 +6,19 @@ Java framework для разработки ботов на платформе MA
 
 ## Sprint status
 
-Текущий этап: `Sprint 2 — polling + webhook ingestion layer`.
+Текущий этап: `Sprint 3 — Dispatcher/Router foundation`.
 
-Sprint 1 (`client/DTO/errors`) завершён.
+Завершённые этапы:
+- Sprint 1 (`client/DTO/errors`);
+- Sprint 2 (`polling + webhook ingestion layer`).
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
 - `max-client-core` foundation слой (transport, auth, serialization, errors, retry/rate-limit hooks, pagination);
 - `max-model` с базовыми DTO, typed value objects и enum-контрактами;
-- ingestion target contract в `max-dispatcher`: `UpdateSink` (async) + `UpdateHandlingResult` для unified polling/webhook flow;
+- ingestion target contract в `max-dispatcher`: `UpdateConsumer` (async, preferred) + `UpdateSink` (compat alias) + `UpdateHandlingResult`;
 - polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
-- long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/isRunning`);
+- long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/shutdown/isRunning`);
 - graceful lifecycle semantics для polling runner: `stop()` vs `shutdown()` + ownership-aware resource cleanup;
 - marker progression contract: monotonic marker state с продвижением только после успешного batch handling;
 - webhook secret validation foundation: `WebhookSecretValidator` + typed validation result/error contracts;
@@ -125,14 +127,19 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 
 ## Current limitations
 
-Ограничения текущего этапа (Sprint 2):
-- сейчас фиксируется только ingestion transport contract (polling/webhook -> unified sink);
+Ограничения текущего этапа (Sprint 3 prep):
 - framework runtime слой ещё не реализован: нет production-готовых `Dispatcher/Router`, filters DSL, middleware chain, DI runtime, FSM/scenes runtime;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media pipeline ещё не реализован;
-- long-polling/webhook transport реализации как runtime-компоненты пока не завершены (зафиксирован контракт слоя ingestion);
-- webhook runtime source пока не реализован (receiver contract/foundation уже есть);
+- webhook source runtime loop пока не реализован (есть receiver + pipeline foundation);
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
+
+## Sprint 2 Summary
+
+- реализован transport-level ingestion для polling и webhook;
+- polling и webhook сведены к единому `UpdatePipeline`;
+- зафиксированы marker strategy, lifecycle/shutdown semantics и overload control;
+- добавлены integration-style fixtures/tests как regression safety net перед Sprint 3.
 
 ## Low-level Long Polling Example
 
@@ -143,11 +150,11 @@ import ru.max.botframework.ingestion.LongPollingRunner;
 import ru.max.botframework.ingestion.LongPollingRunnerConfig;
 import ru.max.botframework.ingestion.PollingFetchRequest;
 import ru.max.botframework.ingestion.SdkPollingUpdateSource;
-import ru.max.botframework.ingestion.UpdateSink;
+import ru.max.botframework.ingestion.UpdateConsumer;
 import ru.max.botframework.model.UpdateEventType;
 
 SdkPollingUpdateSource source = new SdkPollingUpdateSource(botClient);
-UpdateSink sink = update -> {
+UpdateConsumer sink = update -> {
     System.out.println("Update: " + update.updateId().value());
     return java.util.concurrent.CompletableFuture.completedFuture(
         ru.max.botframework.ingestion.UpdateHandlingResult.success()
@@ -194,7 +201,7 @@ runner.stop();
 ## Unified Ingestion Pipeline
 
 - polling runner и webhook receiver используют один transport-level contract: `UpdatePipeline`;
-- стандартная реализация: `DefaultUpdatePipeline`, которая делегирует в `UpdateSink`;
+- стандартная реализация: `DefaultUpdatePipeline`, которая делегирует в `UpdateConsumer` (`UpdateSink` alias);
 - контекст источника фиксируется через `UpdatePipelineContext` (`POLLING` / `WEBHOOK`);
 - расширение для observability: `UpdatePipelineHook` (`onBefore` / `onAfter`).
 
@@ -215,8 +222,8 @@ runner.stop();
 
 ## Ingestion Integration Tests
 
-- polling chain coverage: `polling -> SdkPollingUpdateSource -> DefaultLongPollingRunner -> UpdateSink`;
-- webhook chain coverage: `webhook request -> DefaultWebhookReceiver -> secret validation -> UpdateSink`;
+- polling chain coverage: `polling -> SdkPollingUpdateSource -> DefaultLongPollingRunner -> UpdateConsumer`;
+- webhook chain coverage: `webhook request -> DefaultWebhookReceiver -> secret validation -> UpdateConsumer`;
 - error coverage:
 - webhook payload deserialization errors (`BAD_PAYLOAD`);
 - sink failures (`INTERNAL_ERROR`);
@@ -240,12 +247,12 @@ import ru.max.botframework.client.serialization.JacksonJsonCodec;
 import ru.max.botframework.ingestion.DefaultWebhookReceiver;
 import ru.max.botframework.ingestion.DefaultWebhookSecretValidator;
 import ru.max.botframework.ingestion.UpdateHandlingResult;
-import ru.max.botframework.ingestion.UpdateSink;
+import ru.max.botframework.ingestion.UpdateConsumer;
 import ru.max.botframework.ingestion.WebhookReceiveResult;
 import ru.max.botframework.ingestion.WebhookReceiveStatus;
 import ru.max.botframework.ingestion.WebhookRequest;
 
-UpdateSink sink = update -> CompletableFuture.completedFuture(UpdateHandlingResult.success());
+UpdateConsumer sink = update -> CompletableFuture.completedFuture(UpdateHandlingResult.success());
 
 DefaultWebhookReceiver receiver = new DefaultWebhookReceiver(
     new DefaultWebhookSecretValidator("my-secret"),

@@ -1,16 +1,12 @@
 package ru.max.botframework.ingestion;
 
 /**
- * Transport-agnostic update source lifecycle.
+ * Common lifecycle boundary for transport-specific update sources.
  */
 public interface UpdateSource extends AutoCloseable {
 
-    void start(UpdateSink sink);
-
-    void stop();
-
     @Override
     default void close() {
-        stop();
+        // no-op by default
     }
 }

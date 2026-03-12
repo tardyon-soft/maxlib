@@ -28,12 +28,13 @@
 
 ### Core сущности
 
-- `UpdateSource` — lifecycle-контракт источника update (`start`/`stop`).
+- `UpdateSource` — базовый lifecycle boundary transport-source.
 - `PollingUpdateSource` — pull-based источник update через long polling (`poll` -> `PollingBatch`).
 - `WebhookUpdateSource` — источник update через webhook ingress.
-- `UpdateSink` (`UpdateConsumer`) — единая async-точка приёма normalized `Update`
-  с `UpdateHandlingResult` (`SUCCESS`/`FAILURE`).
-- `LongPollingRunner` — lifecycle-контракт long polling loop (`start`/`stop`/`isRunning`).
+- `UpdateConsumer` — предпочтительная async-точка приёма normalized `Update`.
+- `UpdateSink` — deprecated backward-compatible alias для `UpdateConsumer`.
+- `UpdateConsumer`/`UpdateSink` возвращают `UpdateHandlingResult` (`SUCCESS`/`FAILURE`).
+- `LongPollingRunner` — lifecycle-контракт long polling loop (`start`/`stop`/`shutdown`/`isRunning`).
 - `LongPollingRunnerConfig` — lifecycle/ownership настройки (`shutdownTimeout`, resource ownership).
 - `PollingMarkerState` — marker progression boundary (in-memory now, persistent later).
 - `WebhookRequest` — framework-agnostic raw webhook request (`body` + `headers`).

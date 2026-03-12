@@ -23,8 +23,8 @@
 
 Назначение:
 - абстракция источника `Update` событий;
-- lifecycle управления источником (`start`/`stop`);
-- доставка normalized `Update` в единый sink.
+- общий lifecycle boundary transport-source;
+- единая точка расширения под разные source типы.
 
 Граница:
 - не решает routing/handler выбор;
@@ -80,7 +80,7 @@
 - если секрет настроен, но не совпадает: `REJECTED` + `SECRET_MISMATCH`;
 - если секрет настроен и совпадает: `ACCEPTED`.
 
-### `UpdateSink` / `UpdateConsumer`
+### `UpdateConsumer` / `UpdateSink`
 
 Назначение:
 - единый контракт потребителя normalized `Update`;
@@ -94,6 +94,10 @@
 Контракт (минимальный):
 - `CompletionStage<UpdateHandlingResult> handle(Update update)`.
 
+Замечание по naming:
+- `UpdateConsumer` — предпочтительное имя public API;
+- `UpdateSink` — deprecated backward-compatible alias.
+
 `UpdateHandlingResult`:
 - `SUCCESS` — update принят downstream-слоем;
 - `FAILURE` — update завершился ошибкой в ingestion boundary.
@@ -103,7 +107,7 @@
 Назначение:
 - runtime loop для `PollingUpdateSource`;
 - управление циклом polling, паузами и завершением;
-- делегирование каждого normalized `Update` в `UpdateSink`.
+- делегирование каждого normalized `Update` в `UpdateConsumer`/`UpdatePipeline`.
 
 Граница:
 - не принимает решения маршрутизации;
@@ -139,7 +143,7 @@ Marker progression strategy (Sprint 2.2.3):
 Назначение:
 - adapter boundary между HTTP endpoint и `WebhookUpdateSource`;
 - принимает `WebhookRequest`, валидирует secret, десериализует `Update`
-  и передаёт событие в `UpdateSink`.
+  и передаёт событие в `UpdatePipeline`.
 
 Граница:
 - не содержит бизнес-обработку update;
@@ -166,7 +170,7 @@ Overload control:
 - единая точка передачи в следующий runtime слой.
 
 Граница:
-- в Sprint 2 реализован как отдельный контракт поверх `UpdateSink`;
+- в Sprint 2 реализован как отдельный контракт поверх `UpdateConsumer` (`UpdateSink` alias);
 - не обязан содержать routing/middleware semantics на этом этапе.
 
 Контракт (минимальный):
@@ -196,7 +200,7 @@ Extension points:
 
 3. Передача в sink:
 - normalized `Update` передаётся в единый `UpdatePipeline`;
-- `UpdatePipeline` делегирует обработку в `UpdateSink`;
+- `UpdatePipeline` делегирует обработку в `UpdateConsumer` (`UpdateSink` alias);
 - polling и webhook используют один и тот же pipeline contract.
 
 4. Ошибки ingestion-слоя:

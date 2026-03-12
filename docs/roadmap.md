@@ -4,6 +4,11 @@
 
 High-level roadmap проекта MAX Java Bot Framework по спринтам.
 
+## Current Status
+
+- Sprint 2 (`Polling/Webhook ingestion`) завершён.
+- Следующий этап: Sprint 3 (`Dispatcher/Router`).
+
 ## Sprint 0 — Spec/API Contract Freeze
 
 Цель:
@@ -31,10 +36,12 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Реализовать transport adapters для polling и webhook с общим ingress контрактом.
 
 Основные результаты:
-- polling runtime;
-- webhook runtime entry;
-- normalize raw updates -> `Update`;
-- единый dispatch entrypoint для обоих transport.
+- polling runtime foundation (`SdkPollingUpdateSource`, `DefaultLongPollingRunner`);
+- webhook runtime entry foundation (`DefaultWebhookReceiver`, secret validation);
+- normalize raw updates -> `Update` + typed transport results;
+- unified ingestion pipeline для polling и webhook;
+- lifecycle/shutdown semantics + lightweight overload control;
+- integration-style fixtures/tests для regression safety.
 
 ## Sprint 3 — Dispatcher/Router
 

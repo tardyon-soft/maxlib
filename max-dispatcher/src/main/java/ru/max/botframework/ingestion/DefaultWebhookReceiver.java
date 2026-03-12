@@ -18,12 +18,25 @@ public final class DefaultWebhookReceiver implements WebhookReceiver {
     private final UpdatePipeline pipeline;
     private final Semaphore inFlight;
 
+    public DefaultWebhookReceiver(WebhookSecretValidator secretValidator, JsonCodec jsonCodec, UpdateConsumer consumer) {
+        this(secretValidator, jsonCodec, wrap(consumer), WebhookReceiverConfig.defaults());
+    }
+
     public DefaultWebhookReceiver(WebhookSecretValidator secretValidator, JsonCodec jsonCodec, UpdateSink sink) {
         this(secretValidator, jsonCodec, new DefaultUpdatePipeline(sink), WebhookReceiverConfig.defaults());
     }
 
     public DefaultWebhookReceiver(WebhookSecretValidator secretValidator, JsonCodec jsonCodec, UpdatePipeline pipeline) {
         this(secretValidator, jsonCodec, pipeline, WebhookReceiverConfig.defaults());
+    }
+
+    public DefaultWebhookReceiver(
+            WebhookSecretValidator secretValidator,
+            JsonCodec jsonCodec,
+            UpdateConsumer consumer,
+            WebhookReceiverConfig config
+    ) {
+        this(secretValidator, jsonCodec, wrap(consumer), config);
     }
 
     public DefaultWebhookReceiver(
@@ -94,5 +107,10 @@ public final class DefaultWebhookReceiver implements WebhookReceiver {
     private CompletionStage<WebhookReceiveResult> completed(WebhookReceiveResult result) {
         inFlight.release();
         return CompletableFuture.completedFuture(result);
+    }
+
+    private static UpdateSink wrap(UpdateConsumer consumer) {
+        Objects.requireNonNull(consumer, "consumer");
+        return consumer::handle;
     }
 }

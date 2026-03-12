@@ -6,7 +6,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * Pull-based update source for MAX long polling transport.
  */
-public interface PollingUpdateSource extends AutoCloseable {
+public interface PollingUpdateSource extends UpdateSource {
 
     PollingBatch poll(PollingFetchRequest request);
 

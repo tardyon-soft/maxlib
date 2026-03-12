@@ -16,7 +16,7 @@ import ru.max.botframework.ingestion.LongPollingRunnerConfig;
 import ru.max.botframework.ingestion.PollingFetchRequest;
 import ru.max.botframework.ingestion.SdkPollingUpdateSource;
 import ru.max.botframework.ingestion.UpdateHandlingResult;
-import ru.max.botframework.ingestion.UpdateSink;
+import ru.max.botframework.ingestion.UpdateConsumer;
 import ru.max.botframework.model.UpdateEventType;
 
 public final class LongPollingExample {
@@ -35,7 +35,7 @@ public final class LongPollingExample {
         MaxBotClient botClient = new DefaultMaxBotClient(config, httpClient, new JacksonJsonCodec());
 
         SdkPollingUpdateSource source = new SdkPollingUpdateSource(botClient);
-        UpdateSink sink = update -> {
+        UpdateConsumer sink = update -> {
             System.out.println("Update " + update.updateId().value() + " type=" + update.type().value());
             return CompletableFuture.completedFuture(UpdateHandlingResult.success());
         };
