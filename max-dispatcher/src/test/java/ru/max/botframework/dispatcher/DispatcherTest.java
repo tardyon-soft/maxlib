@@ -279,6 +279,53 @@ class DispatcherTest {
     }
 
     @Test
+    void middlewareAndFilterEnrichmentAreMergedAndVisibleDownstream() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        ContextKey<String> traceKey = ContextKey.of("traceId", String.class);
+        AtomicInteger handled = new AtomicInteger();
+
+        dispatcher.outerMiddleware((ctx, next) -> {
+            ctx.putEnrichment(traceKey, "trace-42");
+            return next.proceed();
+        });
+        router.innerMiddleware((ctx, next) -> {
+            assertEquals("trace-42", ctx.enrichmentValue(traceKey).orElse(null));
+            assertEquals("7", ctx.enrichmentValue(BuiltInFilters.TEXT_SUFFIX_KEY, String.class).orElse(null));
+            return next.proceed();
+        });
+        router.message(BuiltInFilters.textStartsWith("pay:"), message -> {
+            handled.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("pay:7")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals("trace-42", result.enrichment().get("traceId"));
+        assertEquals("7", result.enrichment().get(BuiltInFilters.TEXT_SUFFIX_KEY));
+        assertEquals(1, handled.get());
+    }
+
+    @Test
+    void conflictingMiddlewareAndFilterEnrichmentFailsDispatch() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        dispatcher.outerMiddleware((ctx, next) -> {
+            ctx.putEnrichment(BuiltInFilters.TEXT_SUFFIX_KEY, "outer");
+            return next.proceed();
+        });
+        router.message(BuiltInFilters.textStartsWith("pay:"), message -> CompletableFuture.completedFuture(null));
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("pay:9")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertTrue(result.errorOpt().orElseThrow() instanceof EnrichmentConflictException);
+    }
+
+    @Test
     void feedUpdateUsesResolverFallbackForUnknownTypeWithMessagePayload() {
         Dispatcher dispatcher = new Dispatcher();
         Router router = new Router("main");

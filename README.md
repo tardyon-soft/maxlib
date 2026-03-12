@@ -134,7 +134,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 
 Ограничения текущего этапа (Sprint 4 prep):
 - rich filter DSL ещё не реализован (доступен только базовый filter contract);
-- middleware пока зафиксированы как контракты и chain foundation, но ещё не встроены в dispatcher execution pipeline;
+- middleware встроены в dispatcher pipeline (`outer -> filters -> inner -> handler`), но без advanced inheritance/scoping;
 - DI runtime и FSM/scenes runtime ещё не реализованы;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media pipeline ещё не реализован;
@@ -335,7 +335,10 @@ First-match and propagation rules:
 - если handler падает, результат `DispatchResult.FAILED`, и вызывается `error` observer текущего router.
 - при регистрации handler с filter учитываются только handler-ы с `FilterResult.MATCHED`;
 - filter `NOT_MATCHED` оставляет dispatch в поиске следующего handler-а по first-match правилам;
-- filter enrichment сохраняется в `DispatchResult.enrichment()` для будущего context/DI enrichment.
+- context enrichment объединяет данные filters и middleware в одном request-scoped runtime context;
+- middleware может писать enrichment через `RuntimeContext.putEnrichment(...)`;
+- конфликт enrichment key с разными значениями приводит к `EnrichmentConflictException` и runtime `FAILED`;
+- итоговый `DispatchResult.enrichment()` возвращает merged enrichment текущего handled path.
 
 Runtime error boundary:
 - runtime dispatch ошибки классифицируются как `HANDLER_FAILURE`, `EVENT_MAPPING_FAILURE`, `OBSERVER_EXECUTION_FAILURE`;

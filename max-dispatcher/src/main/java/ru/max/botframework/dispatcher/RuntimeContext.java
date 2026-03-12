@@ -50,18 +50,47 @@ public final class RuntimeContext {
         return Map.copyOf(attributes);
     }
 
+    public <T> RuntimeContext putEnrichment(ContextKey<T> key, T value) {
+        Objects.requireNonNull(key, "key");
+        Objects.requireNonNull(value, "value");
+        if (!key.type().isInstance(value)) {
+            throw new IllegalArgumentException("value type does not match context key type");
+        }
+        putEnrichmentValue(key.name(), value, "context key");
+        return this;
+    }
+
+    public RuntimeContext putEnrichment(String key, Object value) {
+        putEnrichmentValue(key, value, "middleware");
+        return this;
+    }
+
     public RuntimeContext putAllEnrichment(Map<String, Object> values) {
+        return mergeFilterEnrichment(values);
+    }
+
+    RuntimeContext mergeFilterEnrichment(Map<String, Object> values) {
         Objects.requireNonNull(values, "values");
         for (Map.Entry<String, Object> entry : values.entrySet()) {
-            if (entry.getKey() == null || entry.getKey().isBlank()) {
-                throw new IllegalArgumentException("enrichment key must not be blank");
-            }
-            if (entry.getValue() == null) {
-                throw new IllegalArgumentException("enrichment value must not be null");
-            }
-            enrichment.put(entry.getKey(), entry.getValue());
+            putEnrichmentValue(entry.getKey(), entry.getValue(), "filter");
         }
         return this;
+    }
+
+    public <T> Optional<T> enrichmentValue(ContextKey<T> key) {
+        Objects.requireNonNull(key, "key");
+        return enrichmentValue(key.name(), key.type());
+    }
+
+    public <T> Optional<T> enrichmentValue(String key, Class<T> type) {
+        Objects.requireNonNull(type, "type");
+        return enrichmentValue(key).map(raw -> {
+            if (!type.isInstance(raw)) {
+                throw new IllegalStateException("enrichment key '%s' contains value incompatible with %s"
+                        .formatted(key, type.getSimpleName()));
+            }
+            return type.cast(raw);
+        });
     }
 
     public Optional<Object> enrichmentValue(String key) {
@@ -71,5 +100,18 @@ public final class RuntimeContext {
 
     public Map<String, Object> enrichment() {
         return Map.copyOf(enrichment);
+    }
+
+    private void putEnrichmentValue(String key, Object value, String source) {
+        Objects.requireNonNull(key, "key");
+        Objects.requireNonNull(value, "value");
+        if (key.isBlank()) {
+            throw new IllegalArgumentException("enrichment key must not be blank");
+        }
+        Object existing = enrichment.putIfAbsent(key, value);
+        if (existing == null || Objects.equals(existing, value)) {
+            return;
+        }
+        throw EnrichmentConflictException.conflict(key, existing, value, source);
     }
 }

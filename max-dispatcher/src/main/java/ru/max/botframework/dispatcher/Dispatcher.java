@@ -197,7 +197,16 @@ public final class Dispatcher implements UpdateConsumer {
                     }
                     HandlerExecutionResult result = outcome.result();
                     if (result.status() == HandlerExecutionStatus.HANDLED) {
-                        mergeEnrichment(context, result.enrichment());
+                        try {
+                            mergeFilterEnrichment(context, result.enrichment());
+                        } catch (Throwable throwable) {
+                            return handleFailure(
+                                    router,
+                                    update,
+                                    throwable,
+                                    RuntimeDispatchErrorType.HANDLER_FAILURE
+                            );
+                        }
                         return CompletableFuture.completedFuture(DispatchResult.handled(context.enrichment()));
                     }
                     if (result.status() == HandlerExecutionStatus.FAILED) {
@@ -236,7 +245,7 @@ public final class Dispatcher implements UpdateConsumer {
             TEvent event,
             Map<String, Object> enrichment
     ) {
-        mergeEnrichment(context, enrichment);
+        mergeFilterEnrichment(context, enrichment);
         return MiddlewareChainExecutor.executeInner(
                         context,
                         router.innerMiddlewares(),
@@ -273,11 +282,11 @@ public final class Dispatcher implements UpdateConsumer {
         }
     }
 
-    private static void mergeEnrichment(RuntimeContext context, Map<String, Object> enrichment) {
+    private static void mergeFilterEnrichment(RuntimeContext context, Map<String, Object> enrichment) {
         if (enrichment == null || enrichment.isEmpty()) {
             return;
         }
-        context.putAllEnrichment(enrichment);
+        context.mergeFilterEnrichment(enrichment);
     }
 
     private CompletionStage<DispatchResult> handleFailure(

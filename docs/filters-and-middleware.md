@@ -9,12 +9,16 @@
 
 Это спецификация публичного поведения, а не полная реализация.
 
-Текущее состояние (Sprint 4.2.2):
+Текущее состояние (Sprint 4.2.4):
 - filter foundation реализован в `max-dispatcher`;
 - middleware contracts и chain executor foundation реализованы;
 - middleware встроены в dispatcher runtime pipeline:
   - outer middleware на уровне `Dispatcher`;
   - inner middleware на уровне `Router` вокруг matched handler execution.
+- runtime enrichment model закреплён:
+  - middleware enrichment через `RuntimeContext.putEnrichment(...)`;
+  - filter enrichment merge через runtime pipeline;
+  - key conflict policy: conflicting values -> `EnrichmentConflictException`.
 
 ## Sprint 4 boundaries
 
@@ -146,6 +150,9 @@ First-match remains:
 
 MVP contract:
 - typed key-value map (`ContextKey<T>`/эквивалент) с безопасным доступом;
+- string-key enrichment namespace для filter-produced bindings;
+- typed read API для enrichment (`enrichmentValue(key, type)` / `enrichmentValue(ContextKey<T>)`);
+- conflict policy: одинаковый ключ с разными значениями -> runtime failure;
 - no global mutable singleton state;
 - no implicit persistence.
 
