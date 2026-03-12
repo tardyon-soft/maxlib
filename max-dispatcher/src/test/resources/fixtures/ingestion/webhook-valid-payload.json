@@ -1,0 +1,20 @@
+{
+  "updateId": "upd-20",
+  "type": "message",
+  "eventAt": "2026-01-01T12:00:00Z",
+  "message": {
+    "messageId": "m-300",
+    "chat": {
+      "id": "c-200",
+      "type": "private"
+    },
+    "from": {
+      "id": "u-10",
+      "username": "carol",
+      "firstName": "Carol",
+      "bot": false
+    },
+    "text": "ping",
+    "createdAt": "2026-01-01T11:59:59Z"
+  }
+}

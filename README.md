@@ -23,6 +23,7 @@ Sprint 1 (`client/DTO/errors`) завершён.
 - webhook receiver foundation: `DefaultWebhookReceiver` (`WebhookRequest` -> `WebhookReceiveResult`);
 - webhook overload control foundation: `WebhookReceiverConfig.maxInFlightRequests` + `OVERLOADED` result;
 - unified ingestion pipeline foundation: `UpdatePipeline` + `DefaultUpdatePipeline` + `UpdatePipelineContext`;
+- integration-style ingestion tests with JSON fixtures for polling/webhook regression safety;
 - domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
 - тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
 
@@ -211,6 +212,15 @@ runner.stop();
 - receiver использует `WebhookReceiverConfig(maxInFlightRequests)`;
 - при достижении лимита возвращается `WebhookReceiveStatus.OVERLOADED`;
 - это lightweight backpressure на transport-уровне без reactive engine.
+
+## Ingestion Integration Tests
+
+- polling chain coverage: `polling -> SdkPollingUpdateSource -> DefaultLongPollingRunner -> UpdateSink`;
+- webhook chain coverage: `webhook request -> DefaultWebhookReceiver -> secret validation -> UpdateSink`;
+- error coverage:
+- webhook payload deserialization errors (`BAD_PAYLOAD`);
+- sink failures (`INTERNAL_ERROR`);
+- fixtures path: `max-dispatcher/src/test/resources/fixtures/ingestion`.
 
 ## Low-level Webhook Handling Example
 

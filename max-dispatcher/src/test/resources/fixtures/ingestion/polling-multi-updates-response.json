@@ -1,0 +1,52 @@
+{
+  "updates": [
+    {
+      "updateId": "upd-10",
+      "type": "message",
+      "eventAt": "2026-01-01T11:00:05Z",
+      "message": {
+        "messageId": "m-100",
+        "chat": {
+          "id": "c-100",
+          "type": "group",
+          "title": "Payments"
+        },
+        "from": {
+          "id": "u-1",
+          "username": "alice",
+          "firstName": "Alice",
+          "bot": false
+        },
+        "text": "hello",
+        "createdAt": "2026-01-01T11:00:00Z"
+      }
+    },
+    {
+      "updateId": "upd-11",
+      "type": "callback",
+      "eventAt": "2026-01-01T11:05:00Z",
+      "callback": {
+        "callbackId": "cb-1",
+        "data": "pay:100",
+        "from": {
+          "id": "u-2",
+          "username": "bob",
+          "firstName": "Bob",
+          "bot": false
+        },
+        "message": {
+          "messageId": "m-200",
+          "chat": {
+            "id": "c-100",
+            "type": "group",
+            "title": "Payments"
+          },
+          "text": "Click action",
+          "createdAt": "2026-01-01T11:04:00Z"
+        },
+        "createdAt": "2026-01-01T11:04:30Z"
+      }
+    }
+  ],
+  "marker": 202
+}
