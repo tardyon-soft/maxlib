@@ -45,4 +45,16 @@ class RouterObserversTest {
         assertEquals(1, router.errors().handlers().size());
         assertSame(errorHandler, router.errors().handlers().getFirst());
     }
+
+    @Test
+    void registrationApiSupportsFilterAwareHandlers() {
+        Router router = new Router("main");
+        EventHandler<Message> messageHandler = event -> CompletableFuture.completedFuture(null);
+
+        Router returned = router.message(Filter.of(message -> "ok".equals(message.text())), messageHandler);
+
+        assertSame(router, returned);
+        assertEquals(1, router.messages().handlers().size());
+        assertSame(messageHandler, router.messages().handlers().getFirst());
+    }
 }

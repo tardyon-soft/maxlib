@@ -50,6 +50,14 @@ public final class Router {
     }
 
     /**
+     * Registers generic update handler with explicit filter.
+     */
+    public Router update(Filter<Update> filter, EventHandler<Update> handler) {
+        updates.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
      * Low-level access to message observer registry.
      */
     public EventObserver<Message> messages() {
@@ -61,6 +69,14 @@ public final class Router {
      */
     public Router message(EventHandler<Message> handler) {
         messages.register(Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
+     * Registers message handler with explicit filter.
+     */
+    public Router message(Filter<Message> filter, EventHandler<Message> handler) {
+        messages.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
         return this;
     }
 
@@ -80,6 +96,14 @@ public final class Router {
     }
 
     /**
+     * Registers callback handler with explicit filter.
+     */
+    public Router callback(Filter<Callback> filter, EventHandler<Callback> handler) {
+        callbacks.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
      * Low-level access to error observer registry.
      */
     public EventObserver<ErrorEvent> errors() {
@@ -91,6 +115,14 @@ public final class Router {
      */
     public Router error(EventHandler<ErrorEvent> handler) {
         errors.register(Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
+     * Registers runtime error handler with explicit filter.
+     */
+    public Router error(Filter<ErrorEvent> filter, EventHandler<ErrorEvent> handler) {
+        errors.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
         return this;
     }
 

@@ -57,6 +57,52 @@ class DefaultEventObserverTest {
     }
 
     @Test
+    void notifySkipsHandlerWhenFilterDoesNotMatchAndUsesNext() {
+        DefaultEventObserver<String> observer = new DefaultEventObserver<>(ObserverType.MESSAGE);
+        AtomicInteger firstCount = new AtomicInteger();
+        AtomicInteger secondCount = new AtomicInteger();
+
+        observer.register(Filter.of(event -> false), event -> {
+            firstCount.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        observer.register(Filter.of(event -> true), event -> {
+            secondCount.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+
+        HandlerExecutionResult result = observer.notify("event").toCompletableFuture().join();
+
+        assertEquals(HandlerExecutionStatus.HANDLED, result.status());
+        assertEquals(0, firstCount.get());
+        assertEquals(1, secondCount.get());
+    }
+
+    @Test
+    void notifyReturnsIgnoredWhenAllFiltersDoNotMatch() {
+        DefaultEventObserver<String> observer = new DefaultEventObserver<>(ObserverType.MESSAGE);
+        observer.register(Filter.of(event -> false), event -> CompletableFuture.completedFuture(null));
+        observer.register(Filter.of(event -> false), event -> CompletableFuture.completedFuture(null));
+
+        HandlerExecutionResult result = observer.notify("event").toCompletableFuture().join();
+
+        assertEquals(HandlerExecutionStatus.IGNORED, result.status());
+    }
+
+    @Test
+    void notifyReturnsFailedWhenFilterExecutionFails() {
+        DefaultEventObserver<String> observer = new DefaultEventObserver<>(ObserverType.MESSAGE);
+        IllegalStateException failure = new IllegalStateException("filter failure");
+        observer.register(event -> CompletableFuture.completedFuture(FilterResult.failed(failure)),
+                event -> CompletableFuture.completedFuture(null));
+
+        HandlerExecutionResult result = observer.notify("event").toCompletableFuture().join();
+
+        assertEquals(HandlerExecutionStatus.FAILED, result.status());
+        assertSame(failure, result.errorOpt().orElseThrow());
+    }
+
+    @Test
     void notifyReturnsFailedWhenHandlerThrows() {
         DefaultEventObserver<String> observer = new DefaultEventObserver<>(ObserverType.UPDATE);
         IllegalStateException failure = new IllegalStateException("boom");
@@ -82,4 +128,3 @@ class DefaultEventObserverTest {
         assertSame(failure, result.errorOpt().orElseThrow());
     }
 }
-

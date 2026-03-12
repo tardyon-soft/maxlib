@@ -21,6 +21,11 @@ public interface EventObserver<TEvent> {
     EventObserver<TEvent> register(EventHandler<TEvent> handler);
 
     /**
+     * Registers handler with filter in insertion order.
+     */
+    EventObserver<TEvent> register(Filter<TEvent> filter, EventHandler<TEvent> handler);
+
+    /**
      * Registered handlers in immutable registration order snapshot.
      */
     List<EventHandler<TEvent>> handlers();

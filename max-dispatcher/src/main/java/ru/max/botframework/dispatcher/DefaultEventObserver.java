@@ -14,11 +14,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent> {
     private final ObserverType type;
-    private final CopyOnWriteArrayList<EventHandler<TEvent>> handlers;
+    private final CopyOnWriteArrayList<Registration<TEvent>> registrations;
 
     public DefaultEventObserver(ObserverType type) {
         this.type = Objects.requireNonNull(type, "type");
-        this.handlers = new CopyOnWriteArrayList<>();
+        this.registrations = new CopyOnWriteArrayList<>();
     }
 
     @Override
@@ -28,22 +28,64 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
 
     @Override
     public EventObserver<TEvent> register(EventHandler<TEvent> handler) {
-        handlers.add(Objects.requireNonNull(handler, "handler"));
+        return register(Filter.any(), handler);
+    }
+
+    @Override
+    public EventObserver<TEvent> register(Filter<TEvent> filter, EventHandler<TEvent> handler) {
+        registrations.add(new Registration<>(
+                Objects.requireNonNull(filter, "filter"),
+                Objects.requireNonNull(handler, "handler")
+        ));
         return this;
     }
 
     @Override
     public List<EventHandler<TEvent>> handlers() {
-        return List.copyOf(handlers);
+        return registrations.stream().map(Registration::handler).toList();
     }
 
     @Override
     public CompletionStage<HandlerExecutionResult> notify(TEvent event) {
-        if (handlers.isEmpty()) {
+        if (registrations.isEmpty()) {
             return CompletableFuture.completedFuture(HandlerExecutionResult.ignored());
         }
 
-        EventHandler<TEvent> handler = handlers.getFirst();
+        return notifyFromRegistration(event, 0);
+    }
+
+    private CompletionStage<HandlerExecutionResult> notifyFromRegistration(TEvent event, int index) {
+        if (index >= registrations.size()) {
+            return CompletableFuture.completedFuture(HandlerExecutionResult.ignored());
+        }
+        Registration<TEvent> registration = registrations.get(index);
+        CompletionStage<FilterResult> filterStage;
+        try {
+            filterStage = Objects.requireNonNull(registration.filter().test(event), "filter result");
+        } catch (Throwable throwable) {
+            return CompletableFuture.completedFuture(HandlerExecutionResult.failed(throwable));
+        }
+        return filterStage.handle((result, throwable) -> new FilterEvaluationOutcome(result, throwable))
+                .thenCompose(outcome -> {
+                    if (outcome.throwable() != null) {
+                        return CompletableFuture.completedFuture(
+                                HandlerExecutionResult.failed(unwrap(outcome.throwable()))
+                        );
+                    }
+                    FilterResult result = outcome.result();
+                    if (result.status() == FilterStatus.FAILED) {
+                        return CompletableFuture.completedFuture(
+                                HandlerExecutionResult.failed(result.errorOpt().orElseGet(() -> new IllegalStateException("filter failed")))
+                        );
+                    }
+                    if (result.status() == FilterStatus.NOT_MATCHED) {
+                        return notifyFromRegistration(event, index + 1);
+                    }
+                    return invokeHandler(registration.handler(), event);
+                });
+    }
+
+    private CompletionStage<HandlerExecutionResult> invokeHandler(EventHandler<TEvent> handler, TEvent event) {
         try {
             CompletionStage<Void> stage = Objects.requireNonNull(handler.handle(event), "handler result");
             return stage.handle((ignored, throwable) -> throwable == null
@@ -60,5 +102,10 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
         }
         return throwable;
     }
-}
 
+    private record Registration<TEvent>(Filter<TEvent> filter, EventHandler<TEvent> handler) {
+    }
+
+    private record FilterEvaluationOutcome(FilterResult result, Throwable throwable) {
+    }
+}

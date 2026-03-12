@@ -19,6 +19,7 @@ Java framework для разработки ботов на платформе MA
 - `max-model` с базовыми DTO, typed value objects и enum-контрактами;
 - зафиксирован runtime contract Sprint 3 (`Dispatcher`, `Router`, `EventObserver`, `Handler`, `DispatchResult`);
 - реализован базовый observer layer в `max-dispatcher`: `EventObserver`, `EventHandler`, `DefaultEventObserver`, MVP observer types (`update/message/callback/error`);
+- реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` и filter-aware handler registration в `Router`;
 - ingestion target contract в `max-dispatcher`: `UpdateConsumer` (async, preferred) + `UpdateSink` (compat alias) + `UpdateHandlingResult`;
 - polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
 - long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/shutdown/isRunning`);
@@ -131,7 +132,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 ## Current limitations
 
 Ограничения текущего этапа (Sprint 4 prep):
-- filters полноценного уровня ещё не реализованы;
+- rich filter DSL ещё не реализован (доступен только базовый filter contract);
 - middleware runtime chain ещё не реализован;
 - DI runtime и FSM/scenes runtime ещё не реализованы;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
