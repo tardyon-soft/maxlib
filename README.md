@@ -1,95 +1,98 @@
 # MAX Java Bot Framework
 
-Java framework для разработки ботов на платформе MAX с DX, вдохновлённым aiogram 3, но адаптированным под Java и реальные возможности MAX API.
+Java framework для разработки ботов на платформе MAX с DX в стиле aiogram 3.
 
-## Цель проекта
+Важно: проект вдохновлён архитектурными паттернами aiogram 3, но не является его буквальной копией. Мы адаптируем идеи под реальные возможности MAX API и Java ecosystem.
 
-Сделать production-ready framework, где разработчик пишет бизнес-логику бота, а не низкоуровневый JSON/HTTP код.
+## Product vision
 
-Ключевые принципы:
-- модульная и расширяемая архитектура;
-- разделение client SDK и runtime framework;
-- типобезопасный и тестируемый API;
-- единый update pipeline для polling и webhook;
-- честная адаптация под MAX API без имитации несуществующих платформенных возможностей.
+Сделать production-ready framework, в котором разработчик пишет бизнес-логику бота, а не низкоуровневый JSON/HTTP код.
 
-## Источники истины
+## Goals
+
+- Дать удобный framework-level API для построения ботов на MAX.
+- Объединить polling и webhook в единый update pipeline.
+- Предоставить расширяемую архитектуру: dispatcher, router, filters, middleware, DI, FSM/scenes.
+- Сохранить типобезопасность и тестируемость как базовые свойства API.
+- Разделить client SDK и runtime framework по модулям.
+
+## Non-goals
+
+- Не делать 1:1 порт aiogram 3 на Java.
+- Не выдумывать возможности, которых нет в MAX API.
+- Не ограничиваться ролью "тонкого HTTP-клиента" без runtime-слоя.
+- Не жертвовать архитектурой ради быстрого увеличения surface area.
+
+## MVP
+
+- Базовый MAX client-core (транспорт, ошибки, базовые методы).
+- Unified update ingestion: polling + webhook в общий dispatcher pipeline.
+- Dispatcher + Router + базовые observer hooks.
+- Минимальный filter/middleware слой для маршрутизации и cross-cutting логики.
+- Базовые message/callback handling сценарии.
+- Рабочий testkit для unit/integration сценариев handler-логики.
+
+## V1
+
+- Зрелый filters DSL и middleware chain (outer/inner).
+- Context-based dependency injection для handler-параметров.
+- FSM storage abstraction + scenes/wizard.
+- Message/attachment builders и keyboard builders.
+- Upload abstraction для многошаговых MAX upload flow.
+- Spring Boot starter с автоконфигурацией и runtime wiring.
+- Документация и примеры production-oriented сценариев.
+
+## Later
+
+- Расширение покрываемых MAX API surface областей.
+- Дополнительные storage/adapters реализации для FSM и runtime.
+- Набор observability и reliability extensions (metrics, tracing, retries).
+- Больше готовых интеграций и эталонных sample apps.
+
+## Design principles
+
+- API-first DX: приоритет удобства публичного API framework.
+- Honest platform mapping: только реальные MAX возможности.
+- Layered architecture: client SDK отделён от framework runtime.
+- Type safety by default: явные и предсказуемые контракты.
+- Extensibility: новые слои строятся поверх существующих абстракций.
+- Testability: нетривиальная логика покрывается тестами.
+- Documentation as contract: README/docs синхронизированы с текущим состоянием.
+
+## Source of truth
 
 - MAX API docs: [dev.max.ru/docs-api](https://dev.max.ru/docs-api)
 - MAX methods: [dev.max.ru/docs-api/methods](https://dev.max.ru/docs-api/methods)
 - MAX objects: [dev.max.ru/docs-api/objects](https://dev.max.ru/docs-api/objects)
-- aiogram 3 reference: [docs.aiogram.dev](https://docs.aiogram.dev/)
+- aiogram 3 reference (DX patterns): [docs.aiogram.dev](https://docs.aiogram.dev/)
 
-## Текущий статус
+## Current status
 
-Статус: `bootstrap` (инициализация репозитория и стартовой multi-module структуры).
+Статус: `bootstrap`.
 
-Реализовано:
-- Gradle multi-module проект (Kotlin DSL) с 6 стартовыми модулями;
-- Java toolchain 21 на уровне всех модулей;
-- базовые модульные границы и минимальные public contracts;
-- межмодульные зависимости на базовом уровне, проект собирается;
-- JUnit 5 конфигурация для тестов;
-- Gradle Wrapper, `.gitignore`, стартовая документация.
+Сейчас в репозитории:
+- стартовая multi-module структура Gradle (Kotlin DSL);
+- Java toolchain 21;
+- базовые межмодульные зависимости;
+- первичные скелеты контрактов;
+- Gradle Wrapper и базовая тестовая конфигурация.
 
-Пока не реализовано (следующие этапы):
-- полноценный MAX HTTP client и DTO surface;
-- dispatcher/router observers, filters DSL, middleware chain;
-- context DI, FSM/scenes;
-- webhook/polling runtime;
-- Spring Boot starter auto-configuration;
-- testkit для end-to-end сценариев.
+## Module plan (current)
 
-## План модульности
+- `max-model`
+- `max-client-core`
+- `max-dispatcher`
+- `max-fsm`
+- `max-spring-boot-starter`
+- `max-testkit`
 
-Текущая стартовая модульность:
-- `max-model` — DTO/enums и унифицированные model-контракты;
-- `max-client-core` — HTTP/client abstractions и API вызовы MAX;
-- `max-dispatcher` — dispatcher, router и orchestration update pipeline;
-- `max-fsm` — FSM storage abstractions и scenes/wizard primitives;
-- `max-spring-boot-starter` — Spring Boot интеграция и автоконфигурация;
-- `max-testkit` — инструменты тестирования framework-level сценариев.
-
-План следующего расширения модульности:
-- выделить `max-filters` и `max-middleware` в отдельные модули после стабилизации dispatcher pipeline.
-
-## Технологический стек
-
-- Java 21
-- Gradle (Kotlin DSL)
-- JUnit 5
-
-## Быстрый старт
+## Build
 
 Требования:
 - JDK 21+
 
-Команды:
+Команда:
 
 ```bash
 ./gradlew clean build
 ```
-
-Для запуска конкретного модуля:
-
-```bash
-./gradlew :max-dispatcher:test
-```
-
-## Roadmap (укрупнённо)
-
-1. HTTP client / DTO / errors
-2. polling + webhook transport
-3. dispatcher / router / observers
-4. filters + middleware
-5. context DI
-6. messages / keyboards / callbacks
-7. upload/media pipeline
-8. FSM / scenes
-9. Spring Boot starter
-10. testkit / examples / docs polishing
-
-## Ограничения и TODO
-
-- Все возможности должны валидироваться по официальной MAX документации перед реализацией.
-- Если по MAX API есть неясности, они будут фиксироваться как `TODO/NOTE` в коде и документации.
