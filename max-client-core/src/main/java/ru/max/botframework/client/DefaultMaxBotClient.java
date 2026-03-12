@@ -8,7 +8,9 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletionStage;
 import ru.max.botframework.client.auth.AuthorizationHeaderInterceptor;
+import ru.max.botframework.client.error.DefaultMaxApiErrorDecoder;
 import ru.max.botframework.client.error.MaxApiException;
+import ru.max.botframework.client.error.MaxApiErrorDecoder;
 import ru.max.botframework.client.http.MaxHttpClient;
 import ru.max.botframework.client.http.MaxHttpRequest;
 import ru.max.botframework.client.http.MaxHttpRequestInterceptor;
@@ -27,9 +29,16 @@ public final class DefaultMaxBotClient implements MaxBotClient {
     private final MaxHttpClient transport;
     private final JsonCodec jsonCodec;
     private final MaxHttpRequestInterceptor authInterceptor;
+    private final MaxApiErrorDecoder errorDecoder;
 
     public DefaultMaxBotClient(MaxApiClientConfig config, MaxHttpClient transport, JsonCodec jsonCodec) {
-        this(config, transport, jsonCodec, new AuthorizationHeaderInterceptor(config.authProvider()));
+        this(
+                config,
+                transport,
+                jsonCodec,
+                new AuthorizationHeaderInterceptor(config.authProvider()),
+                new DefaultMaxApiErrorDecoder()
+        );
     }
 
     public DefaultMaxBotClient(
@@ -38,10 +47,21 @@ public final class DefaultMaxBotClient implements MaxBotClient {
             JsonCodec jsonCodec,
             MaxHttpRequestInterceptor authInterceptor
     ) {
+        this(config, transport, jsonCodec, authInterceptor, new DefaultMaxApiErrorDecoder());
+    }
+
+    public DefaultMaxBotClient(
+            MaxApiClientConfig config,
+            MaxHttpClient transport,
+            JsonCodec jsonCodec,
+            MaxHttpRequestInterceptor authInterceptor,
+            MaxApiErrorDecoder errorDecoder
+    ) {
         this.config = Objects.requireNonNull(config, "config");
         this.transport = Objects.requireNonNull(transport, "transport");
         this.jsonCodec = Objects.requireNonNull(jsonCodec, "jsonCodec");
         this.authInterceptor = Objects.requireNonNull(authInterceptor, "authInterceptor");
+        this.errorDecoder = Objects.requireNonNull(errorDecoder, "errorDecoder");
     }
 
     @Override
@@ -51,7 +71,7 @@ public final class DefaultMaxBotClient implements MaxBotClient {
         MaxHttpResponse response = transport.execute(authorizedRequest);
 
         if (response.statusCode() >= 400) {
-            throw new MaxApiException(response.statusCode(), new String(response.body(), StandardCharsets.UTF_8));
+            throw errorDecoder.decode(authorizedRequest, response);
         }
 
         if (request.responseType() == Void.class) {

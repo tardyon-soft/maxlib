@@ -14,7 +14,8 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.max.botframework.client.error.MaxApiException;
+import ru.max.botframework.client.error.MaxNotFoundException;
+import ru.max.botframework.client.error.MaxRateLimitException;
 import ru.max.botframework.client.http.HttpMethod;
 import ru.max.botframework.client.http.MaxHttpClient;
 import ru.max.botframework.client.http.okhttp.OkHttpMaxHttpClient;
@@ -95,12 +96,28 @@ class DefaultMaxBotClientTest {
     }
 
     @Test
-    void shouldThrowMaxApiExceptionForErrorResponse() {
-        server.enqueue(new MockResponse().setResponseCode(429).setBody("{\"error\":\"rate_limit\"}"));
+    void shouldMap429ToRateLimitException() {
+        server.enqueue(new MockResponse()
+                .setResponseCode(429)
+                .setHeader("Retry-After", "7")
+                .setBody("{\"error\":\"rate_limit\"}"));
 
         assertThatThrownBy(() -> client.execute(new EchoRequest(HttpMethod.GET, null)))
-                .isInstanceOf(MaxApiException.class)
-                .hasMessageContaining("429");
+                .isInstanceOf(MaxRateLimitException.class)
+                .satisfies(ex -> {
+                    MaxRateLimitException exception = (MaxRateLimitException) ex;
+                    assertThat(exception.statusCode()).isEqualTo(429);
+                    assertThat(exception.retryAfterSeconds()).isEqualTo(7L);
+                    assertThat(exception.responseBody()).contains("rate_limit");
+                });
+    }
+
+    @Test
+    void shouldMap404ToNotFoundException() {
+        server.enqueue(new MockResponse().setResponseCode(404).setBody("{\"error\":\"not_found\"}"));
+
+        assertThatThrownBy(() -> client.execute(new EchoRequest(HttpMethod.GET, null)))
+                .isInstanceOf(MaxNotFoundException.class);
     }
 
     private record EchoRequest(HttpMethod method, Object payload) implements MaxRequest<EchoResponse> {
