@@ -11,6 +11,7 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Sprint 4 (`Filters/Middleware/context enrichment`) завершён.
 - Sprint 5 (`DI / handler parameter resolution`) завершён.
 - Следующий этап: Sprint 6 (`Messages/Keyboards/Callbacks ergonomics`).
+- Sprint 6.1: contract freeze для high-level messaging API (`docs/messaging-api.md`).
 
 ## Sprint 0 — Spec/API Contract Freeze
 

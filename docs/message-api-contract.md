@@ -5,6 +5,9 @@
 Документ фиксирует публичный контракт Message API для framework.
 Это спецификация API и поведения, а не реализация.
 
+Актуальный Sprint 6.1 contract:
+- [messaging-api.md](messaging-api.md)
+
 ## Goals
 
 - Предоставить builder-style API для работы с сообщениями.

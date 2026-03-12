@@ -107,6 +107,23 @@ outer middleware -> filters -> inner middleware -> handler.
 Детальная спецификация Sprint 5 contracts:
 - [di-and-invocation.md](di-and-invocation.md)
 
+## Messaging layer (Sprint 6)
+
+### Назначение
+
+Контракты Sprint 6 задают high-level messaging ergonomics поверх существующих runtime и SDK слоёв:
+- send/reply/edit/delete builders;
+- keyboard/buttons builders;
+- callback answer и chat actions abstractions.
+
+### Границы Sprint 6
+
+- В scope: high-level API и builder contracts.
+- Вне scope: upload/media subsystem, FSM/scenes, Spring starter integration.
+
+Детальная спецификация Sprint 6 contracts:
+- [messaging-api.md](messaging-api.md)
+
 ## MaxBotClient
 
 ### Назначение

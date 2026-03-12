@@ -18,6 +18,7 @@ Java framework для разработки ботов на платформе MA
 Текущая цель Sprint 6:
 - builder-style message/callback ergonomics поверх уже готового runtime;
 - high-level API для send/edit/delete/reply и keyboard/callback flows без потери type-safety.
+- контракт Sprint 6.1 зафиксирован в `docs/messaging-api.md`.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -184,6 +185,10 @@ Sprint 5 завершён:
 Следующий этап (Sprint 6):
 - messages/keyboards/callbacks ergonomics;
 - high-level builders и callback-oriented DX поверх текущего runtime foundation.
+
+Sprint 6.1 contracts:
+- `docs/messaging-api.md` (MessageTarget, MessageBuilder, Messages factory, KeyboardBuilder, Buttons, callback/chat-action abstractions);
+- `docs/api-contract.md` (Sprint 6 section, boundaries и интеграция с existing SDK/runtime).
 
 ## Shared Services Injection (Sprint 5.2.3)
 
