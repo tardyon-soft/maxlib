@@ -141,6 +141,9 @@ Filter<MessageContext> privateChat = F.message().chat().type().isPrivate();
 router.message(start.and(privateChat), ctx -> ctx.reply("Private start"));
 ```
 
+Детальный контракт filter API, built-in набора и композиции:
+- [filter-contract.md](filter-contract.md)
+
 ## Middleware
 
 ### Назначение
