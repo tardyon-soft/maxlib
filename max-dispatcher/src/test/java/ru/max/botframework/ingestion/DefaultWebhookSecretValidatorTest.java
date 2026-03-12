@@ -1,14 +1,9 @@
 package ru.max.botframework.ingestion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.Instant;
 import org.junit.jupiter.api.Test;
-import ru.max.botframework.model.Update;
-import ru.max.botframework.model.UpdateId;
-import ru.max.botframework.model.UpdateType;
 
 class DefaultWebhookSecretValidatorTest {
 
@@ -16,7 +11,7 @@ class DefaultWebhookSecretValidatorTest {
     void skipsValidationWhenSecretNotConfigured() {
         DefaultWebhookSecretValidator validator = new DefaultWebhookSecretValidator(null);
 
-        WebhookSecretValidationResult result = validator.validate(payload("provided-secret"));
+        WebhookSecretValidationResult result = validator.validate("provided-secret");
 
         assertEquals(WebhookSecretValidationStatus.SKIPPED_NO_SECRET_CONFIGURED, result.status());
         assertTrue(result.error().isEmpty());
@@ -27,7 +22,7 @@ class DefaultWebhookSecretValidatorTest {
     void treatsBlankConfiguredSecretAsNotConfigured() {
         DefaultWebhookSecretValidator validator = new DefaultWebhookSecretValidator("   ");
 
-        WebhookSecretValidationResult result = validator.validate(payload("provided-secret"));
+        WebhookSecretValidationResult result = validator.validate("provided-secret");
 
         assertEquals(WebhookSecretValidationStatus.SKIPPED_NO_SECRET_CONFIGURED, result.status());
         assertTrue(result.error().isEmpty());
@@ -37,7 +32,7 @@ class DefaultWebhookSecretValidatorTest {
     void rejectsWhenSecretConfiguredButHeaderIsMissing() {
         DefaultWebhookSecretValidator validator = new DefaultWebhookSecretValidator("expected-secret");
 
-        WebhookSecretValidationResult result = validator.validate(payload(null));
+        WebhookSecretValidationResult result = validator.validate(null);
 
         assertEquals(WebhookSecretValidationStatus.REJECTED, result.status());
         assertEquals(WebhookValidationErrorCode.SECRET_HEADER_MISSING, result.error().orElseThrow().code());
@@ -47,7 +42,7 @@ class DefaultWebhookSecretValidatorTest {
     void rejectsWhenSecretConfiguredButHeaderDoesNotMatch() {
         DefaultWebhookSecretValidator validator = new DefaultWebhookSecretValidator("expected-secret");
 
-        WebhookSecretValidationResult result = validator.validate(payload("wrong-secret"));
+        WebhookSecretValidationResult result = validator.validate("wrong-secret");
 
         assertEquals(WebhookSecretValidationStatus.REJECTED, result.status());
         assertEquals(WebhookValidationErrorCode.SECRET_MISMATCH, result.error().orElseThrow().code());
@@ -57,7 +52,7 @@ class DefaultWebhookSecretValidatorTest {
     void acceptsWhenConfiguredSecretMatchesHeader() {
         DefaultWebhookSecretValidator validator = new DefaultWebhookSecretValidator("expected-secret");
 
-        WebhookSecretValidationResult result = validator.validate(payload("expected-secret"));
+        WebhookSecretValidationResult result = validator.validate("expected-secret");
 
         assertEquals(WebhookSecretValidationStatus.ACCEPTED, result.status());
         assertTrue(result.error().isEmpty());
@@ -65,20 +60,17 @@ class DefaultWebhookSecretValidatorTest {
     }
 
     @Test
-    void validateRequiresPayload() {
-        DefaultWebhookSecretValidator validator = new DefaultWebhookSecretValidator("expected-secret");
-        assertThrows(NullPointerException.class, () -> validator.validate(null));
+    void validateAllowsNullHeaderWhenSecretIsNotConfigured() {
+        DefaultWebhookSecretValidator validator = new DefaultWebhookSecretValidator(null);
+        WebhookSecretValidationResult result = validator.validate(null);
+        assertEquals(WebhookSecretValidationStatus.SKIPPED_NO_SECRET_CONFIGURED, result.status());
     }
 
-    private static WebhookUpdatePayload payload(String secretHeader) {
-        Update update = new Update(
-                new UpdateId("upd-1"),
-                UpdateType.MESSAGE,
-                null,
-                null,
-                null,
-                Instant.parse("2026-01-01T00:00:00Z")
-        );
-        return new WebhookUpdatePayload(update, secretHeader);
+    @Test
+    void validateWithNullHeaderProducesStructuredErrorWhenSecretIsConfigured() {
+        DefaultWebhookSecretValidator validator = new DefaultWebhookSecretValidator("expected-secret");
+        WebhookSecretValidationResult result = validator.validate(null);
+        assertEquals(WebhookSecretValidationStatus.REJECTED, result.status());
+        assertEquals(WebhookValidationErrorCode.SECRET_HEADER_MISSING, result.error().orElseThrow().code());
     }
 }

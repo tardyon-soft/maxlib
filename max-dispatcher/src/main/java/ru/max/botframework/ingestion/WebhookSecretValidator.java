@@ -5,5 +5,5 @@ package ru.max.botframework.ingestion;
  */
 public interface WebhookSecretValidator {
 
-    WebhookSecretValidationResult validate(WebhookUpdatePayload payload);
+    WebhookSecretValidationResult validate(String secretHeader);
 }

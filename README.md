@@ -19,6 +19,7 @@ Sprint 1 (`client/DTO/errors`) завершён.
 - long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/isRunning`);
 - marker progression contract: monotonic marker state с продвижением только после успешного batch handling;
 - webhook secret validation foundation: `WebhookSecretValidator` + typed validation result/error contracts;
+- webhook receiver foundation: `DefaultWebhookReceiver` (`WebhookRequest` -> `WebhookReceiveResult`);
 - domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
 - тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
 
@@ -126,7 +127,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media pipeline ещё не реализован;
 - long-polling/webhook transport реализации как runtime-компоненты пока не завершены (зафиксирован контракт слоя ingestion);
-- webhook runtime source/receiver пока не реализованы (доступен только framework-agnostic secret validator contract);
+- webhook runtime source пока не реализован (receiver contract/foundation уже есть);
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
 
 ## Low-level Long Polling Example
@@ -180,11 +181,52 @@ runner.stop();
 ## Webhook Secret Validation
 
 - заголовок секрета: `X-Max-Bot-Api-Secret`;
-- контракт: `WebhookSecretValidator.validate(WebhookUpdatePayload)`;
+- контракт: `WebhookSecretValidator.validate(String secretHeader)`;
 - outcomes:
 - `ACCEPTED`
 - `SKIPPED_NO_SECRET_CONFIGURED`
 - `REJECTED` (`SECRET_HEADER_MISSING` или `SECRET_MISMATCH`).
+
+## Low-level Webhook Handling Example
+
+```java
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import ru.max.botframework.client.serialization.JacksonJsonCodec;
+import ru.max.botframework.ingestion.DefaultWebhookReceiver;
+import ru.max.botframework.ingestion.DefaultWebhookSecretValidator;
+import ru.max.botframework.ingestion.UpdateHandlingResult;
+import ru.max.botframework.ingestion.UpdateSink;
+import ru.max.botframework.ingestion.WebhookReceiveResult;
+import ru.max.botframework.ingestion.WebhookReceiveStatus;
+import ru.max.botframework.ingestion.WebhookRequest;
+
+UpdateSink sink = update -> CompletableFuture.completedFuture(UpdateHandlingResult.success());
+
+DefaultWebhookReceiver receiver = new DefaultWebhookReceiver(
+    new DefaultWebhookSecretValidator("my-secret"),
+    new JacksonJsonCodec(),
+    sink
+);
+
+WebhookRequest request = new WebhookRequest(
+    rawBodyBytes,
+    Map.of("X-Max-Bot-Api-Secret", List.of(secretFromHttpHeader))
+);
+
+WebhookReceiveResult result = receiver.receive(request).toCompletableFuture().join();
+if (result.status() == WebhookReceiveStatus.ACCEPTED) {
+    // return HTTP 200
+} else if (result.status() == WebhookReceiveStatus.INVALID_SECRET) {
+    // return HTTP 401/403
+} else if (result.status() == WebhookReceiveStatus.BAD_PAYLOAD) {
+    // return HTTP 400
+} else {
+    // return HTTP 500
+}
+```
 
 ## Build and test
 

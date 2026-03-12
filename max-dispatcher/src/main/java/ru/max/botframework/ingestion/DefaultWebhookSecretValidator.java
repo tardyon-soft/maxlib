@@ -2,7 +2,6 @@ package ru.max.botframework.ingestion;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Objects;
 
 /**
  * Default validator for MAX webhook secret header.
@@ -17,14 +16,12 @@ public final class DefaultWebhookSecretValidator implements WebhookSecretValidat
     }
 
     @Override
-    public WebhookSecretValidationResult validate(WebhookUpdatePayload payload) {
-        Objects.requireNonNull(payload, "payload");
-
+    public WebhookSecretValidationResult validate(String secretHeader) {
         if (expectedSecret == null) {
             return WebhookSecretValidationResult.skippedNoSecretConfigured();
         }
 
-        String provided = normalize(payload.secretHeader());
+        String provided = normalize(secretHeader);
         if (provided == null) {
             return WebhookSecretValidationResult.rejected(
                     WebhookValidationErrorCode.SECRET_HEADER_MISSING,

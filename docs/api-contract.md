@@ -35,10 +35,12 @@
   с `UpdateHandlingResult` (`SUCCESS`/`FAILURE`).
 - `LongPollingRunner` — lifecycle-контракт long polling loop (`start`/`stop`/`isRunning`).
 - `PollingMarkerState` — marker progression boundary (in-memory now, persistent later).
-- `WebhookUpdatePayload` — framework-agnostic вход webhook update (`Update` + secret header).
+- `WebhookRequest` — framework-agnostic raw webhook request (`body` + `headers`).
 - `WebhookSecretValidator` — контракт проверки `X-Max-Bot-Api-Secret`.
 - `WebhookSecretValidationResult`/`WebhookValidationError` — результат и причина отказа валидации.
-- `WebhookReceiver` — boundary между HTTP webhook endpoint и ingestion source.
+- `WebhookReceiver` — boundary между HTTP webhook endpoint и ingestion source
+  (`WebhookRequest` -> `WebhookReceiveResult`).
+- `WebhookReceiveResult` — result contract для web adapter integration.
 - `UpdatePipeline` — unified ingress контракт для downstream обработки.
 
 ### Границы Sprint 2

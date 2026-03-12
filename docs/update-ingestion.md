@@ -55,11 +55,11 @@
 - не определяет HTTP server stack (Spring, Netty и т.п.);
 - не отвечает за handler execution.
 
-### `WebhookUpdatePayload`
+### `WebhookRequest`
 
 Назначение:
-- framework-agnostic модель входящего webhook update;
-- переносит десериализованный `Update` и значение заголовка секрета.
+- framework-agnostic модель raw webhook request;
+- переносит `body` и `headers` без привязки к servlet/spring API.
 
 ### `WebhookSecretValidator`
 
@@ -67,7 +67,7 @@
 - проверка секрета из заголовка `X-Max-Bot-Api-Secret` до передачи update в sink.
 
 Контракт (минимальный):
-- `WebhookSecretValidationResult validate(WebhookUpdatePayload payload)`.
+- `WebhookSecretValidationResult validate(String secretHeader)`.
 
 `WebhookSecretValidationResult`:
 - `ACCEPTED` — секрет валиден;
@@ -132,11 +132,21 @@ Marker progression strategy (Sprint 2.2.3):
 
 Назначение:
 - adapter boundary между HTTP endpoint и `WebhookUpdateSource`;
-- принимает входящий webhook payload и передаёт его в ingestion pipeline.
+- принимает `WebhookRequest`, валидирует secret, десериализует `Update`
+  и передаёт событие в `UpdateSink`.
 
 Граница:
 - не содержит бизнес-обработку update;
 - не зависит от конкретного routing слоя.
+
+Контракт (минимальный):
+- `CompletionStage<WebhookReceiveResult> receive(WebhookRequest request)`.
+
+`WebhookReceiveResult`:
+- `ACCEPTED` — update успешно принят sink;
+- `INVALID_SECRET` — webhook secret не прошёл проверку;
+- `BAD_PAYLOAD` — body не удалось десериализовать в `Update`;
+- `INTERNAL_ERROR` — ошибка sink/внутренней обработки receiver.
 
 ### `UpdatePipeline` (unified ingestion contract)
 
