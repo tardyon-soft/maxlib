@@ -19,6 +19,31 @@
 - `Filter` и `Middleware` должны быть композиционными и предсказуемыми по порядку.
 - `Context`/`FSMContext` являются основными точками handler ergonomics.
 
+## Update ingestion layer (Sprint 2)
+
+### Назначение
+
+Контракты ingestion-слоя задают единый transport boundary для получения `Update`
+из polling и webhook и передачи их в общий внутренний flow.
+
+### Core сущности
+
+- `UpdateSource` — lifecycle-контракт источника update (`start`/`stop`).
+- `PollingUpdateSource` — источник update через long polling.
+- `WebhookUpdateSource` — источник update через webhook ingress.
+- `UpdateSink` (`UpdateConsumer`) — единая точка приёма normalized `Update`.
+- `LongPollingRunner` — управляющий цикл long polling ingestion.
+- `WebhookReceiver` — boundary между HTTP webhook endpoint и ingestion source.
+- `UpdatePipeline` — unified ingress контракт для downstream обработки.
+
+### Границы Sprint 2
+
+- В scope: transport ingestion (polling + webhook), normalization и доставка в sink.
+- Вне scope: полноценный dispatcher/router runtime, middleware runtime, FSM runtime.
+
+Детальная спецификация ingestion contracts:
+- [update-ingestion.md](update-ingestion.md)
+
 ## MaxBotClient
 
 ### Назначение

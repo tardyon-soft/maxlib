@@ -52,37 +52,36 @@ public interface Update {
 - Дальнейший отбор делает filter chain внутри observer.
 - Если filter не матчится, handler не вызывается.
 
-## Unified Pipeline for Polling and Webhook
+## Unified Ingestion Pipeline for Polling and Webhook
 
 ### Ingress paths
 
 1. Polling path:
 - Polling adapter получает batch raw updates из MAX API.
 - Каждый raw update нормализуется в `Update`.
-- Далее передаётся в общий dispatcher pipeline.
+- Далее передаётся в общий ingestion sink/pipeline.
 
 2. Webhook path:
 - Webhook adapter получает raw update из HTTP request.
 - Raw update нормализуется в `Update`.
-- Далее передаётся в общий dispatcher pipeline.
+- Далее передаётся в общий ingestion sink/pipeline.
 
-### Common processing pipeline
+### Common ingestion lifecycle (Sprint 2)
 
 1. `Transport Adapter` (polling/webhook) получает raw update.
 2. `Update Decoder/Normalizer` строит normalized `Update`.
-3. `Dispatcher` запускает outer middleware chain.
-4. `Router resolver` выбирает observer по `UpdateType`.
-5. `Filters` observer-а выполняются в registration order.
-6. `Inner middleware` выполняется вокруг matched handler.
-7. `Handler` исполняется с context injection.
-8. `Error boundary` обрабатывает исключения через dispatcher policy.
-9. `Post-processing` пишет metrics/logging и завершает transport acknowledgment.
+3. `UpdateSource` передаёт normalized update в единый `UpdateSink`/`UpdatePipeline`.
+4. `Ingestion Error Boundary` обрабатывает transport/decoding/normalization ошибки.
+5. `Post-processing` пишет logging/metrics и завершает transport acknowledgment.
+
+Дальнейший runtime этап (dispatcher/router/middleware/handler execution) фиксируется отдельными контрактами
+и не реализуется в рамках Sprint 2.1.1.
 
 ## Transport equivalence contract
 
-- Polling и webhook обязаны использовать один и тот же dispatcher pipeline.
-- Различия transport не должны менять semantics filter/middleware/handler execution.
-- Бизнес-код handler-ов не должен зависеть от источника события (polling/webhook).
+- Polling и webhook обязаны использовать один и тот же internal ingestion flow.
+- Различия transport не должны менять semantics normalized update delivery в sink/pipeline.
+- Downstream runtime не должен зависеть от источника события (polling/webhook).
 
 ## Acknowledgment rules (MVP)
 

@@ -4,9 +4,11 @@ Java framework для разработки ботов на платформе MA
 
 Важно: это не буквальная копия aiogram 3. Проект адаптирует лучшие архитектурные идеи под реальные возможности MAX API и Java ecosystem.
 
-## Sprint 1 status
+## Sprint status
 
-Текущий этап: `Sprint 1 — client/DTO/errors`.
+Текущий этап: `Sprint 2 — polling + webhook ingestion layer`.
+
+Sprint 1 (`client/DTO/errors`) завершён.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -113,11 +115,12 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 
 ## Current limitations
 
-Ограничения текущего этапа (Sprint 1):
+Ограничения текущего этапа (Sprint 2):
+- сейчас фиксируется только ingestion transport contract (polling/webhook -> unified sink);
 - framework runtime слой ещё не реализован: нет production-готовых `Dispatcher/Router`, filters DSL, middleware chain, DI runtime, FSM/scenes runtime;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media pipeline ещё не реализован;
-- long-polling/webhook runtime orchestration ещё не реализованы (есть только client foundation-методы);
+- long-polling/webhook transport реализации как runtime-компоненты пока не завершены (зафиксирован контракт слоя ingestion);
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
 
 ## Build and test
@@ -133,6 +136,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - Product vision and target DX: [docs/product-spec.md](docs/product-spec.md)
 - Core API contract: [docs/api-contract.md](docs/api-contract.md)
 - Event model: [docs/event-model.md](docs/event-model.md)
+- Update ingestion contract (Sprint 2): [docs/update-ingestion.md](docs/update-ingestion.md)
 - Roadmap: [docs/roadmap.md](docs/roadmap.md)
 - Contributing workflow: [docs/contributing.md](docs/contributing.md)
 - ADR index: [docs/adr/README.md](docs/adr/README.md)
