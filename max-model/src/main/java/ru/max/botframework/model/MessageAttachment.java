@@ -9,7 +9,7 @@ import java.util.Objects;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record MessageAttachment(
         MessageAttachmentType type,
-        String fileId,
+        FileId fileId,
         String url,
         String mimeType,
         Long size

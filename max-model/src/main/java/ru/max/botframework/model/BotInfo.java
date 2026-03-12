@@ -8,7 +8,7 @@ import java.util.Objects;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record BotInfo(
-        String id,
+        UserId id,
         String username,
         String displayName,
         String about,

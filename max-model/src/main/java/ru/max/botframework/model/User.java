@@ -8,7 +8,7 @@ import java.util.Objects;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record User(
-        String id,
+        UserId id,
         String username,
         String firstName,
         String lastName,

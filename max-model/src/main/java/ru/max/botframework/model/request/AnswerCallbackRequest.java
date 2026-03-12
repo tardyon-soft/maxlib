@@ -3,13 +3,14 @@ package ru.max.botframework.model.request;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Objects;
+import ru.max.botframework.model.CallbackId;
 
 /**
  * Request DTO for answering callback events.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record AnswerCallbackRequest(
-        String callbackId,
+        CallbackId callbackId,
         String text,
         @JsonProperty("notify") Boolean sendNotification,
         Integer cacheSeconds

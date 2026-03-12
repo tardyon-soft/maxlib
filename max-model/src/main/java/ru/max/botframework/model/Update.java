@@ -9,7 +9,7 @@ import java.util.Objects;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Update(
-        String updateId,
+        UpdateId updateId,
         UpdateType type,
         Message message,
         Callback callback,

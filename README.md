@@ -103,8 +103,10 @@ Java framework для разработки ботов на платформе MA
 - централизованный JSON serialization layer в `max-client-core`: единый shared mapper и единые правила (non-null serialization, ISO dates, ignore unknown fields);
 - базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
 - request DTO для message/callback API в `max-model`: `NewMessageBody`, `SendMessageRequest`, `EditMessageRequest`, `AnswerCallbackRequest`, минимальные attachment-related структуры;
+- typed value objects в `max-model` для id/reference-полей (`UserId`, `ChatId`, `MessageId`, `UpdateId`, `CallbackId`, `FileId`) вместо магических `String` в core DTO/request моделях;
+- дополнительные enum-контракты `ChatAction` и `ChatAdminPermission` с безопасным `UNKNOWN` fallback для forward compatibility;
 - JSON fixture tests для десериализации DTO в `max-model`;
-- serialization tests для request DTO send/edit/callback answer;
+- serialization tests для request DTO и typed enum/value objects;
 - Gradle Wrapper и базовая тестовая конфигурация.
 
 ## Module plan (current)

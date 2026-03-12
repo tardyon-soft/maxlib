@@ -6,6 +6,7 @@ import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import ru.max.botframework.model.Update;
 import ru.max.botframework.model.UpdateType;
+import ru.max.botframework.model.UpdateId;
 
 class JacksonJsonCodecRoundTripTest {
 
@@ -13,7 +14,7 @@ class JacksonJsonCodecRoundTripTest {
 
     @Test
     void shouldRoundTripMaxModelDto() {
-        Update source = new Update("u-100", UpdateType.MESSAGE, null, null, null, null);
+        Update source = new Update(new UpdateId("u-100"), UpdateType.MESSAGE, null, null, null, null);
 
         String json = jsonCodec.write(source);
         Update restored = jsonCodec.read(json, Update.class);
@@ -27,7 +28,7 @@ class JacksonJsonCodecRoundTripTest {
 
         Update restored = jsonCodec.read(json, Update.class);
 
-        assertThat(restored).isEqualTo(new Update("u-200", UpdateType.CALLBACK, null, null, null, null));
+        assertThat(restored).isEqualTo(new Update(new UpdateId("u-200"), UpdateType.CALLBACK, null, null, null, null));
     }
 
     @Test

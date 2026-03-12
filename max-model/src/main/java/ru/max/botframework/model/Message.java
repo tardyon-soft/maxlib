@@ -10,12 +10,12 @@ import java.util.Objects;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Message(
-        String messageId,
+        MessageId messageId,
         Chat chat,
         User from,
         String text,
         Instant createdAt,
-        String replyToMessageId,
+        MessageId replyToMessageId,
         List<MessageEntity> entities,
         List<MessageAttachment> attachments
 ) {

@@ -9,6 +9,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import ru.max.botframework.model.CallbackId;
+import ru.max.botframework.model.ChatId;
+import ru.max.botframework.model.FileId;
+import ru.max.botframework.model.MessageId;
 import ru.max.botframework.model.MessageAttachmentType;
 import ru.max.botframework.model.TextFormat;
 
@@ -23,20 +27,20 @@ class RequestModelSerializationTest {
     @Test
     void shouldSerializeAndDeserializeSendMessageRequest() throws Exception {
         SendMessageRequest source = new SendMessageRequest(
-                "chat-1",
+                new ChatId("chat-1"),
                 new NewMessageBody(
                         "hello",
                         TextFormat.MARKDOWN,
                         List.of(new NewMessageAttachment(
                                 MessageAttachmentType.DOCUMENT,
-                                new AttachmentInput("file-1", null, null),
+                                new AttachmentInput(new FileId("file-1"), null, null),
                                 "spec",
                                 "application/pdf",
                                 1024L
                         ))
                 ),
                 false,
-                "m-10"
+                new MessageId("m-10")
         );
 
         String json = objectMapper.writeValueAsString(source);
@@ -50,8 +54,8 @@ class RequestModelSerializationTest {
     @Test
     void shouldSerializeAndDeserializeEditMessageRequest() throws Exception {
         EditMessageRequest source = new EditMessageRequest(
-                "chat-1",
-                "m-1",
+                new ChatId("chat-1"),
+                new MessageId("m-1"),
                 new NewMessageBody(
                         "edited",
                         TextFormat.PLAIN,
@@ -69,7 +73,7 @@ class RequestModelSerializationTest {
 
     @Test
     void shouldSerializeAndDeserializeAnswerCallbackRequest() throws Exception {
-        AnswerCallbackRequest source = new AnswerCallbackRequest("cb-1", "OK", false, 5);
+        AnswerCallbackRequest source = new AnswerCallbackRequest(new CallbackId("cb-1"), "OK", false, 5);
 
         String json = objectMapper.writeValueAsString(source);
         AnswerCallbackRequest restored = objectMapper.readValue(json, AnswerCallbackRequest.class);

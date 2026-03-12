@@ -8,7 +8,7 @@ import java.util.Objects;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Chat(
-        String id,
+        ChatId id,
         ChatType type,
         String title,
         String username,

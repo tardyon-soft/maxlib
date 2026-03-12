@@ -24,7 +24,7 @@ class MaxModelJsonDeserializationTest {
     void shouldDeserializeUserFixture() throws IOException {
         User user = readFixture("user.json", User.class);
 
-        assertThat(user.id()).isEqualTo("u-1");
+        assertThat(user.id().value()).isEqualTo("u-1");
         assertThat(user.username()).isEqualTo("alice");
         assertThat(user.bot()).isFalse();
     }
@@ -33,7 +33,7 @@ class MaxModelJsonDeserializationTest {
     void shouldDeserializeBotInfoFixture() throws IOException {
         BotInfo botInfo = readFixture("bot-info.json", BotInfo.class);
 
-        assertThat(botInfo.id()).isEqualTo("b-1");
+        assertThat(botInfo.id().value()).isEqualTo("b-1");
         assertThat(botInfo.username()).isEqualTo("max_helper_bot");
     }
 
@@ -41,7 +41,7 @@ class MaxModelJsonDeserializationTest {
     void shouldDeserializeChatFixture() throws IOException {
         Chat chat = readFixture("chat.json", Chat.class);
 
-        assertThat(chat.id()).isEqualTo("c-100");
+        assertThat(chat.id().value()).isEqualTo("c-100");
         assertThat(chat.type()).isEqualTo(ChatType.GROUP);
     }
 
@@ -50,15 +50,15 @@ class MaxModelJsonDeserializationTest {
         ChatMember chatMember = readFixture("chat-member.json", ChatMember.class);
 
         assertThat(chatMember.status()).isEqualTo(ChatMemberStatus.MEMBER);
-        assertThat(chatMember.chat().id()).isEqualTo("c-100");
-        assertThat(chatMember.user().id()).isEqualTo("u-1");
+        assertThat(chatMember.chat().id().value()).isEqualTo("c-100");
+        assertThat(chatMember.user().id().value()).isEqualTo("u-1");
     }
 
     @Test
     void shouldDeserializeMessageFixture() throws IOException {
         Message message = readFixture("message.json", Message.class);
 
-        assertThat(message.messageId()).isEqualTo("m-100");
+        assertThat(message.messageId().value()).isEqualTo("m-100");
         assertThat(message.entities()).hasSize(1);
         assertThat(message.attachments()).hasSize(1);
         assertThat(message.entities().getFirst().type()).isEqualTo(MessageEntityType.BOT_COMMAND);
@@ -69,7 +69,7 @@ class MaxModelJsonDeserializationTest {
     void shouldDeserializeUpdateWithMessageFixture() throws IOException {
         Update update = readFixture("update-message.json", Update.class);
 
-        assertThat(update.updateId()).isEqualTo("upd-1");
+        assertThat(update.updateId().value()).isEqualTo("upd-1");
         assertThat(update.type()).isEqualTo(UpdateType.MESSAGE);
         assertThat(update.message()).isNotNull();
         assertThat(update.callback()).isNull();
@@ -79,10 +79,10 @@ class MaxModelJsonDeserializationTest {
     void shouldDeserializeUpdateWithCallbackFixture() throws IOException {
         Update update = readFixture("update-callback.json", Update.class);
 
-        assertThat(update.updateId()).isEqualTo("upd-2");
+        assertThat(update.updateId().value()).isEqualTo("upd-2");
         assertThat(update.type()).isEqualTo(UpdateType.CALLBACK);
         assertThat(update.callback()).isNotNull();
-        assertThat(update.callback().callbackId()).isEqualTo("cb-1");
+        assertThat(update.callback().callbackId().value()).isEqualTo("cb-1");
     }
 
     private <T> T readFixture(String fileName, Class<T> type) throws IOException {

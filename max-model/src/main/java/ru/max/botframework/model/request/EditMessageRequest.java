@@ -3,14 +3,16 @@ package ru.max.botframework.model.request;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Objects;
+import ru.max.botframework.model.ChatId;
+import ru.max.botframework.model.MessageId;
 
 /**
  * Request DTO for editing an existing message.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record EditMessageRequest(
-        String chatId,
-        String messageId,
+        ChatId chatId,
+        MessageId messageId,
         NewMessageBody body,
         @JsonProperty("notify") Boolean sendNotification
 ) {

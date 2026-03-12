@@ -9,7 +9,7 @@ import java.util.Objects;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Callback(
-        String callbackId,
+        CallbackId callbackId,
         String data,
         User from,
         Message message,
