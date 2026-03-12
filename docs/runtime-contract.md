@@ -132,6 +132,13 @@ MVP outcomes:
 - Если handler завершился `FAILED`, результат dispatch = `FAILED`; fallback к следующему handler в Sprint 3 не делается.
 - Если ни один handler не matched, результат = `IGNORED`.
 
+Практическая propagation-семантика Sprint 3:
+- обход начинается с root router-ов в порядке `Dispatcher.includeRouter(...)`;
+- внутри root используется DFS pre-order router tree (`root -> children in include order`);
+- для каждого router сначала пробуется generic `update` observer, затем resolved typed observer (`message`/`callback`);
+- первый `HANDLED` останавливает весь dispatch pipeline;
+- первый `FAILED` завершает pipeline как `FAILED` (после уведомления `error` observer текущего router).
+
 ## Runtime pipeline over Sprint 2 ingestion
 
 Целевой flow Sprint 3:
@@ -142,4 +149,3 @@ MVP outcomes:
 
 Требование:
 - polling и webhook обязаны приходить в один и тот же dispatch pipeline без расхождения внутренней логики.
-

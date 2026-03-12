@@ -112,9 +112,91 @@ class DispatcherTest {
     }
 
     @Test
+    void feedUpdateStopsAtFirstMatchedHandlerInSameObserver() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger firstCalls = new AtomicInteger();
+        AtomicInteger secondCalls = new AtomicInteger();
+        router.message(message -> {
+            firstCalls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        router.message(message -> {
+            secondCalls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, firstCalls.get());
+        assertEquals(0, secondCalls.get());
+    }
+
+    @Test
+    void feedUpdatePropagatesToChildRoutersUntilHandled() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router root = new Router("root");
+        Router child = new Router("child");
+        AtomicInteger childHandled = new AtomicInteger();
+
+        child.message(message -> {
+            childHandled.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        root.includeRouter(child);
+        dispatcher.includeRouter(root);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, childHandled.get());
+    }
+
+    @Test
+    void feedUpdateStopsOnFirstHandledRootRouter() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router first = new Router("first");
+        Router second = new Router("second");
+        AtomicInteger firstCalls = new AtomicInteger();
+        AtomicInteger secondCalls = new AtomicInteger();
+
+        first.message(message -> {
+            firstCalls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        second.message(message -> {
+            secondCalls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+
+        dispatcher.includeRouters(first, second);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, firstCalls.get());
+        assertEquals(0, secondCalls.get());
+    }
+
+    @Test
     void feedUpdateReturnsIgnoredWhenNoObserversHandleUpdate() {
         Dispatcher dispatcher = new Dispatcher();
         dispatcher.includeRouter(new Router("main"));
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.IGNORED, result.status());
+    }
+
+    @Test
+    void feedUpdateReturnsIgnoredWhenNoHandlersAcrossRouterTree() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router root = new Router("root");
+        Router child = new Router("child");
+        root.includeRouter(child);
+        dispatcher.includeRouter(root);
 
         DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
 

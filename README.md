@@ -290,6 +290,13 @@ Event mapping strategy:
 - fallback: если type не распознан, но payload содержит `message` или `callback`, используется соответствующий observer;
 - `unsupported` update без подходящего payload даёт `DispatchResult.IGNORED`.
 
+First-match and propagation rules:
+- `HANDLED` возникает на первом успешно выполненном handler;
+- при `HANDLED` дальнейший поиск по текущему observer/router tree/root routers прекращается;
+- обход идёт deterministic: root routers в порядке include, внутри root — DFS pre-order по router tree;
+- если handler не найден во всей цепочке, результат `DispatchResult.IGNORED`;
+- если handler падает, результат `DispatchResult.FAILED`, и вызывается `error` observer текущего router.
+
 ## Low-level Webhook Handling Example
 
 ```java
