@@ -26,6 +26,7 @@ import ru.max.botframework.client.http.MaxHttpClient;
 import ru.max.botframework.client.http.MaxHttpResponse;
 import ru.max.botframework.client.http.okhttp.OkHttpMaxHttpClient;
 import ru.max.botframework.client.serialization.JacksonJsonCodec;
+import ru.max.botframework.client.test.JsonFixtures;
 import ru.max.botframework.model.BotInfo;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.Message;
@@ -130,17 +131,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldCallGetMeAndReturnTypedBotInfo() throws Exception {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("""
-                        {
-                          "id": "b-1",
-                          "username": "max_helper_bot",
-                          "displayName": "MAX Helper Bot",
-                          "about": "Utility bot",
-                          "avatarUrl": "https://cdn.max.ru/bot.png"
-                        }
-                        """));
+        server.enqueue(JsonFixtures.jsonResponse("bot-info-response.json"));
 
         BotInfo botInfo = client.getMe();
 
@@ -156,21 +147,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldSendMessageViaDomainMethod() throws Exception {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("""
-                        {
-                          "message": {
-                            "messageId": "m-101",
-                            "chat": {"id": "c-100", "type": "group", "title": "Team"},
-                            "from": {"id": "u-1", "username": "alice", "displayName": "Alice", "bot": false},
-                            "text": "hello",
-                            "createdAt": "2026-01-01T00:00:00Z",
-                            "entities": [],
-                            "attachments": []
-                          }
-                        }
-                        """));
+        server.enqueue(JsonFixtures.jsonResponse("message-envelope-response.json"));
 
         Message message = client.sendMessage(new SendMessageRequest(
                 new ChatId("c-100"),
@@ -190,9 +167,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldEditMessageViaDomainMethod() {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("{\"success\":true}"));
+        server.enqueue(JsonFixtures.jsonResponse("operation-success-response.json"));
 
         boolean success = client.editMessage(new EditMessageRequest(
                 new ChatId("c-100"),
@@ -210,9 +185,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldDeleteMessageViaDomainMethod() {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("{\"success\":true}"));
+        server.enqueue(JsonFixtures.jsonResponse("operation-success-response.json"));
 
         boolean success = client.deleteMessage(new MessageId("m-102"));
 
@@ -224,19 +197,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldGetMessageViaDomainMethod() {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("""
-                        {
-                          "messageId": "m-200",
-                          "chat": {"id": "c-100", "type": "group", "title": "Team"},
-                          "from": {"id": "u-1", "username": "alice", "displayName": "Alice", "bot": false},
-                          "text": "single",
-                          "createdAt": "2026-01-01T00:00:00Z",
-                          "entities": [],
-                          "attachments": []
-                        }
-                        """));
+        server.enqueue(JsonFixtures.jsonResponse("message-single-response.json"));
 
         Message message = client.getMessage(new MessageId("m-200"));
 
@@ -248,32 +209,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldGetMessagesByChatIdViaDomainMethod() {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("""
-                        {
-                          "messages": [
-                            {
-                              "messageId": "m-1",
-                              "chat": {"id": "c-100", "type": "group", "title": "Team"},
-                              "from": {"id": "u-1", "username": "alice", "displayName": "Alice", "bot": false},
-                              "text": "one",
-                              "createdAt": "2026-01-01T00:00:00Z",
-                              "entities": [],
-                              "attachments": []
-                            },
-                            {
-                              "messageId": "m-2",
-                              "chat": {"id": "c-100", "type": "group", "title": "Team"},
-                              "from": {"id": "u-2", "username": "bob", "displayName": "Bob", "bot": false},
-                              "text": "two",
-                              "createdAt": "2026-01-01T00:00:01Z",
-                              "entities": [],
-                              "attachments": []
-                            }
-                          ]
-                        }
-                        """));
+        server.enqueue(JsonFixtures.jsonResponse("messages-list-response.json"));
 
         List<Message> messages = client.getMessages(new ChatId("c-100"));
 
@@ -302,9 +238,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldAnswerCallbackViaDomainMethod() {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("{\"success\":true}"));
+        server.enqueue(JsonFixtures.jsonResponse("operation-success-response.json"));
 
         boolean success = client.answerCallback(new AnswerCallbackRequest(
                 new CallbackId("cb-1"),
@@ -324,28 +258,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldGetUpdatesViaDomainMethodWithPollingParams() {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("""
-                        {
-                          "updates": [
-                            {
-                              "updateId": "upd-1",
-                              "type": "message",
-                              "message": {
-                                "messageId": "m-1",
-                                "chat": {"id": "c-100", "type": "group", "title": "Team"},
-                                "from": {"id": "u-1", "username": "alice", "displayName": "Alice", "bot": false},
-                                "text": "hello",
-                                "createdAt": "2026-01-01T00:00:00Z",
-                                "entities": [],
-                                "attachments": []
-                              }
-                            }
-                          ],
-                          "marker": 101
-                        }
-                        """));
+        server.enqueue(JsonFixtures.jsonResponse("updates-response.json"));
 
         GetUpdatesResponse response = client.getUpdates(new GetUpdatesRequest(
                 100L,
@@ -368,18 +281,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldGetWebhookSubscriptions() {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("""
-                        {
-                          "subscriptions": [
-                            {
-                              "url": "https://example.com/webhook",
-                              "update_types": ["message_created", "message_callback"]
-                            }
-                          ]
-                        }
-                        """));
+        server.enqueue(JsonFixtures.jsonResponse("subscriptions-response.json"));
 
         List<Subscription> subscriptions = client.getSubscriptions();
 
@@ -394,9 +296,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldCreateWebhookSubscription() {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("{\"success\":true}"));
+        server.enqueue(JsonFixtures.jsonResponse("operation-success-response.json"));
 
         boolean success = client.createSubscription(new CreateSubscriptionRequest(
                 "https://example.com/webhook",
@@ -416,9 +316,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldDeleteWebhookSubscription() {
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("{\"success\":true}"));
+        server.enqueue(JsonFixtures.jsonResponse("operation-success-response.json"));
 
         boolean success = client.deleteSubscription(new DeleteSubscriptionRequest("https://example.com/webhook"));
 

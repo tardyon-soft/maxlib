@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
+import ru.max.botframework.client.test.JsonFixtures;
 import ru.max.botframework.model.Update;
 import ru.max.botframework.model.UpdateType;
 import ru.max.botframework.model.UpdateId;
@@ -24,7 +25,7 @@ class JacksonJsonCodecRoundTripTest {
 
     @Test
     void shouldIgnoreUnknownPropertiesOnDeserialization() {
-        String json = "{\"updateId\":\"u-200\",\"type\":\"callback\",\"unknown\":\"ignored\"}";
+        String json = JsonFixtures.read("update-with-unknown.json");
 
         Update restored = jsonCodec.read(json, Update.class);
 

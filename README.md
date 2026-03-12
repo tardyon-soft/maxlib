@@ -110,6 +110,7 @@ Java framework для разработки ботов на платформе MA
 - поддержка callback answer в `max-client-core`: `answerCallback()` (`POST /answers`) с typed request/response API;
 - foundation для polling transport в `max-client-core`: `getUpdates()` (`GET /updates`) с typed request (`marker`, `timeout`, `limit`, `types`) и typed response (`updates`, `marker`);
 - foundation для webhook subscriptions в `max-client-core`: `getSubscriptions()` (`GET /subscriptions`), `createSubscription()` (`POST /subscriptions`), `deleteSubscription()` (`DELETE /subscriptions`);
+- test infrastructure для `max-client-core`: JSON fixtures (`max-client-core/src/test/resources/fixtures`) и общий helper `JsonFixtures` для serialization/transport тестов;
 - базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
 - request DTO для message/callback API в `max-model`: `NewMessageBody`, `SendMessageRequest`, `EditMessageRequest`, `AnswerCallbackRequest`, минимальные attachment-related структуры;
 - typed value objects в `max-model` для id/reference-полей (`UserId`, `ChatId`, `MessageId`, `UpdateId`, `CallbackId`, `FileId`) вместо магических `String` в core DTO/request моделях;
@@ -222,3 +223,13 @@ boolean deleted = botClient.deleteSubscription(
 ```bash
 ./gradlew clean build
 ```
+
+## Test Fixtures
+
+Для `max-client-core` добавлен единый слой тестовых JSON fixtures:
+- path: `max-client-core/src/test/resources/fixtures`;
+- helper: `ru.max.botframework.client.test.JsonFixtures`.
+
+Это позволяет использовать одни и те же sample MAX API responses в:
+- serialization tests (`JsonFixtures.read(...)`);
+- transport tests c `MockWebServer` (`JsonFixtures.jsonResponse(...)`).

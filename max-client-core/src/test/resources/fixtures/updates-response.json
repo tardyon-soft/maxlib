@@ -1,0 +1,27 @@
+{
+  "updates": [
+    {
+      "updateId": "upd-1",
+      "type": "message",
+      "message": {
+        "messageId": "m-1",
+        "chat": {
+          "id": "c-100",
+          "type": "group",
+          "title": "Team"
+        },
+        "from": {
+          "id": "u-1",
+          "username": "alice",
+          "displayName": "Alice",
+          "bot": false
+        },
+        "text": "hello",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "entities": [],
+        "attachments": []
+      }
+    }
+  ],
+  "marker": 101
+}
