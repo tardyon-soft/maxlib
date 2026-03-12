@@ -272,6 +272,17 @@ runner.stop();
 - `DispatcherRouterExample.java` (dispatcher/router handlers + includeRouter + feedUpdate);
 - `DispatcherIngestionIntegrationExample.java` (dispatcher as ingestion target for polling/webhook).
 
+## Sprint 4 Examples
+
+- filters/middleware examples directory: `examples/sprint-4-filters-middleware`;
+- files:
+- `FiltersMiddlewareExample.java`:
+  - built-in filters на handler registration;
+  - filter composition (`and`);
+  - `outerMiddleware` + `innerMiddleware`;
+  - context enrichment (`putEnrichment` / `enrichmentValue`);
+  - router tree (`includeRouter`).
+
 ## Router Registration (Sprint 3 foundation)
 
 ```java
@@ -320,6 +331,34 @@ Dispatcher dispatcher = new Dispatcher()
 router.innerMiddleware((ctx, next) -> next.proceed());
 
 DispatchResult result = dispatcher.feedUpdate(update).toCompletableFuture().join();
+```
+
+Minimal filter + middleware usage:
+
+```java
+ContextKey<String> traceId = ContextKey.of("traceId", String.class);
+
+Router root = new Router("root");
+Router payments = new Router("payments");
+
+payments.message(
+    BuiltInFilters.chatType(ChatType.PRIVATE).and(BuiltInFilters.textStartsWith("pay:")),
+    message -> CompletableFuture.completedFuture(null)
+);
+payments.innerMiddleware((ctx, next) -> {
+    String trace = ctx.enrichmentValue(traceId).orElse("trace-missing");
+    String suffix = ctx.enrichmentValue(BuiltInFilters.TEXT_SUFFIX_KEY, String.class).orElse("n/a");
+    System.out.println(trace + " -> " + suffix);
+    return next.proceed();
+});
+root.includeRouter(payments);
+
+Dispatcher dispatcher = new Dispatcher()
+    .outerMiddleware((ctx, next) -> {
+        ctx.putEnrichment(traceId, "trace-" + ctx.update().updateId().value());
+        return next.proceed();
+    })
+    .includeRouter(root);
 ```
 
 Event mapping strategy:
