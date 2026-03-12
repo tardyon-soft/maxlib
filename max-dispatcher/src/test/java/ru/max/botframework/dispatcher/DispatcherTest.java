@@ -69,7 +69,7 @@ class DispatcherTest {
     }
 
     @Test
-    void dispatchRoutesMessageUpdateToMessageObserver() {
+    void feedUpdateRoutesMessageUpdateToMessageObserver() {
         Dispatcher dispatcher = new Dispatcher();
         Router router = new Router("main");
         AtomicInteger messageHandled = new AtomicInteger();
@@ -79,24 +79,24 @@ class DispatcherTest {
         });
         dispatcher.includeRouter(router);
 
-        DispatchResult result = dispatcher.dispatch(messageUpdate()).toCompletableFuture().join();
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
 
         assertEquals(DispatchStatus.HANDLED, result.status());
         assertEquals(1, messageHandled.get());
     }
 
     @Test
-    void dispatchReturnsIgnoredWhenNoObserversHandleUpdate() {
+    void feedUpdateReturnsIgnoredWhenNoObserversHandleUpdate() {
         Dispatcher dispatcher = new Dispatcher();
         dispatcher.includeRouter(new Router("main"));
 
-        DispatchResult result = dispatcher.dispatch(messageUpdate()).toCompletableFuture().join();
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
 
         assertEquals(DispatchStatus.IGNORED, result.status());
     }
 
     @Test
-    void dispatchReturnsFailedAndNotifiesErrorObserver() {
+    void feedUpdateReturnsFailedAndNotifiesErrorObserver() {
         Dispatcher dispatcher = new Dispatcher();
         Router router = new Router("main");
         RuntimeException failure = new RuntimeException("handler failed");
@@ -109,7 +109,7 @@ class DispatcherTest {
         });
         dispatcher.includeRouter(router);
 
-        DispatchResult result = dispatcher.dispatch(messageUpdate()).toCompletableFuture().join();
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
 
         assertEquals(DispatchStatus.FAILED, result.status());
         assertSame(failure, result.errorOpt().orElseThrow());

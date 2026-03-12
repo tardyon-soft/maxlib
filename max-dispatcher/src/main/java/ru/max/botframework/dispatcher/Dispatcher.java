@@ -42,14 +42,25 @@ public final class Dispatcher implements UpdateConsumer {
         return Collections.unmodifiableList(rootRouters);
     }
 
-    public CompletionStage<DispatchResult> dispatch(Update update) {
+    /**
+     * Feeds one normalized update into dispatcher runtime flow.
+     */
+    public CompletionStage<DispatchResult> feedUpdate(Update update) {
         Objects.requireNonNull(update, "update");
         return dispatchFromRoots(update, 0);
     }
 
+    /**
+     * @deprecated use {@link #feedUpdate(Update)} as primary runtime entrypoint.
+     */
+    @Deprecated(forRemoval = false)
+    public CompletionStage<DispatchResult> dispatch(Update update) {
+        return feedUpdate(update);
+    }
+
     @Override
     public CompletionStage<UpdateHandlingResult> handle(Update update) {
-        return dispatch(update).handle((result, throwable) -> {
+        return feedUpdate(update).handle((result, throwable) -> {
             if (throwable != null) {
                 return UpdateHandlingResult.failure(unwrap(throwable));
             }
