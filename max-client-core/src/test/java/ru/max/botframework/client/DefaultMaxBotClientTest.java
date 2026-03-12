@@ -4,15 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
-import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,9 +21,7 @@ import ru.max.botframework.client.error.MaxTransportException;
 import ru.max.botframework.client.http.HttpMethod;
 import ru.max.botframework.client.http.MaxHttpClient;
 import ru.max.botframework.client.http.MaxHttpResponse;
-import ru.max.botframework.client.http.okhttp.OkHttpMaxHttpClient;
-import ru.max.botframework.client.serialization.JacksonJsonCodec;
-import ru.max.botframework.client.test.JsonFixtures;
+import ru.max.botframework.client.test.MockHttpClientTestContext;
 import ru.max.botframework.model.BotInfo;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.Message;
@@ -46,32 +41,29 @@ import ru.max.botframework.model.Subscription;
 
 class DefaultMaxBotClientTest {
 
-    private MockWebServer server;
+    private MockHttpClientTestContext http;
     private DefaultMaxBotClient client;
 
     @BeforeEach
-    void setUp() throws IOException {
-        server = new MockWebServer();
-        server.start();
-
-        MaxApiClientConfig config = buildConfig(RetryPolicy.none());
-        client = createClient(config, createTransport(config));
+    void setUp() {
+        http = MockHttpClientTestContext.start();
+        client = http.createClient(RetryPolicy.none());
     }
 
     @AfterEach
-    void tearDown() throws IOException {
-        server.shutdown();
+    void tearDown() {
+        http.close();
     }
 
     @Test
     void shouldExecuteGetWithoutBodyAndDeserializeJsonResponse() throws Exception {
-        server.enqueue(new MockResponse()
+        http.enqueue(new MockResponse()
                 .setHeader("Content-Type", "application/json")
                 .setBody("{\"ok\":true,\"message\":\"pong\"}"));
 
         EchoResponse response = client.execute(new EchoRequest(HttpMethod.GET, null));
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).isEqualTo("/v1/ping?limit=10");
         assertThat(recorded.getHeader("Authorization")).isEqualTo("Bearer test-token");
@@ -85,13 +77,13 @@ class DefaultMaxBotClientTest {
     @Test
     void shouldSerializeJsonBodyAndSupportMutatingHttpMethods() throws Exception {
         for (HttpMethod method : new HttpMethod[]{HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE}) {
-            server.enqueue(new MockResponse()
+            http.enqueue(new MockResponse()
                     .setHeader("Content-Type", "application/json")
                     .setBody("{\"ok\":true,\"message\":\"" + method + "\"}"));
 
             EchoResponse response = client.execute(new EchoRequest(method, new Payload("hello")));
 
-            RecordedRequest recorded = server.takeRequest();
+            RecordedRequest recorded = http.takeRequest();
             assertThat(recorded.getMethod()).isEqualTo(method.name());
             assertThat(recorded.getPath()).isEqualTo("/v1/ping?limit=10");
             assertThat(recorded.getHeader("Content-Type")).startsWith("application/json");
@@ -104,7 +96,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldMap429ToRateLimitException() {
-        server.enqueue(new MockResponse()
+        http.enqueue(new MockResponse()
                 .setResponseCode(429)
                 .setHeader("Retry-After", "7")
                 .setBody("{\"error_code\":\"RATE_LIMIT\",\"message\":\"Slow down\",\"details\":{\"scope\":\"global\"}}"));
@@ -123,7 +115,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldMap404ToNotFoundException() {
-        server.enqueue(new MockResponse().setResponseCode(404).setBody("{\"error\":\"not_found\"}"));
+        http.enqueue(new MockResponse().setResponseCode(404).setBody("{\"error\":\"not_found\"}"));
 
         assertThatThrownBy(() -> client.execute(new EchoRequest(HttpMethod.GET, null)))
                 .isInstanceOf(MaxNotFoundException.class);
@@ -131,11 +123,11 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldCallGetMeAndReturnTypedBotInfo() throws Exception {
-        server.enqueue(JsonFixtures.jsonResponse("bot-info-response.json"));
+        http.enqueueJsonFixture("bot-info-response.json");
 
         BotInfo botInfo = client.getMe();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).isEqualTo("/me");
         assertThat(recorded.getHeader("Authorization")).isEqualTo("Bearer test-token");
@@ -147,7 +139,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldSendMessageViaDomainMethod() throws Exception {
-        server.enqueue(JsonFixtures.jsonResponse("message-envelope-response.json"));
+        http.enqueueJsonFixture("message-envelope-response.json");
 
         Message message = client.sendMessage(new SendMessageRequest(
                 new ChatId("c-100"),
@@ -156,7 +148,7 @@ class DefaultMaxBotClientTest {
                 null
         ));
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("POST");
         assertThat(recorded.getPath()).isEqualTo("/messages?chat_id=c-100");
         String body = recorded.getBody().readUtf8();
@@ -167,7 +159,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldEditMessageViaDomainMethod() {
-        server.enqueue(JsonFixtures.jsonResponse("operation-success-response.json"));
+        http.enqueueJsonFixture("operation-success-response.json");
 
         boolean success = client.editMessage(new EditMessageRequest(
                 new ChatId("c-100"),
@@ -176,7 +168,7 @@ class DefaultMaxBotClientTest {
                 true
         ));
 
-        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("PUT");
         assertThat(recorded.getPath()).isEqualTo("/messages?message_id=m-101");
         assertThat(recorded.getBody().readUtf8()).contains("\"text\":\"edited\"");
@@ -185,11 +177,11 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldDeleteMessageViaDomainMethod() {
-        server.enqueue(JsonFixtures.jsonResponse("operation-success-response.json"));
+        http.enqueueJsonFixture("operation-success-response.json");
 
         boolean success = client.deleteMessage(new MessageId("m-102"));
 
-        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("DELETE");
         assertThat(recorded.getPath()).isEqualTo("/messages?message_id=m-102");
         assertThat(success).isTrue();
@@ -197,11 +189,11 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldGetMessageViaDomainMethod() {
-        server.enqueue(JsonFixtures.jsonResponse("message-single-response.json"));
+        http.enqueueJsonFixture("message-single-response.json");
 
         Message message = client.getMessage(new MessageId("m-200"));
 
-        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).isEqualTo("/messages/m-200");
         assertThat(message.text()).isEqualTo("single");
@@ -209,11 +201,11 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldGetMessagesByChatIdViaDomainMethod() {
-        server.enqueue(JsonFixtures.jsonResponse("messages-list-response.json"));
+        http.enqueueJsonFixture("messages-list-response.json");
 
         List<Message> messages = client.getMessages(new ChatId("c-100"));
 
-        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).isEqualTo("/messages?chat_id=c-100");
         assertThat(messages).hasSize(2);
@@ -222,7 +214,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldGetMessagesByIdsViaDomainMethod() {
-        server.enqueue(new MockResponse()
+        http.enqueue(new MockResponse()
                 .setHeader("Content-Type", "application/json")
                 .setBody("""
                         {"messages":[]}
@@ -230,7 +222,7 @@ class DefaultMaxBotClientTest {
 
         List<Message> messages = client.getMessages(List.of(new MessageId("m-1"), new MessageId("m-2")));
 
-        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).isEqualTo("/messages?message_ids=m-1%2Cm-2");
         assertThat(messages).isEmpty();
@@ -238,7 +230,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldAnswerCallbackViaDomainMethod() {
-        server.enqueue(JsonFixtures.jsonResponse("operation-success-response.json"));
+        http.enqueueJsonFixture("operation-success-response.json");
 
         boolean success = client.answerCallback(new AnswerCallbackRequest(
                 new CallbackId("cb-1"),
@@ -247,7 +239,7 @@ class DefaultMaxBotClientTest {
                 5
         ));
 
-        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("POST");
         assertThat(recorded.getPath()).isEqualTo("/answers");
         String body = recorded.getBody().readUtf8();
@@ -258,7 +250,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldGetUpdatesViaDomainMethodWithPollingParams() {
-        server.enqueue(JsonFixtures.jsonResponse("updates-response.json"));
+        http.enqueueJsonFixture("updates-response.json");
 
         GetUpdatesResponse response = client.getUpdates(new GetUpdatesRequest(
                 100L,
@@ -267,7 +259,7 @@ class DefaultMaxBotClientTest {
                 List.of(UpdateEventType.MESSAGE_CREATED, UpdateEventType.MESSAGE_CALLBACK)
         ));
 
-        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).contains("/updates?");
         assertThat(recorded.getPath()).contains("marker=100");
@@ -281,11 +273,11 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldGetWebhookSubscriptions() {
-        server.enqueue(JsonFixtures.jsonResponse("subscriptions-response.json"));
+        http.enqueueJsonFixture("subscriptions-response.json");
 
         List<Subscription> subscriptions = client.getSubscriptions();
 
-        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).isEqualTo("/subscriptions");
         assertThat(subscriptions).hasSize(1);
@@ -296,7 +288,7 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldCreateWebhookSubscription() {
-        server.enqueue(JsonFixtures.jsonResponse("operation-success-response.json"));
+        http.enqueueJsonFixture("operation-success-response.json");
 
         boolean success = client.createSubscription(new CreateSubscriptionRequest(
                 "https://example.com/webhook",
@@ -304,7 +296,7 @@ class DefaultMaxBotClientTest {
                 "secret-1"
         ));
 
-        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("POST");
         assertThat(recorded.getPath()).isEqualTo("/subscriptions");
         String body = recorded.getBody().readUtf8();
@@ -316,11 +308,11 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldDeleteWebhookSubscription() {
-        server.enqueue(JsonFixtures.jsonResponse("operation-success-response.json"));
+        http.enqueueJsonFixture("operation-success-response.json");
 
         boolean success = client.deleteSubscription(new DeleteSubscriptionRequest("https://example.com/webhook"));
 
-        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("DELETE");
         assertThat(recorded.getPath()).isEqualTo("/subscriptions?url=https%3A%2F%2Fexample.com%2Fwebhook");
         assertThat(success).isTrue();
@@ -328,33 +320,33 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldRetrySafeGetForTransientStatusWhenPolicyAllows() throws Exception {
-        MaxApiClientConfig config = buildConfig(RetryPolicy.fixed(2, Duration.ZERO));
-        client = createClient(config, createTransport(config));
+        MaxApiClientConfig config = http.buildConfig(RetryPolicy.fixed(2, Duration.ZERO));
+        client = http.createClient(config, http.createTransport(config));
 
-        server.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"service_unavailable\"}"));
-        server.enqueue(new MockResponse()
+        http.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"service_unavailable\"}"));
+        http.enqueue(new MockResponse()
                 .setHeader("Content-Type", "application/json")
                 .setBody("{\"ok\":true,\"message\":\"recovered\"}"));
 
         EchoResponse response = client.execute(new EchoRequest(HttpMethod.GET, null));
 
         assertThat(response.message()).isEqualTo("recovered");
-        RecordedRequest first = server.takeRequest();
-        RecordedRequest second = server.takeRequest();
+        RecordedRequest first = http.takeRequest();
+        RecordedRequest second = http.takeRequest();
         assertThat(first.getMethod()).isEqualTo("GET");
         assertThat(second.getMethod()).isEqualTo("GET");
     }
 
     @Test
     void shouldNotRetryUnsafeMethodsByDefault() {
-        MaxApiClientConfig config = buildConfig(RetryPolicy.fixed(3, Duration.ZERO));
-        client = createClient(config, createTransport(config));
-        server.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"service_unavailable\"}"));
+        MaxApiClientConfig config = http.buildConfig(RetryPolicy.fixed(3, Duration.ZERO));
+        client = http.createClient(config, http.createTransport(config));
+        http.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"service_unavailable\"}"));
 
         assertThatThrownBy(() -> client.execute(new EchoRequest(HttpMethod.POST, new Payload("x"))))
                 .isInstanceOf(MaxServiceUnavailableException.class);
 
-        assertThat(server.getRequestCount()).isEqualTo(1);
+        assertThat(http.requestCount()).isEqualTo(1);
     }
 
     @Test
@@ -371,8 +363,8 @@ class DefaultMaxBotClientTest {
             );
         };
 
-        MaxApiClientConfig config = buildConfig(RetryPolicy.fixed(2, Duration.ZERO));
-        client = createClient(config, failingTransport);
+        MaxApiClientConfig config = http.buildConfig(RetryPolicy.fixed(2, Duration.ZERO));
+        client = http.createClient(config, failingTransport);
 
         EchoResponse response = client.execute(new EchoRequest(HttpMethod.GET, null));
 
@@ -383,12 +375,9 @@ class DefaultMaxBotClientTest {
     @Test
     void shouldNotifyRateLimiterWhen429IsReceived() {
         CapturingRateLimiter limiter = new CapturingRateLimiter();
-        MaxApiClientConfig config = buildConfig(RetryPolicy.none(), limiter);
-        client = createClient(
-                config,
-                createTransport(config)
-        );
-        server.enqueue(new MockResponse().setResponseCode(429).setHeader("Retry-After", "3").setBody("{\"error\":\"rate_limit\"}"));
+        MaxApiClientConfig config = http.buildConfig(RetryPolicy.none(), limiter);
+        client = http.createClient(config, http.createTransport(config));
+        http.enqueue(new MockResponse().setResponseCode(429).setHeader("Retry-After", "3").setBody("{\"error\":\"rate_limit\"}"));
 
         assertThatThrownBy(() -> client.execute(new EchoRequest(HttpMethod.GET, null)))
                 .isInstanceOf(MaxRateLimitException.class);
@@ -401,14 +390,11 @@ class DefaultMaxBotClientTest {
     @Test
     void shouldCallRateLimiterBeforeEachRetryAttempt() {
         CapturingRateLimiter limiter = new CapturingRateLimiter();
-        MaxApiClientConfig config = buildConfig(RetryPolicy.fixed(2, Duration.ZERO), limiter);
-        client = createClient(
-                config,
-                createTransport(config)
-        );
+        MaxApiClientConfig config = http.buildConfig(RetryPolicy.fixed(2, Duration.ZERO), limiter);
+        client = http.createClient(config, http.createTransport(config));
 
-        server.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"temporary\"}"));
-        server.enqueue(new MockResponse()
+        http.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"temporary\"}"));
+        http.enqueue(new MockResponse()
                 .setHeader("Content-Type", "application/json")
                 .setBody("{\"ok\":true,\"message\":\"done\"}"));
 
@@ -420,10 +406,10 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldRespectRetryAfterHeaderWhenRetrying429() {
-        MaxApiClientConfig config = buildConfig(RetryPolicy.fixed(2, Duration.ZERO));
-        client = createClient(config, createTransport(config));
-        server.enqueue(new MockResponse().setResponseCode(429).setHeader("Retry-After", "1").setBody("{\"error\":\"rate_limit\"}"));
-        server.enqueue(new MockResponse()
+        MaxApiClientConfig config = http.buildConfig(RetryPolicy.fixed(2, Duration.ZERO));
+        client = http.createClient(config, http.createTransport(config));
+        http.enqueue(new MockResponse().setResponseCode(429).setHeader("Retry-After", "1").setBody("{\"error\":\"rate_limit\"}"));
+        http.enqueue(new MockResponse()
                 .setHeader("Content-Type", "application/json")
                 .setBody("{\"ok\":true,\"message\":\"after-rate-limit\"}"));
 
@@ -433,45 +419,6 @@ class DefaultMaxBotClientTest {
 
         assertThat(response.message()).isEqualTo("after-rate-limit");
         assertThat(elapsedMillis).isGreaterThanOrEqualTo(800L);
-    }
-
-    private MaxApiClientConfig buildConfig(RetryPolicy retryPolicy) {
-        return buildConfig(retryPolicy, RequestRateLimiter.noop());
-    }
-
-    private MaxApiClientConfig buildConfig(RetryPolicy retryPolicy, RequestRateLimiter rateLimiter) {
-        return MaxApiClientConfig.builder()
-                .baseUri(URI.create(server.url("/").toString()))
-                .token("test-token")
-                .connectTimeout(Duration.ofSeconds(2))
-                .readTimeout(Duration.ofSeconds(2))
-                .userAgent("max-client-core-test/1.0")
-                .retryPolicy(retryPolicy)
-                .rateLimiter(rateLimiter)
-                .build();
-    }
-
-    private MaxHttpClient createTransport(MaxApiClientConfig config) {
-        return new OkHttpMaxHttpClient(
-                config.baseUri(),
-                new OkHttpClient.Builder()
-                        .connectTimeout(config.connectTimeout())
-                        .readTimeout(config.readTimeout())
-                        .build()
-        );
-    }
-
-    private RecordedRequest takeRecordedRequestUnchecked() {
-        try {
-            return server.takeRequest();
-        } catch (InterruptedException interruptedException) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(interruptedException);
-        }
-    }
-
-    private DefaultMaxBotClient createClient(MaxApiClientConfig config, MaxHttpClient transport) {
-        return new DefaultMaxBotClient(config, transport, new JacksonJsonCodec());
     }
 
     private static final class CapturingRateLimiter implements RequestRateLimiter {
