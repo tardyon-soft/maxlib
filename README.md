@@ -284,6 +284,12 @@ Dispatcher dispatcher = new Dispatcher()
 DispatchResult result = dispatcher.feedUpdate(update).toCompletableFuture().join();
 ```
 
+Event mapping strategy:
+- всегда вызывается generic `update` observer;
+- затем `UpdateEventResolver` маппит update в `message`/`callback`/`unsupported`;
+- fallback: если type не распознан, но payload содержит `message` или `callback`, используется соответствующий observer;
+- `unsupported` update без подходящего payload даёт `DispatchResult.IGNORED`.
+
 ## Low-level Webhook Handling Example
 
 ```java

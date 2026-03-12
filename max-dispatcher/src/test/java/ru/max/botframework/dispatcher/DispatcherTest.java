@@ -86,11 +86,55 @@ class DispatcherTest {
     }
 
     @Test
+    void feedUpdateUsesResolverFallbackForUnknownTypeWithMessagePayload() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger handled = new AtomicInteger();
+        router.message(message -> {
+            handled.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        Update update = new Update(
+                new UpdateId("u-fallback"),
+                UpdateType.UNKNOWN,
+                message(),
+                null,
+                null,
+                Instant.parse("2026-03-12T00:00:00Z")
+        );
+
+        DispatchResult result = dispatcher.feedUpdate(update).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, handled.get());
+    }
+
+    @Test
     void feedUpdateReturnsIgnoredWhenNoObserversHandleUpdate() {
         Dispatcher dispatcher = new Dispatcher();
         dispatcher.includeRouter(new Router("main"));
 
         DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.IGNORED, result.status());
+    }
+
+    @Test
+    void feedUpdateReturnsIgnoredForUnsupportedUpdateType() {
+        Dispatcher dispatcher = new Dispatcher();
+        dispatcher.includeRouter(new Router("main"));
+        Update update = new Update(
+                new UpdateId("u-unsupported"),
+                UpdateType.CHAT_MEMBER,
+                null,
+                null,
+                null,
+                Instant.parse("2026-03-12T00:00:00Z")
+        );
+
+        DispatchResult result = dispatcher.feedUpdate(update).toCompletableFuture().join();
 
         assertEquals(DispatchStatus.IGNORED, result.status());
     }

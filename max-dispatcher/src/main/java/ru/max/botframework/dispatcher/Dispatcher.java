@@ -10,13 +10,21 @@ import java.util.concurrent.CompletionStage;
 import ru.max.botframework.ingestion.UpdateConsumer;
 import ru.max.botframework.ingestion.UpdateHandlingResult;
 import ru.max.botframework.model.Update;
-import ru.max.botframework.model.UpdateType;
 
 /**
  * Root runtime orchestrator that owns root routing graph and dispatch entrypoint.
  */
 public final class Dispatcher implements UpdateConsumer {
     private final List<Router> rootRouters = new ArrayList<>();
+    private final UpdateEventResolver eventResolver;
+
+    public Dispatcher() {
+        this(new DefaultUpdateEventResolver());
+    }
+
+    public Dispatcher(UpdateEventResolver eventResolver) {
+        this.eventResolver = Objects.requireNonNull(eventResolver, "eventResolver");
+    }
 
     public Dispatcher includeRouter(Router router) {
         Router candidate = Objects.requireNonNull(router, "router");
@@ -104,29 +112,29 @@ public final class Dispatcher implements UpdateConsumer {
                     if (result.status() == HandlerExecutionStatus.FAILED) {
                         return handleFailure(router, update, result.errorOpt().orElseThrow());
                     }
-                    EventObserver<?> observer = observerForUpdate(router, update.type());
-                    if (observer == null) {
-                        return CompletableFuture.completedFuture(DispatchResult.ignored());
-                    }
-                    if (observer.type() == ObserverType.MESSAGE && update.message() == null) {
-                        return CompletableFuture.completedFuture(DispatchResult.ignored());
-                    }
-                    if (observer.type() == ObserverType.CALLBACK && update.callback() == null) {
-                        return CompletableFuture.completedFuture(DispatchResult.ignored());
-                    }
-                    return notifyTypedObserver(observer, update, router);
+                    UpdateEventResolution resolution = eventResolver.resolve(update);
+                    return notifyResolvedObserver(router, update, resolution);
                 });
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private CompletionStage<DispatchResult> notifyTypedObserver(EventObserver observer, Update update, Router router) {
+    private CompletionStage<DispatchResult> notifyResolvedObserver(
+            Router router,
+            Update update,
+            UpdateEventResolution resolution
+    ) {
         CompletionStage<HandlerExecutionResult> stage;
-        if (observer.type() == ObserverType.MESSAGE) {
-            stage = observer.notify(update.message());
-        } else if (observer.type() == ObserverType.CALLBACK) {
-            stage = observer.notify(update.callback());
+        if (resolution.eventType() == ResolvedUpdateEventType.MESSAGE) {
+            if (update.message() == null) {
+                return CompletableFuture.completedFuture(DispatchResult.ignored());
+            }
+            stage = router.messages().notify(update.message());
+        } else if (resolution.eventType() == ResolvedUpdateEventType.CALLBACK) {
+            if (update.callback() == null) {
+                return CompletableFuture.completedFuture(DispatchResult.ignored());
+            }
+            stage = router.callbacks().notify(update.callback());
         } else {
-            stage = observer.notify(update);
+            return CompletableFuture.completedFuture(DispatchResult.ignored());
         }
 
         return stage.thenCompose(result -> {
@@ -138,16 +146,6 @@ public final class Dispatcher implements UpdateConsumer {
             }
             return CompletableFuture.completedFuture(DispatchResult.ignored());
         });
-    }
-
-    private static EventObserver<?> observerForUpdate(Router router, UpdateType type) {
-        if (type == UpdateType.MESSAGE) {
-            return router.messages();
-        }
-        if (type == UpdateType.CALLBACK) {
-            return router.callbacks();
-        }
-        return null;
     }
 
     private CompletionStage<DispatchResult> handleFailure(Router router, Update update, Throwable error) {
