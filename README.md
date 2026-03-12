@@ -15,6 +15,7 @@ Sprint 1 (`client/DTO/errors`) завершён.
 - `max-client-core` foundation слой (transport, auth, serialization, errors, retry/rate-limit hooks, pagination);
 - `max-model` с базовыми DTO, typed value objects и enum-контрактами;
 - ingestion target contract в `max-dispatcher`: `UpdateSink` (async) + `UpdateHandlingResult` для unified polling/webhook flow;
+- polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
 - domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
 - тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
 
@@ -122,6 +123,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media pipeline ещё не реализован;
 - long-polling/webhook transport реализации как runtime-компоненты пока не завершены (зафиксирован контракт слоя ingestion);
+- long polling loop (`LongPollingRunner`) пока не реализован: есть только single-pull polling source;
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
 
 ## Build and test

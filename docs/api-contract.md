@@ -29,7 +29,7 @@
 ### Core сущности
 
 - `UpdateSource` — lifecycle-контракт источника update (`start`/`stop`).
-- `PollingUpdateSource` — источник update через long polling.
+- `PollingUpdateSource` — pull-based источник update через long polling (`poll` -> `PollingBatch`).
 - `WebhookUpdateSource` — источник update через webhook ingress.
 - `UpdateSink` (`UpdateConsumer`) — единая async-точка приёма normalized `Update`
   с `UpdateHandlingResult` (`SUCCESS`/`FAILURE`).

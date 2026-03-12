@@ -1,0 +1,80 @@
+package ru.max.botframework.ingestion;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.Instant;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import ru.max.botframework.client.MaxBotClient;
+import ru.max.botframework.client.error.MaxApiException;
+import ru.max.botframework.model.Update;
+import ru.max.botframework.model.UpdateEventType;
+import ru.max.botframework.model.UpdateId;
+import ru.max.botframework.model.UpdateType;
+import ru.max.botframework.model.request.GetUpdatesRequest;
+import ru.max.botframework.model.response.GetUpdatesResponse;
+
+class SdkPollingUpdateSourceTest {
+
+    @Test
+    void pollReturnsEmptyBatchWhenApiReturnsNoUpdates() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        SdkPollingUpdateSource source = new SdkPollingUpdateSource(client);
+        PollingFetchRequest request = new PollingFetchRequest(100L, 30, 50, List.of(UpdateEventType.MESSAGE_CREATED));
+        when(client.getUpdates(new GetUpdatesRequest(100L, 30, 50, List.of(UpdateEventType.MESSAGE_CREATED))))
+                .thenReturn(new GetUpdatesResponse(List.of(), 101L));
+
+        PollingBatch batch = source.poll(request);
+
+        assertEquals(0, batch.updates().size());
+        assertEquals(101L, batch.nextMarker());
+        verify(client).getUpdates(new GetUpdatesRequest(100L, 30, 50, List.of(UpdateEventType.MESSAGE_CREATED)));
+    }
+
+    @Test
+    void pollReturnsUpdatesBatch() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        SdkPollingUpdateSource source = new SdkPollingUpdateSource(client);
+        PollingFetchRequest request = new PollingFetchRequest(10L, 10, 100, List.of(UpdateEventType.MESSAGE_CALLBACK));
+        Update update = sampleUpdate("upd-1");
+        when(client.getUpdates(new GetUpdatesRequest(10L, 10, 100, List.of(UpdateEventType.MESSAGE_CALLBACK))))
+                .thenReturn(new GetUpdatesResponse(List.of(update), 11L));
+
+        PollingBatch batch = source.poll(request);
+
+        assertEquals(1, batch.updates().size());
+        assertSame(update, batch.updates().getFirst());
+        assertEquals(11L, batch.nextMarker());
+        verify(client).getUpdates(new GetUpdatesRequest(10L, 10, 100, List.of(UpdateEventType.MESSAGE_CALLBACK)));
+    }
+
+    @Test
+    void pollPropagatesSdkErrors() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        SdkPollingUpdateSource source = new SdkPollingUpdateSource(client);
+        PollingFetchRequest request = PollingFetchRequest.defaults();
+        MaxApiException expected = new MaxApiException(503, "temporary unavailable");
+        when(client.getUpdates(new GetUpdatesRequest(null, null, null, List.of())))
+                .thenThrow(expected);
+
+        MaxApiException actual = assertThrows(MaxApiException.class, () -> source.poll(request));
+
+        assertSame(expected, actual);
+    }
+
+    private static Update sampleUpdate(String updateId) {
+        return new Update(
+                new UpdateId(updateId),
+                UpdateType.MESSAGE,
+                null,
+                null,
+                null,
+                Instant.parse("2026-01-01T00:00:00Z")
+        );
+    }
+}

@@ -34,10 +34,16 @@
 
 Назначение:
 - источник `Update`, читающий события через MAX long polling (`getUpdates`);
-- инкапсулирует transport-level polling детали (marker, timeout, limit, backoff).
+- инкапсулирует transport-level polling параметры (`marker`, `timeout`, `limit`, `types`);
+- выполняет один pull-вызов и возвращает batch normalized update.
 
 Граница:
+- не содержит lifecycle loop (это ответственность `LongPollingRunner`);
 - не содержит dispatcher/runtime orchestration.
+
+Контракт (минимальный):
+- `PollingBatch poll(PollingFetchRequest request)`.
+- `PollingBatch` содержит `updates` и `nextMarker` для следующего polling шага.
 
 ### `WebhookUpdateSource`
 
@@ -101,7 +107,7 @@
 ## Update lifecycle (ingestion layer)
 
 1. Получение update:
-- polling: получение batch через `getUpdates`;
+- polling: `PollingUpdateSource.poll(...)` вызывает SDK `getUpdates` и возвращает `PollingBatch`;
 - webhook: получение raw payload из HTTP ingress.
 
 2. Нормализация:
