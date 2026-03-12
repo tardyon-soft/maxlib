@@ -105,6 +105,28 @@ class DispatcherIngestionIntegrationTest {
     }
 
     @Test
+    void webhookReceiverReturnsInternalErrorWhenDispatcherHandlerFails() {
+        Router router = new Router("main")
+                .message(message -> java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("handler failure")));
+        Dispatcher dispatcher = new Dispatcher().includeRouter(router);
+
+        DefaultWebhookReceiver receiver = new DefaultWebhookReceiver(
+                new DefaultWebhookSecretValidator("secret-1"),
+                new JacksonJsonCodec(),
+                dispatcher
+        );
+
+        WebhookReceiveResult result = receiver.receive(new WebhookRequest(
+                        IngestionFixtures.raw("webhook-valid-payload.json").getBytes(StandardCharsets.UTF_8),
+                        Map.of(DefaultWebhookSecretValidator.SECRET_HEADER_NAME, List.of("secret-1"))
+                ))
+                .toCompletableFuture()
+                .join();
+
+        assertEquals(WebhookReceiveStatus.INTERNAL_ERROR, result.status());
+    }
+
+    @Test
     void dispatcherAsUpdateSinkAdapterWorksForLegacySinkPath() {
         Router router = new Router("main")
                 .message(message -> java.util.concurrent.CompletableFuture.completedFuture(null));
@@ -130,4 +152,3 @@ class DispatcherIngestionIntegrationTest {
         }
     }
 }
-

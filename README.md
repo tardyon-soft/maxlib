@@ -309,6 +309,11 @@ Dispatcher <-> ingestion integration:
 - `DefaultWebhookReceiver(secretValidator, jsonCodec, dispatcher)`
 - для backward-compatible ingestion API доступен адаптер `dispatcher.asUpdateSink()`.
 
+Sprint 3 runtime test coverage:
+- unit: observer registration, router composition, dispatch results, event mapping, first-match semantics, error observer/error boundary;
+- integration-style: router tree dispatch propagation и ingestion linkage (`polling -> runner -> dispatcher`, `webhook -> receiver -> dispatcher`);
+- reused fixtures: `max-dispatcher/src/test/resources/fixtures/ingestion`.
+
 ## Low-level Webhook Handling Example
 
 ```java
