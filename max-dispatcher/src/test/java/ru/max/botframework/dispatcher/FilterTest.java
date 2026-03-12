@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class FilterTest {
@@ -111,5 +112,37 @@ class FilterTest {
         FilterResult result = left.and(right).test("x").toCompletableFuture().join();
 
         assertEquals(FilterStatus.NOT_MATCHED, result.status());
+    }
+
+    @Test
+    void andCompositionShortCircuitsRightWhenLeftFailed() {
+        AtomicInteger rightCalls = new AtomicInteger();
+        IllegalStateException failure = new IllegalStateException("left failed");
+        Filter<String> left = event -> java.util.concurrent.CompletableFuture.completedFuture(FilterResult.failed(failure));
+        Filter<String> right = event -> {
+            rightCalls.incrementAndGet();
+            return java.util.concurrent.CompletableFuture.completedFuture(FilterResult.matched());
+        };
+
+        FilterResult result = left.and(right).test("x").toCompletableFuture().join();
+
+        assertEquals(FilterStatus.FAILED, result.status());
+        assertSame(failure, result.errorOpt().orElseThrow());
+        assertEquals(0, rightCalls.get());
+    }
+
+    @Test
+    void orCompositionShortCircuitsRightWhenLeftMatched() {
+        AtomicInteger rightCalls = new AtomicInteger();
+        Filter<String> left = event -> java.util.concurrent.CompletableFuture.completedFuture(FilterResult.matched());
+        Filter<String> right = event -> {
+            rightCalls.incrementAndGet();
+            return java.util.concurrent.CompletableFuture.completedFuture(FilterResult.notMatched());
+        };
+
+        FilterResult result = left.or(right).test("x").toCompletableFuture().join();
+
+        assertEquals(FilterStatus.MATCHED, result.status());
+        assertEquals(0, rightCalls.get());
     }
 }

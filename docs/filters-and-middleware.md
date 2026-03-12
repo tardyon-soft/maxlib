@@ -175,6 +175,13 @@ MVP contract:
 - Не смешивать filter/middleware API с transport abstractions.
 - Сохранить расширяемость к Sprint 5 (DI) без ломающего redesign публичных сигнатур.
 
+## Test coverage (Sprint 4.3.2)
+
+- unit tests: `Filter`, `FilterResult` composition rules, built-in filters, middleware chain contracts,
+  runtime context enrichment, runtime error behavior;
+- integration-style tests: `Dispatcher + Router + Filters`, `Dispatcher + Router + Middleware`,
+  combined pipeline order and enrichment visibility in router tree flow.
+
 ## Related docs
 
 - [runtime-contract.md](runtime-contract.md)

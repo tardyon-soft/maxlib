@@ -100,7 +100,9 @@ class DefaultEventObserverTest {
         HandlerExecutionResult result = observer.notify("event").toCompletableFuture().join();
 
         assertEquals(HandlerExecutionStatus.FAILED, result.status());
-        assertSame(failure, result.errorOpt().orElseThrow());
+        Throwable error = result.errorOpt().orElseThrow();
+        assertTrue(error instanceof FilterExecutionException);
+        assertSame(failure, error.getCause());
     }
 
     @Test

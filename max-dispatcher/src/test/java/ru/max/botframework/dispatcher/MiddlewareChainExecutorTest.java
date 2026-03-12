@@ -2,12 +2,15 @@ package ru.max.botframework.dispatcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import ru.max.botframework.model.Chat;
@@ -137,6 +140,48 @@ class MiddlewareChainExecutorTest {
         assertEquals(DispatchStatus.IGNORED, result.status());
         assertFalse(secondCalled.get());
         assertFalse(terminalCalled.get());
+    }
+
+    @Test
+    void outerMiddlewareFailureIsWrappedWithOuterPhase() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        RuntimeException failure = new RuntimeException("outer failed");
+        OuterMiddleware failing = (ctx, next) -> CompletableFuture.failedFuture(failure);
+
+        CompletionException thrown = assertThrows(
+                CompletionException.class,
+                () -> MiddlewareChainExecutor.executeOuter(
+                        context,
+                        List.of(failing),
+                        () -> CompletableFuture.completedFuture(DispatchResult.handled())
+                ).toCompletableFuture().join()
+        );
+
+        assertTrue(thrown.getCause() instanceof MiddlewareExecutionException);
+        MiddlewareExecutionException wrapped = (MiddlewareExecutionException) thrown.getCause();
+        assertEquals(MiddlewareExecutionException.Phase.OUTER, wrapped.phase());
+        assertSame(failure, wrapped.rootCause());
+    }
+
+    @Test
+    void innerMiddlewareFailureIsWrappedWithInnerPhase() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        RuntimeException failure = new RuntimeException("inner failed");
+        InnerMiddleware failing = (ctx, next) -> CompletableFuture.failedFuture(failure);
+
+        CompletionException thrown = assertThrows(
+                CompletionException.class,
+                () -> MiddlewareChainExecutor.executeInner(
+                        context,
+                        List.of(failing),
+                        () -> CompletableFuture.completedFuture(DispatchResult.handled())
+                ).toCompletableFuture().join()
+        );
+
+        assertTrue(thrown.getCause() instanceof MiddlewareExecutionException);
+        MiddlewareExecutionException wrapped = (MiddlewareExecutionException) thrown.getCause();
+        assertEquals(MiddlewareExecutionException.Phase.INNER, wrapped.phase());
+        assertSame(failure, wrapped.rootCause());
     }
 
     private static Update sampleUpdate() {
