@@ -66,6 +66,10 @@ Java framework для разработки ботов на платформе MA
 - MAX objects: [dev.max.ru/docs-api/objects](https://dev.max.ru/docs-api/objects)
 - aiogram 3 reference (DX patterns): [docs.aiogram.dev](https://docs.aiogram.dev/)
 
+## Documentation
+
+- Product API specification: [docs/product-spec.md](docs/product-spec.md)
+
 ## Current status
 
 Статус: `bootstrap`.
