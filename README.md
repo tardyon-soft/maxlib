@@ -97,6 +97,7 @@ Java framework для разработки ботов на платформе MA
 - базовые межмодульные зависимости;
 - первичные скелеты контрактов;
 - `max-client-core` foundation layer: `MaxBotClient`, `MaxHttpClient`, `MaxRequest<T>`, `MaxApiClientConfig`;
+- базовый HTTP transport layer в `max-client-core` (GET/POST/PUT/PATCH/DELETE + JSON request/response pipeline), отделённый от domain-level `MaxBotClient`/`MaxRequest<T>` API;
 - Gradle Wrapper и базовая тестовая конфигурация.
 
 ## Module plan (current)
