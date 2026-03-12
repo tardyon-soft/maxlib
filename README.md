@@ -303,6 +303,12 @@ Runtime error boundary:
 - даже при успешном `error` handler итог dispatch остаётся `FAILED`;
 - если `error` handler сам падает, его ошибка добавляется в `suppressed` исходной runtime ошибки.
 
+Dispatcher <-> ingestion integration:
+- `Dispatcher` реализует `UpdateConsumer` и может быть передан напрямую в:
+- `DefaultLongPollingRunner(source, dispatcher, config)`
+- `DefaultWebhookReceiver(secretValidator, jsonCodec, dispatcher)`
+- для backward-compatible ingestion API доступен адаптер `dispatcher.asUpdateSink()`.
+
 ## Low-level Webhook Handling Example
 
 ```java

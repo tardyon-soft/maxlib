@@ -167,3 +167,4 @@ Boundary с ingestion:
 - ingestion-level transport ошибки (polling/webhook parse/IO/secret validation) остаются в ingestion layer;
 - runtime dispatch ошибки (routing/handler/event resolution) остаются в dispatcher layer;
 - `Dispatcher` адаптируется к ingestion через `UpdateConsumer.handle(Update)` без смешивания transport-ошибок и runtime-ошибок.
+- для backward-compatible ingestion paths доступен adapter `Dispatcher.asUpdateSink()`.

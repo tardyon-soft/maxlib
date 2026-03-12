@@ -9,6 +9,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import ru.max.botframework.ingestion.UpdateConsumer;
 import ru.max.botframework.ingestion.UpdateHandlingResult;
+import ru.max.botframework.ingestion.UpdateSink;
 import ru.max.botframework.model.Update;
 
 /**
@@ -48,6 +49,14 @@ public final class Dispatcher implements UpdateConsumer {
 
     public List<Router> routers() {
         return Collections.unmodifiableList(rootRouters);
+    }
+
+    /**
+     * Backward-compatible ingestion adapter for APIs that still require {@link UpdateSink}.
+     */
+    @Deprecated(forRemoval = false)
+    public UpdateSink asUpdateSink() {
+        return this::handle;
     }
 
     /**
