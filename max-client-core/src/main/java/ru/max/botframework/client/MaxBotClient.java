@@ -9,6 +9,7 @@ import ru.max.botframework.client.method.EditMessageMethodRequest;
 import ru.max.botframework.client.method.GetMeRequest;
 import ru.max.botframework.client.method.GetMessageMethodRequest;
 import ru.max.botframework.client.method.GetMessagesMethodRequest;
+import ru.max.botframework.client.method.GetUpdatesMethodRequest;
 import ru.max.botframework.client.method.SendMessageMethodRequest;
 import ru.max.botframework.model.BotInfo;
 import ru.max.botframework.model.ChatId;
@@ -16,7 +17,9 @@ import ru.max.botframework.model.Message;
 import ru.max.botframework.model.MessageId;
 import ru.max.botframework.model.request.AnswerCallbackRequest;
 import ru.max.botframework.model.request.EditMessageRequest;
+import ru.max.botframework.model.request.GetUpdatesRequest;
 import ru.max.botframework.model.request.SendMessageRequest;
+import ru.max.botframework.model.response.GetUpdatesResponse;
 
 /**
  * High-level entry point for executing typed MAX API requests.
@@ -79,6 +82,14 @@ public interface MaxBotClient {
 
     default CompletionStage<Boolean> answerCallbackAsync(AnswerCallbackRequest request) {
         return executeAsync(new AnswerCallbackMethodRequest(request)).thenApply(response -> response.success());
+    }
+
+    default GetUpdatesResponse getUpdates(GetUpdatesRequest request) {
+        return execute(new GetUpdatesMethodRequest(request));
+    }
+
+    default CompletionStage<GetUpdatesResponse> getUpdatesAsync(GetUpdatesRequest request) {
+        return executeAsync(new GetUpdatesMethodRequest(request));
     }
 
     default <T> CompletionStage<T> executeAsync(MaxRequest<T> request) {

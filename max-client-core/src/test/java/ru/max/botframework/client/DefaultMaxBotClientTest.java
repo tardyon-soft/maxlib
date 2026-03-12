@@ -34,8 +34,11 @@ import ru.max.botframework.model.TextFormat;
 import ru.max.botframework.model.CallbackId;
 import ru.max.botframework.model.request.AnswerCallbackRequest;
 import ru.max.botframework.model.request.EditMessageRequest;
+import ru.max.botframework.model.request.GetUpdatesRequest;
 import ru.max.botframework.model.request.NewMessageBody;
 import ru.max.botframework.model.request.SendMessageRequest;
+import ru.max.botframework.model.response.GetUpdatesResponse;
+import ru.max.botframework.model.UpdateEventType;
 
 class DefaultMaxBotClientTest {
 
@@ -314,6 +317,50 @@ class DefaultMaxBotClientTest {
         assertThat(body).contains("\"callbackId\":\"cb-1\"");
         assertThat(body).contains("\"text\":\"OK\"");
         assertThat(success).isTrue();
+    }
+
+    @Test
+    void shouldGetUpdatesViaDomainMethodWithPollingParams() {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("""
+                        {
+                          "updates": [
+                            {
+                              "updateId": "upd-1",
+                              "type": "message",
+                              "message": {
+                                "messageId": "m-1",
+                                "chat": {"id": "c-100", "type": "group", "title": "Team"},
+                                "from": {"id": "u-1", "username": "alice", "displayName": "Alice", "bot": false},
+                                "text": "hello",
+                                "createdAt": "2026-01-01T00:00:00Z",
+                                "entities": [],
+                                "attachments": []
+                              }
+                            }
+                          ],
+                          "marker": 101
+                        }
+                        """));
+
+        GetUpdatesResponse response = client.getUpdates(new GetUpdatesRequest(
+                100L,
+                30,
+                50,
+                List.of(UpdateEventType.MESSAGE_CREATED, UpdateEventType.MESSAGE_CALLBACK)
+        ));
+
+        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        assertThat(recorded.getMethod()).isEqualTo("GET");
+        assertThat(recorded.getPath()).contains("/updates?");
+        assertThat(recorded.getPath()).contains("marker=100");
+        assertThat(recorded.getPath()).contains("timeout=30");
+        assertThat(recorded.getPath()).contains("limit=50");
+        assertThat(recorded.getPath()).contains("types=message_created%2Cmessage_callback");
+        assertThat(response.marker()).isEqualTo(101L);
+        assertThat(response.updates()).hasSize(1);
+        assertThat(response.updates().getFirst().updateId().value()).isEqualTo("upd-1");
     }
 
     @Test

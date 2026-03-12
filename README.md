@@ -108,6 +108,7 @@ Java framework для разработки ботов на платформе MA
 - первый domain-level метод в `max-client-core`: `getMe()` (`GET /me`) поверх существующих transport/auth/serialization/error abstractions с типизированным `BotInfo` результатом;
 - foundation для message operations в `max-client-core`: `sendMessage`, `editMessage`, `deleteMessage`, `getMessage`, `getMessages` как typed domain-level методы поверх существующих DTO/transport abstractions;
 - поддержка callback answer в `max-client-core`: `answerCallback()` (`POST /answers`) с typed request/response API;
+- foundation для polling transport в `max-client-core`: `getUpdates()` (`GET /updates`) с typed request (`marker`, `timeout`, `limit`, `types`) и typed response (`updates`, `marker`);
 - базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
 - request DTO для message/callback API в `max-model`: `NewMessageBody`, `SendMessageRequest`, `EditMessageRequest`, `AnswerCallbackRequest`, минимальные attachment-related структуры;
 - typed value objects в `max-model` для id/reference-полей (`UserId`, `ChatId`, `MessageId`, `UpdateId`, `CallbackId`, `FileId`) вместо магических `String` в core DTO/request моделях;
@@ -178,6 +179,20 @@ boolean answered = botClient.answerCallback(new AnswerCallbackRequest(
     false,
     3
 ));
+```
+
+## getUpdates Example (Polling Foundation)
+
+```java
+GetUpdatesResponse updates = botClient.getUpdates(new GetUpdatesRequest(
+    100L,
+    30,
+    100,
+    List.of(UpdateEventType.MESSAGE_CREATED, UpdateEventType.MESSAGE_CALLBACK)
+));
+
+Long nextMarker = updates.marker();
+List<Update> batch = updates.updates();
 ```
 
 ## Build
