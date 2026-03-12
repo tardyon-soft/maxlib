@@ -262,6 +262,11 @@ Router router = new Router("main")
         error.error().printStackTrace();
         return CompletableFuture.completedFuture(null);
     });
+
+Router admin = new Router("admin")
+    .message(message -> CompletableFuture.completedFuture(null));
+
+router.includeRouter(admin);
 ```
 
 ## Low-level Webhook Handling Example

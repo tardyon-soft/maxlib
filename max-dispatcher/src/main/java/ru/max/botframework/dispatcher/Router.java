@@ -1,6 +1,10 @@
 package ru.max.botframework.dispatcher;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import ru.max.botframework.model.Callback;
 import ru.max.botframework.model.Message;
 import ru.max.botframework.model.Update;
@@ -14,6 +18,8 @@ public final class Router {
     private final EventObserver<Message> messages;
     private final EventObserver<Callback> callbacks;
     private final EventObserver<ErrorEvent> errors;
+    private final ArrayList<Router> children;
+    private Router parent;
 
     public Router(String name) {
         this.name = Objects.requireNonNull(name, "name");
@@ -21,6 +27,7 @@ public final class Router {
         this.messages = new DefaultEventObserver<>(ObserverType.MESSAGE);
         this.callbacks = new DefaultEventObserver<>(ObserverType.CALLBACK);
         this.errors = new DefaultEventObserver<>(ObserverType.ERROR);
+        this.children = new ArrayList<>();
     }
 
     public String name() {
@@ -61,5 +68,56 @@ public final class Router {
     public Router error(EventHandler<ErrorEvent> handler) {
         errors.register(Objects.requireNonNull(handler, "handler"));
         return this;
+    }
+
+    public Router includeRouter(Router child) {
+        Router router = Objects.requireNonNull(child, "child");
+        if (router == this) {
+            throw new IllegalArgumentException("router cannot include itself");
+        }
+        if (isAncestorOf(router)) {
+            throw new IllegalArgumentException("router inclusion would create a cycle");
+        }
+        if (router.parent != null) {
+            throw new IllegalStateException("router is already included in another parent");
+        }
+        children.add(router);
+        router.parent = this;
+        return this;
+    }
+
+    public Optional<Router> parent() {
+        return Optional.ofNullable(parent);
+    }
+
+    public List<Router> children() {
+        return Collections.unmodifiableList(children);
+    }
+
+    /**
+     * Returns depth-first pre-order traversal of this router subtree.
+     */
+    public List<Router> traversalOrder() {
+        ArrayList<Router> order = new ArrayList<>();
+        collectPreOrder(this, order);
+        return List.copyOf(order);
+    }
+
+    private static void collectPreOrder(Router root, ArrayList<Router> order) {
+        order.add(root);
+        for (Router child : root.children) {
+            collectPreOrder(child, order);
+        }
+    }
+
+    private boolean isAncestorOf(Router candidateAncestor) {
+        Router current = this;
+        while (current != null) {
+            if (current == candidateAncestor) {
+                return true;
+            }
+            current = current.parent;
+        }
+        return false;
     }
 }
