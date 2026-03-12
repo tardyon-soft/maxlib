@@ -114,6 +114,8 @@ router.callback(F.callback().data().startsWith("order:"), ctx ->
 
 Детальная модель `includeRouter`, observer-ов и resolution порядка зафиксирована в ADR:
 - [adr/0001-router-model.md](adr/0001-router-model.md)
+Детальный callback contract (event model, handler API, answer abstraction, lifecycle):
+- [callback-contract.md](callback-contract.md)
 
 ## Filter<TContext>
 

@@ -74,6 +74,7 @@ Java framework для разработки ботов на платформе MA
 - Middleware contract specification: [docs/middleware-contract.md](docs/middleware-contract.md)
 - Dependency injection model: [docs/di-model.md](docs/di-model.md)
 - Message API contract: [docs/message-api-contract.md](docs/message-api-contract.md)
+- Callback contract: [docs/callback-contract.md](docs/callback-contract.md)
 - Event model specification: [docs/event-model.md](docs/event-model.md)
 - Router model ADR: [docs/adr/0001-router-model.md](docs/adr/0001-router-model.md)
 
