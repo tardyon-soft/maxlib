@@ -11,6 +11,8 @@ import ru.max.botframework.client.auth.AuthorizationHeaderInterceptor;
 import ru.max.botframework.client.error.DefaultMaxApiErrorDecoder;
 import ru.max.botframework.client.error.MaxApiException;
 import ru.max.botframework.client.error.MaxApiErrorDecoder;
+import ru.max.botframework.client.error.MaxClientException;
+import ru.max.botframework.client.error.MaxTransportException;
 import ru.max.botframework.client.http.MaxHttpClient;
 import ru.max.botframework.client.http.MaxHttpRequest;
 import ru.max.botframework.client.http.MaxHttpRequestInterceptor;
@@ -68,7 +70,7 @@ public final class DefaultMaxBotClient implements MaxBotClient {
     public <T> T execute(MaxRequest<T> request) {
         MaxHttpRequest httpRequest = mapRequest(request);
         MaxHttpRequest authorizedRequest = authInterceptor.intercept(httpRequest);
-        MaxHttpResponse response = transport.execute(authorizedRequest);
+        MaxHttpResponse response = executeWithRetry(authorizedRequest);
 
         if (response.statusCode() >= 400) {
             throw errorDecoder.decode(authorizedRequest, response);
@@ -84,6 +86,27 @@ public final class DefaultMaxBotClient implements MaxBotClient {
 
         String body = new String(response.body(), StandardCharsets.UTF_8);
         return jsonCodec.read(body, request.responseType());
+    }
+
+    private MaxHttpResponse executeWithRetry(MaxHttpRequest request) {
+        int attempt = 1;
+        while (true) {
+            try {
+                MaxHttpResponse response = transport.execute(request);
+                if (response.statusCode() >= 400 && config.retryPolicy().shouldRetry(request, response, attempt)) {
+                    sleepBeforeNextAttempt(attempt);
+                    attempt++;
+                    continue;
+                }
+                return response;
+            } catch (MaxTransportException transportException) {
+                if (!config.retryPolicy().shouldRetry(request, transportException, attempt)) {
+                    throw transportException;
+                }
+                sleepBeforeNextAttempt(attempt);
+                attempt++;
+            }
+        }
     }
 
     @Override
@@ -137,5 +160,18 @@ public final class DefaultMaxBotClient implements MaxBotClient {
 
     private static String encode(String value) {
         return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private void sleepBeforeNextAttempt(int attempt) {
+        long delayMillis = config.retryPolicy().delayBeforeAttempt(attempt).toMillis();
+        if (delayMillis <= 0) {
+            return;
+        }
+        try {
+            Thread.sleep(delayMillis);
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            throw new MaxClientException("Retry interrupted", interruptedException);
+        }
     }
 }

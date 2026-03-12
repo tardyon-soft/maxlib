@@ -97,12 +97,13 @@ Java framework для разработки ботов на платформе MA
 - базовые межмодульные зависимости;
 - первичные скелеты контрактов;
 - `max-client-core` foundation layer: `MaxBotClient`, `MaxHttpClient`, `MaxRequest<T>`, `MaxApiClientConfig`;
-- builder-style конфигурация client SDK: `baseUrl`, `token`, `timeouts`, `user-agent`, `retry policy` (placeholder);
+- builder-style конфигурация client SDK: `baseUrl`, `token`, `timeouts`, `user-agent`, `retry policy`;
 - базовый HTTP transport layer в `max-client-core` (GET/POST/PUT/PATCH/DELETE + JSON request/response pipeline), отделённый от domain-level `MaxBotClient`/`MaxRequest<T>` API;
 - auth layer в `max-client-core`: автоматический `Authorization` header через отдельный interceptor component;
 - централизованный JSON serialization layer в `max-client-core`: единый shared mapper и единые правила (non-null serialization, ISO dates, ignore unknown fields);
 - error model в `max-client-core`: иерархия `MaxApiException` + специализированные исключения (400/401/404/429/503 и generic 4xx/5xx) через единый `MaxApiErrorDecoder`, включая structured payload (`status`, `errorCode`, `message`, `details`, `rawBody`);
 - reusable pagination foundation в `max-client-core` для marker-based MAX API: `Page<T>`, `MarkerPage<T>`, `MarkerPageRequest`, `PaginationHelper` (query params + safe page traversal helpers);
+- базовый retry hook в transport pipeline (`RetryPolicy`): по умолчанию без retry (`maxAttempts=1`), при включении — консервативный retry для безопасных `GET` на временных сбоях (`429`/`503`) и transport errors;
 - базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
 - request DTO для message/callback API в `max-model`: `NewMessageBody`, `SendMessageRequest`, `EditMessageRequest`, `AnswerCallbackRequest`, минимальные attachment-related структуры;
 - typed value objects в `max-model` для id/reference-полей (`UserId`, `ChatId`, `MessageId`, `UpdateId`, `CallbackId`, `FileId`) вместо магических `String` в core DTO/request моделях;
@@ -129,7 +130,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
     .connectTimeout(Duration.ofSeconds(5))
     .readTimeout(Duration.ofSeconds(30))
     .userAgent("my-max-bot/1.0")
-    .retryPolicy(RetryPolicy.none()) // placeholder for future retry behavior
+    .retryPolicy(RetryPolicy.fixed(2, Duration.ofMillis(200)))
     .build();
 ```
 

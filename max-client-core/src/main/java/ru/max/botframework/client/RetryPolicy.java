@@ -2,18 +2,42 @@ package ru.max.botframework.client;
 
 import java.time.Duration;
 import java.util.Objects;
+import ru.max.botframework.client.http.HttpMethod;
+import ru.max.botframework.client.http.MaxHttpRequest;
+import ru.max.botframework.client.http.MaxHttpResponse;
 
 /**
- * Placeholder contract for transport retry policy.
- *
- * <p>Current foundation layer stores this configuration only;
- * retry behavior will be implemented in a subsequent iteration.</p>
+ * Lightweight retry policy for transport-level retries.
  */
 public interface RetryPolicy {
 
     int maxAttempts();
 
     Duration delay();
+
+    default Duration delayBeforeAttempt(int attempt) {
+        return delay();
+    }
+
+    default boolean shouldRetry(MaxHttpRequest request, MaxHttpResponse response, int attempt) {
+        Objects.requireNonNull(request, "request");
+        Objects.requireNonNull(response, "response");
+        return isMethodRetryable(request.method()) && isRetryableStatus(response.statusCode()) && attempt < maxAttempts();
+    }
+
+    default boolean shouldRetry(MaxHttpRequest request, RuntimeException error, int attempt) {
+        Objects.requireNonNull(request, "request");
+        Objects.requireNonNull(error, "error");
+        return isMethodRetryable(request.method()) && attempt < maxAttempts();
+    }
+
+    default boolean isMethodRetryable(HttpMethod method) {
+        return method == HttpMethod.GET;
+    }
+
+    default boolean isRetryableStatus(int statusCode) {
+        return statusCode == 429 || statusCode == 503;
+    }
 
     static RetryPolicy none() {
         return fixed(1, Duration.ZERO);
