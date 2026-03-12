@@ -381,6 +381,54 @@ class DispatcherTest {
     }
 
     @Test
+    void reflectiveHandlerResolvesFilterDerivedParameter() throws Exception {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        ReflectiveDerivedProbe probe = new ReflectiveDerivedProbe();
+        Method method = ReflectiveDerivedProbe.class.getDeclaredMethod(
+                "onPayment",
+                Message.class,
+                String.class
+        );
+        router.message(
+                BuiltInFilters.textStartsWith("pay:"),
+                ReflectiveEventHandler.of(probe, method, DefaultHandlerInvoker.withDefaults())
+        );
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("pay:777")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals("777", probe.lastDerived.get());
+    }
+
+    @Test
+    void reflectiveHandlerUsesFilterDataBeforeMiddlewareDataForSameType() throws Exception {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        ReflectiveDerivedProbe probe = new ReflectiveDerivedProbe();
+        Method method = ReflectiveDerivedProbe.class.getDeclaredMethod(
+                "onPayment",
+                Message.class,
+                String.class
+        );
+        dispatcher.outerMiddleware((ctx, next) -> {
+            ctx.putEnrichment("trace", "middleware-string");
+            return next.proceed();
+        });
+        router.message(
+                BuiltInFilters.textStartsWith("pay:"),
+                ReflectiveEventHandler.of(probe, method, DefaultHandlerInvoker.withDefaults())
+        );
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("pay:888")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals("888", probe.lastDerived.get());
+    }
+
+    @Test
     void middlewareAndFilterEnrichmentAreMergedAndVisibleDownstream() {
         Dispatcher dispatcher = new Dispatcher();
         Router router = new Router("main");
@@ -794,6 +842,14 @@ class DispatcherTest {
         public void onMessage(Message message, RuntimeContext context) {
             lastText.set(message.text());
             context.putEnrichment("reflective", "ok");
+        }
+    }
+
+    private static final class ReflectiveDerivedProbe {
+        private final java.util.concurrent.atomic.AtomicReference<String> lastDerived = new java.util.concurrent.atomic.AtomicReference<>();
+
+        public void onPayment(Message message, String derivedValue) {
+            lastDerived.set(derivedValue);
         }
     }
 }

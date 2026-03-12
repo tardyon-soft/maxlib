@@ -87,10 +87,14 @@ MVP built-ins:
 - `UserParameterResolver`;
 - `ChatParameterResolver`;
 - `EventParameterResolver`;
+- `FilterDataParameterResolver`;
+- `MiddlewareDataParameterResolver`.
 
 Примечание текущего этапа:
 - `ApplicationDataParameterResolver` существует как инфраструктурный extension point,
   но не включён в default resolver chain Sprint 5.2.1.
+- Приоритет enrichment-derived parameters в default chain:
+  `filter data` -> `middleware data`.
 
 ### `ResolverRegistry`
 

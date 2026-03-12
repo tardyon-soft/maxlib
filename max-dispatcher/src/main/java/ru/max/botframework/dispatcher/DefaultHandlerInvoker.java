@@ -30,6 +30,8 @@ public final class DefaultHandlerInvoker implements HandlerInvoker {
                 .register(new UserParameterResolver())
                 .register(new ChatParameterResolver())
                 .register(new EventParameterResolver())
+                .register(new FilterDataParameterResolver())
+                .register(new MiddlewareDataParameterResolver())
         );
     }
 

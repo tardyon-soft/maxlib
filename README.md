@@ -29,7 +29,8 @@ Java framework для разработки ботов на платформе MA
 - добавлен typed runtime data container foundation: `RuntimeDataContainer` + `RuntimeDataKey<T>` + `RuntimeDataScope`;
 - добавлено ядро invocation engine Sprint 5:
   `HandlerInvoker` (`DefaultHandlerInvoker`), `HandlerParameterResolver`, `ResolverRegistry`,
-  базовые resolvers для `RuntimeContext`/`Update`/`Message`/`Callback`/`User`/`Chat`/event;
+  базовые resolvers для `RuntimeContext`/`Update`/`Message`/`Callback`/`User`/`Chat`/event
+  и enrichment-derived parameters (filter data, middleware data);
 - реализован базовый observer layer в `max-dispatcher`: `EventObserver`, `EventHandler`, `DefaultEventObserver`, MVP observer types (`update/message/callback/error`);
 - реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not`, filter-aware handler registration в `Router` и built-in filters MVP (`Command`, `TextEquals`, `TextStartsWith`, `ChatType`, `FromUser`, `HasAttachment`, `StateFilter` placeholder);
 - реализованы middleware contracts foundation: `OuterMiddleware`, `InnerMiddleware`, `MiddlewareNext`, `RuntimeContext`/`ContextKey` и chain executor с short-circuit support;
@@ -388,6 +389,9 @@ router.message((Message message, RuntimeContext ctx) -> {
 router.callback((Callback callback, User actor, Chat chat, RuntimeContext ctx) -> {
     return CompletableFuture.completedFuture(null);
 });
+
+// Reflective handler method can receive filter-derived String (e.g. text suffix from pay:123)
+// when resolver chain can unambiguously resolve by type.
 ```
 
 Event mapping strategy:

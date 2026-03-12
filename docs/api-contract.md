@@ -97,6 +97,7 @@ outer middleware -> filters -> inner middleware -> handler.
 - typed runtime data model: `RuntimeDataContainer` + `RuntimeDataKey<T>` + source scopes.
 - method-based adapter path: `ReflectiveEventHandler<TEvent>` + `DefaultHandlerInvoker`.
 - built-in resolver coverage: `Update`, `Message`, `Callback`, `User`, `Chat`, `RuntimeContext`.
+- enrichment-derived resolver coverage: filter data + middleware data (by unique type).
 
 ### Границы Sprint 5
 
