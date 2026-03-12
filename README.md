@@ -96,6 +96,7 @@ Java framework для разработки ботов на платформе MA
 - Java toolchain 21;
 - базовые межмодульные зависимости;
 - первичные скелеты контрактов;
+- `max-client-core` foundation layer: `MaxBotClient`, `MaxHttpClient`, `MaxRequest<T>`, `MaxApiClientConfig`;
 - Gradle Wrapper и базовая тестовая конфигурация.
 
 ## Module plan (current)
