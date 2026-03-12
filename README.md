@@ -242,6 +242,28 @@ runner.stop();
 - `LongPollingExample.java`
 - `WebhookHandlingExample.java`
 
+## Router Registration (Sprint 3 foundation)
+
+```java
+import java.util.concurrent.CompletableFuture;
+import ru.max.botframework.dispatcher.Router;
+
+Router router = new Router("main")
+    .update(update -> {
+        System.out.println("Any update: " + update.updateId().value());
+        return CompletableFuture.completedFuture(null);
+    })
+    .message(message -> {
+        System.out.println("Message text: " + message.text());
+        return CompletableFuture.completedFuture(null);
+    })
+    .callback(callback -> CompletableFuture.completedFuture(null))
+    .error(error -> {
+        error.error().printStackTrace();
+        return CompletableFuture.completedFuture(null);
+    });
+```
+
 ## Low-level Webhook Handling Example
 
 ```java

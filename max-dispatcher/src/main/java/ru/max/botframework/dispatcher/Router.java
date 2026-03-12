@@ -31,15 +31,35 @@ public final class Router {
         return updates;
     }
 
+    public Router update(EventHandler<Update> handler) {
+        updates.register(Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
     public EventObserver<Message> messages() {
         return messages;
+    }
+
+    public Router message(EventHandler<Message> handler) {
+        messages.register(Objects.requireNonNull(handler, "handler"));
+        return this;
     }
 
     public EventObserver<Callback> callbacks() {
         return callbacks;
     }
 
+    public Router callback(EventHandler<Callback> handler) {
+        callbacks.register(Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
     public EventObserver<ErrorEvent> errors() {
         return errors;
+    }
+
+    public Router error(EventHandler<ErrorEvent> handler) {
+        errors.register(Objects.requireNonNull(handler, "handler"));
+        return this;
     }
 }
