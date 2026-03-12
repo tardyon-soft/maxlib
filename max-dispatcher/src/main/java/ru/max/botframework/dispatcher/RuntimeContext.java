@@ -9,19 +9,20 @@ import ru.max.botframework.model.Update;
 /**
  * Request-scoped runtime context used by middleware and future DI/resolution layers.
  *
- * <p>Context has two namespaces:
- * typed attributes (`ContextKey`) and string-key enrichment map. Enrichment values are merged
- * from filters and middleware for one update lifecycle and never shared across updates.</p>
+ * <p>Context exposes:
+ * request attributes (`ContextKey`) and typed runtime data container (`RuntimeDataContainer`).
+ * Runtime data keeps framework/filter/middleware/application scopes isolated per update lifecycle.</p>
  */
 public final class RuntimeContext {
+    private static final String CONTEXT_KEY_PREFIX = "ctx.";
     private final Update update;
     private final Map<ContextKey<?>, Object> attributes;
-    private final Map<String, Object> enrichment;
+    private final RuntimeDataContainer data;
 
     public RuntimeContext(Update update) {
         this.update = Objects.requireNonNull(update, "update");
         this.attributes = new ConcurrentHashMap<>();
-        this.enrichment = new ConcurrentHashMap<>();
+        this.data = new RuntimeDataContainer();
     }
 
     public Update update() {
@@ -35,6 +36,7 @@ public final class RuntimeContext {
             throw new IllegalArgumentException("value type does not match context key type");
         }
         attributes.put(key, value);
+        data.put(RuntimeDataKey.framework(contextKeyName(key), key.type()), value);
         return this;
     }
 
@@ -54,18 +56,36 @@ public final class RuntimeContext {
         return Map.copyOf(attributes);
     }
 
+    public RuntimeDataContainer data() {
+        return data;
+    }
+
+    public <T> RuntimeContext putData(RuntimeDataKey<T> key, T value) {
+        data.put(key, value);
+        return this;
+    }
+
+    public <T> RuntimeContext replaceData(RuntimeDataKey<T> key, T value) {
+        data.replace(key, value);
+        return this;
+    }
+
+    public <T> Optional<T> dataValue(RuntimeDataKey<T> key) {
+        return data.get(key);
+    }
+
     public <T> RuntimeContext putEnrichment(ContextKey<T> key, T value) {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(value, "value");
         if (!key.type().isInstance(value)) {
             throw new IllegalArgumentException("value type does not match context key type");
         }
-        putEnrichmentValue(key.name(), value, "context key");
+        putEnrichmentValue(key.name(), value, RuntimeDataScope.MIDDLEWARE, "context key");
         return this;
     }
 
     public RuntimeContext putEnrichment(String key, Object value) {
-        putEnrichmentValue(key, value, "middleware");
+        putEnrichmentValue(key, value, RuntimeDataScope.MIDDLEWARE, "middleware");
         return this;
     }
 
@@ -86,7 +106,7 @@ public final class RuntimeContext {
     RuntimeContext mergeFilterEnrichment(Map<String, Object> values) {
         Objects.requireNonNull(values, "values");
         for (Map.Entry<String, Object> entry : values.entrySet()) {
-            putEnrichmentValue(entry.getKey(), entry.getValue(), "filter");
+            putEnrichmentValue(entry.getKey(), entry.getValue(), RuntimeDataScope.FILTER, "filter");
         }
         return this;
     }
@@ -97,35 +117,36 @@ public final class RuntimeContext {
     }
 
     public <T> Optional<T> enrichmentValue(String key, Class<T> type) {
-        Objects.requireNonNull(type, "type");
-        return enrichmentValue(key).map(raw -> {
-            if (!type.isInstance(raw)) {
-                throw new IllegalStateException("enrichment key '%s' contains value incompatible with %s"
-                        .formatted(key, type.getSimpleName()));
-            }
-            return type.cast(raw);
-        });
+        return data.find(key, Objects.requireNonNull(type, "type"));
     }
 
     public Optional<Object> enrichmentValue(String key) {
-        Objects.requireNonNull(key, "key");
-        return Optional.ofNullable(enrichment.get(key));
+        return data.find(Objects.requireNonNull(key, "key"));
     }
 
     public Map<String, Object> enrichment() {
-        return Map.copyOf(enrichment);
+        return data.snapshot(RuntimeDataScope.FILTER, RuntimeDataScope.MIDDLEWARE);
     }
 
-    private void putEnrichmentValue(String key, Object value, String source) {
+    private void putEnrichmentValue(String key, Object value, RuntimeDataScope scope, String source) {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(value, "value");
         if (key.isBlank()) {
             throw new IllegalArgumentException("enrichment key must not be blank");
         }
-        Object existing = enrichment.putIfAbsent(key, value);
-        if (existing == null || Objects.equals(existing, value)) {
-            return;
+        try {
+            data.put(new RuntimeDataKey<>(key, Object.class, scope), value);
+        } catch (RuntimeDataConflictException conflict) {
+            throw EnrichmentConflictException.conflict(
+                    conflict.keyName(),
+                    conflict.existingValue(),
+                    conflict.incomingValue(),
+                    source
+            );
         }
-        throw EnrichmentConflictException.conflict(key, existing, value, source);
+    }
+
+    private static <T> String contextKeyName(ContextKey<T> key) {
+        return CONTEXT_KEY_PREFIX + key.name();
     }
 }

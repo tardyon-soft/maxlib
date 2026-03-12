@@ -94,6 +94,7 @@ outer middleware -> filters -> inner middleware -> handler.
 - вызов handler-а через `HandlerInvoker`;
 - резолв параметров через `HandlerParameterResolver` + `ResolverRegistry`.
 - Java-friendly signature model: `ContextualEventHandler<TEvent>` (`event + RuntimeContext`).
+- typed runtime data model: `RuntimeDataContainer` + `RuntimeDataKey<T>` + source scopes.
 
 ### Границы Sprint 5
 

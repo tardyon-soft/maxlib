@@ -98,6 +98,16 @@
 - живёт в рамках одного dispatch;
 - не шарится между update processing.
 
+### Runtime data container baseline
+
+Базовый контейнер данных Sprint 5:
+- `RuntimeDataContainer` + typed keys `RuntimeDataKey<T>`;
+- source scope model: `FRAMEWORK`, `FILTER`, `MIDDLEWARE`, `APPLICATION`;
+- explicit conflict policy для одинакового key-name с разными значениями;
+- explicit override через `replace(...)` (no implicit shadowing).
+
+Этот контейнер является базой для будущих `HandlerParameterResolver` implementations.
+
 ## Parameter categories (MVP for Sprint 5)
 
 Framework должен уметь резолвить:

@@ -332,6 +332,30 @@ class DispatcherTest {
     }
 
     @Test
+    void runtimeDataIsVisibleDownstreamInPipeline() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        RuntimeDataKey<String> serviceKey = RuntimeDataKey.application("service.name", String.class);
+        AtomicInteger handled = new AtomicInteger();
+
+        dispatcher.outerMiddleware((ctx, next) -> {
+            ctx.putData(serviceKey, "payments");
+            return next.proceed();
+        });
+        router.message((message, ctx) -> {
+            handled.incrementAndGet();
+            assertEquals("payments", ctx.dataValue(serviceKey).orElse(null));
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, handled.get());
+    }
+
+    @Test
     void middlewareAndFilterEnrichmentAreMergedAndVisibleDownstream() {
         Dispatcher dispatcher = new Dispatcher();
         Router router = new Router("main");

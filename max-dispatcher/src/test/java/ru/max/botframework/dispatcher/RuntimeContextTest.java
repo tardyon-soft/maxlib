@@ -64,6 +64,59 @@ class RuntimeContextTest {
         assertTrue(context.enrichmentValue("attempts", Integer.class).isPresent());
     }
 
+    @Test
+    void runtimeDataContainerSupportsTypedPutAndGet() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        RuntimeDataKey<String> appService = RuntimeDataKey.application("serviceName", String.class);
+
+        context.putData(appService, "billing");
+
+        assertEquals("billing", context.dataValue(appService).orElse(null));
+    }
+
+    @Test
+    void runtimeDataContainerReturnsEmptyWhenValueAbsent() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        RuntimeDataKey<String> missing = RuntimeDataKey.application("missing", String.class);
+
+        assertTrue(context.dataValue(missing).isEmpty());
+    }
+
+    @Test
+    void runtimeDataContainerSupportsExplicitReplaceRule() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        RuntimeDataKey<String> trace = RuntimeDataKey.middleware("trace", String.class);
+        context.putData(trace, "trace-1");
+
+        context.replaceData(trace, "trace-2");
+
+        assertEquals("trace-2", context.dataValue(trace).orElse(null));
+    }
+
+    @Test
+    void runtimeDataContainerDetectsConflicts() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        RuntimeDataKey<String> key = RuntimeDataKey.framework("framework.id", String.class);
+        context.putData(key, "v1");
+
+        RuntimeDataConflictException conflict = assertThrows(
+                RuntimeDataConflictException.class,
+                () -> context.putData(key, "v2")
+        );
+        assertEquals("framework.id", conflict.keyName());
+    }
+
+    @Test
+    void runtimeDataContainerTypedLookupFailsOnTypeMismatch() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        context.putData(RuntimeDataKey.application("retries", Integer.class), 3);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> context.data().find("retries", String.class)
+        );
+    }
+
     private static Update sampleUpdate() {
         return new Update(
                 new UpdateId("u-ctx-1"),

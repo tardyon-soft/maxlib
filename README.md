@@ -25,6 +25,8 @@ Java framework для разработки ботов на платформе MA
 - `max-client-core` foundation слой (transport, auth, serialization, errors, retry/rate-limit hooks, pagination);
 - `max-model` с базовыми DTO, typed value objects и enum-контрактами;
 - зафиксирован runtime contract Sprint 3 (`Dispatcher`, `Router`, `EventObserver`, `Handler`, `DispatchResult`);
+- добавлена Java-friendly handler signature model Sprint 5: `ContextualEventHandler<TEvent>` (`event + RuntimeContext`);
+- добавлен typed runtime data container foundation: `RuntimeDataContainer` + `RuntimeDataKey<T>` + `RuntimeDataScope`;
 - реализован базовый observer layer в `max-dispatcher`: `EventObserver`, `EventHandler`, `DefaultEventObserver`, MVP observer types (`update/message/callback/error`);
 - реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not`, filter-aware handler registration в `Router` и built-in filters MVP (`Command`, `TextEquals`, `TextStartsWith`, `ChatType`, `FromUser`, `HasAttachment`, `StateFilter` placeholder);
 - реализованы middleware contracts foundation: `OuterMiddleware`, `InnerMiddleware`, `MiddlewareNext`, `RuntimeContext`/`ContextKey` и chain executor с short-circuit support;
@@ -163,6 +165,7 @@ Sprint 4 завершён:
 - DI / handler parameter resolution;
 - источники инъекции: runtime context, filter data, middleware data, framework services.
 - без полноценного IoC container и без Spring-specific integration на этом этапе.
+- runtime data model основан на request-scoped typed container (framework/filter/middleware/application scopes).
 
 ## Sprint 2 Summary
 
