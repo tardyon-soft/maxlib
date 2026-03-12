@@ -100,12 +100,12 @@ Java framework для разработки ботов на платформе MA
 
 ## Module plan (current)
 
-- `max-model`
-- `max-client-core`
-- `max-dispatcher`
-- `max-fsm`
-- `max-spring-boot-starter`
-- `max-testkit`
+- `max-model` — базовые DTO/enums контракты.
+- `max-client-core` — Java SDK слой поверх MAX API (HTTP transport, auth, serialization, errors, pagination).
+- `max-dispatcher` — dispatcher/router orchestration runtime.
+- `max-fsm` — state management abstractions для диалогов.
+- `max-spring-boot-starter` — Spring Boot integration слой.
+- `max-testkit` — тестовые утилиты для framework-level сценариев.
 
 ## Build
 
