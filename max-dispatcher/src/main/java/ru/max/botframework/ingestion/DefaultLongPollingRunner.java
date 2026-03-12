@@ -16,21 +16,29 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
     private final UpdateSink sink;
     private final LongPollingRunnerConfig config;
     private final ExecutorService executor;
+    private final PollingMarkerState markerState;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile Future<?> worker;
-    private volatile Long marker;
-
     public DefaultLongPollingRunner(PollingUpdateSource source, UpdateSink sink) {
         this(source, sink, LongPollingRunnerConfig.defaults());
     }
 
     public DefaultLongPollingRunner(PollingUpdateSource source, UpdateSink sink, LongPollingRunnerConfig config) {
+        this(source, sink, config, new InMemoryPollingMarkerState(config.request().marker()));
+    }
+
+    public DefaultLongPollingRunner(
+            PollingUpdateSource source,
+            UpdateSink sink,
+            LongPollingRunnerConfig config,
+            PollingMarkerState markerState
+    ) {
         this.source = Objects.requireNonNull(source, "source");
         this.sink = Objects.requireNonNull(sink, "sink");
         this.config = Objects.requireNonNull(config, "config");
         this.executor = config.executor();
-        this.marker = config.request().marker();
+        this.markerState = Objects.requireNonNull(markerState, "markerState");
     }
 
     @Override
@@ -66,20 +74,24 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
                     continue;
                 }
 
-                if (batch.nextMarker() != null) {
-                    marker = batch.nextMarker();
-                }
-
                 if (batch.isEmpty()) {
+                    markerState.advance(batch.nextMarker());
                     sleep(config.idleDelay());
                     continue;
                 }
 
+                boolean batchHandledSuccessfully = true;
                 for (Update update : batch.updates()) {
                     if (!running.get() || Thread.currentThread().isInterrupted()) {
                         return;
                     }
-                    handleUpdate(update);
+                    if (!handleUpdate(update)) {
+                        batchHandledSuccessfully = false;
+                    }
+                }
+
+                if (batchHandledSuccessfully) {
+                    markerState.advance(batch.nextMarker());
                 }
             }
         } finally {
@@ -89,7 +101,7 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
 
     private PollingBatch pollBatch() {
         PollingFetchRequest request = new PollingFetchRequest(
-                marker,
+                markerState.current(),
                 config.request().timeout(),
                 config.request().limit(),
                 config.request().types()
@@ -101,14 +113,17 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
         }
     }
 
-    private void handleUpdate(Update update) {
+    private boolean handleUpdate(Update update) {
         try {
             UpdateHandlingResult result = sink.handle(update).toCompletableFuture().join();
             if (result == null || !result.isSuccess()) {
                 sleep(config.sinkErrorDelay());
+                return false;
             }
+            return true;
         } catch (CompletionException | RuntimeException ignored) {
             sleep(config.sinkErrorDelay());
+            return false;
         }
     }
 

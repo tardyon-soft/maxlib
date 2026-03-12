@@ -17,6 +17,7 @@ Sprint 1 (`client/DTO/errors`) завершён.
 - ingestion target contract в `max-dispatcher`: `UpdateSink` (async) + `UpdateHandlingResult` для unified polling/webhook flow;
 - polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
 - long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/isRunning`);
+- marker progression contract: monotonic marker state с продвижением только после успешного batch handling;
 - domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
 - тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
 
@@ -167,6 +168,13 @@ runner.start();
 // ...
 runner.stop();
 ```
+
+## Marker Strategy (Long Polling)
+
+- marker хранится внутри runner через `PollingMarkerState` (по умолчанию in-memory);
+- marker продвигается только после успешной обработки всего полученного batch;
+- при sink/source ошибках marker не двигается, чтобы сохранить at-least-once доставку;
+- marker не регрессирует даже если source вернул более старое значение.
 
 ## Build and test
 

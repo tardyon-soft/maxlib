@@ -34,6 +34,7 @@
 - `UpdateSink` (`UpdateConsumer`) — единая async-точка приёма normalized `Update`
   с `UpdateHandlingResult` (`SUCCESS`/`FAILURE`).
 - `LongPollingRunner` — lifecycle-контракт long polling loop (`start`/`stop`/`isRunning`).
+- `PollingMarkerState` — marker progression boundary (in-memory now, persistent later).
 - `WebhookReceiver` — boundary между HTTP webhook endpoint и ingestion source.
 - `UpdatePipeline` — unified ingress контракт для downstream обработки.
 

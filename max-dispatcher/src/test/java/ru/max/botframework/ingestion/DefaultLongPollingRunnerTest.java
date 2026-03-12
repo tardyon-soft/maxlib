@@ -1,10 +1,11 @@
 package ru.max.botframework.ingestion;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -12,6 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,32 +28,80 @@ import ru.max.botframework.model.UpdateType;
 class DefaultLongPollingRunnerTest {
 
     @Test
-    void startProcessesUpdatesAndSendsThemToSink() throws Exception {
+    void markerProgressesSequentiallyAcrossSuccessfulPolls() throws Exception {
         PollingUpdateSource source = Mockito.mock(PollingUpdateSource.class);
         UpdateSink sink = Mockito.mock(UpdateSink.class);
-        CountDownLatch updatesHandled = new CountDownLatch(2);
-        AtomicInteger pollCalls = new AtomicInteger();
+        CountDownLatch threePollsReached = new CountDownLatch(1);
+        List<Long> markers = new CopyOnWriteArrayList<>();
+        AtomicInteger calls = new AtomicInteger();
 
         when(source.poll(any())).thenAnswer(invocation -> {
-            if (pollCalls.incrementAndGet() == 1) {
+            PollingFetchRequest request = invocation.getArgument(0);
+            markers.add(request.marker());
+
+            int call = calls.incrementAndGet();
+            if (call == 1) {
                 return new PollingBatch(List.of(sampleUpdate("u-1"), sampleUpdate("u-2")), 10L);
             }
+            if (call == 2) {
+                return new PollingBatch(List.of(sampleUpdate("u-3")), 20L);
+            }
+            threePollsReached.countDown();
             return new PollingBatch(List.of(), 10L);
         });
-        when(sink.handle(any())).thenAnswer(invocation -> {
-            updatesHandled.countDown();
-            return CompletableFuture.completedFuture(UpdateHandlingResult.success());
-        });
+        when(sink.handle(any())).thenReturn(CompletableFuture.completedFuture(UpdateHandlingResult.success()));
 
         DefaultLongPollingRunner runner = runner(source, sink);
         runner.start();
 
-        assertTrue(updatesHandled.await(1, TimeUnit.SECONDS));
+        assertTrue(threePollsReached.await(1, TimeUnit.SECONDS));
         runner.stop();
         awaitCondition(() -> !runner.isRunning(), Duration.ofSeconds(1));
 
-        verify(sink, atLeast(2)).handle(any());
+        assertTrue(markers.size() >= 3);
+        assertNull(markers.get(0));
+        assertEquals(10L, markers.get(1));
+        assertEquals(20L, markers.get(2));
+
+        verify(sink, atLeast(3)).handle(any());
         verify(source, atLeast(1)).poll(any());
+    }
+
+    @Test
+    void markerDoesNotRegressWhenSourceReturnsLowerMarker() throws Exception {
+        PollingUpdateSource source = Mockito.mock(PollingUpdateSource.class);
+        UpdateSink sink = Mockito.mock(UpdateSink.class);
+        CountDownLatch threePollsReached = new CountDownLatch(1);
+        List<Long> markers = new CopyOnWriteArrayList<>();
+        AtomicInteger calls = new AtomicInteger();
+
+        when(source.poll(any())).thenAnswer(invocation -> {
+            PollingFetchRequest request = invocation.getArgument(0);
+            markers.add(request.marker());
+
+            int call = calls.incrementAndGet();
+            if (call == 1) {
+                return new PollingBatch(List.of(), 20L);
+            }
+            if (call == 2) {
+                return new PollingBatch(List.of(), 10L);
+            }
+            threePollsReached.countDown();
+            return new PollingBatch(List.of(), 10L);
+        });
+        when(sink.handle(any())).thenReturn(CompletableFuture.completedFuture(UpdateHandlingResult.success()));
+
+        DefaultLongPollingRunner runner = runner(source, sink);
+        runner.start();
+
+        assertTrue(threePollsReached.await(1, TimeUnit.SECONDS));
+        runner.stop();
+        awaitCondition(() -> !runner.isRunning(), Duration.ofSeconds(1));
+
+        assertTrue(markers.size() >= 3);
+        assertNull(markers.get(0));
+        assertEquals(20L, markers.get(1));
+        assertEquals(20L, markers.get(2));
     }
 
     @Test
@@ -76,14 +126,19 @@ class DefaultLongPollingRunnerTest {
     }
 
     @Test
-    void pollingSourceErrorIsTreatedAsTransientAndLoopContinues() throws Exception {
+    void pollingSourceErrorDoesNotAdvanceMarkerAndLoopContinues() throws Exception {
         PollingUpdateSource source = Mockito.mock(PollingUpdateSource.class);
         UpdateSink sink = Mockito.mock(UpdateSink.class);
         CountDownLatch secondPollReached = new CountDownLatch(1);
         AtomicInteger calls = new AtomicInteger();
+        List<Long> markers = new CopyOnWriteArrayList<>();
 
         when(source.poll(any())).thenAnswer(invocation -> {
-            if (calls.incrementAndGet() == 1) {
+            PollingFetchRequest request = invocation.getArgument(0);
+            markers.add(request.marker());
+
+            int call = calls.incrementAndGet();
+            if (call == 1) {
                 throw new MaxApiException(503, "temporary");
             }
             secondPollReached.countDown();
@@ -97,27 +152,39 @@ class DefaultLongPollingRunnerTest {
         runner.stop();
         awaitCondition(() -> !runner.isRunning(), Duration.ofSeconds(1));
 
+        assertTrue(markers.size() >= 2);
+        assertNull(markers.get(0));
+        assertNull(markers.get(1));
+
         verify(source, atLeast(2)).poll(any());
-        verify(sink, never()).handle(any());
     }
 
     @Test
-    void sinkFailureDoesNotStopPollingLoop() throws Exception {
+    void sinkFailureDoesNotAdvanceMarkerAndLoopContinues() throws Exception {
         PollingUpdateSource source = Mockito.mock(PollingUpdateSource.class);
         UpdateSink sink = Mockito.mock(UpdateSink.class);
         CountDownLatch secondPollReached = new CountDownLatch(1);
         AtomicInteger calls = new AtomicInteger();
+        List<Long> markers = new CopyOnWriteArrayList<>();
 
         when(source.poll(any())).thenAnswer(invocation -> {
-            if (calls.incrementAndGet() == 1) {
-                return new PollingBatch(List.of(sampleUpdate("u-1")), 300L);
+            PollingFetchRequest request = invocation.getArgument(0);
+            markers.add(request.marker());
+
+            int call = calls.incrementAndGet();
+            if (call == 1) {
+                return new PollingBatch(List.of(sampleUpdate("u-1"), sampleUpdate("u-2")), 300L);
             }
             secondPollReached.countDown();
             return new PollingBatch(List.of(), 300L);
         });
-        when(sink.handle(any())).thenReturn(
-                CompletableFuture.completedFuture(UpdateHandlingResult.failure(new RuntimeException("sink failed")))
-        );
+        when(sink.handle(any())).thenAnswer(invocation -> {
+            Update update = invocation.getArgument(0);
+            if ("u-2".equals(update.updateId().value())) {
+                return CompletableFuture.completedFuture(UpdateHandlingResult.failure(new RuntimeException("sink failed")));
+            }
+            return CompletableFuture.completedFuture(UpdateHandlingResult.success());
+        });
 
         DefaultLongPollingRunner runner = runner(source, sink);
         runner.start();
@@ -126,8 +193,12 @@ class DefaultLongPollingRunnerTest {
         runner.stop();
         awaitCondition(() -> !runner.isRunning(), Duration.ofSeconds(1));
 
+        assertTrue(markers.size() >= 2);
+        assertNull(markers.get(0));
+        assertNull(markers.get(1));
+
         verify(source, atLeast(2)).poll(any());
-        verify(sink, atLeast(1)).handle(any());
+        verify(sink, atLeast(2)).handle(any());
     }
 
     private static DefaultLongPollingRunner runner(PollingUpdateSource source, UpdateSink sink) {

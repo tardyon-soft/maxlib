@@ -95,6 +95,14 @@
 - пустой batch обрабатывается как idle-итерация;
 - transient ошибки source/sink не останавливают runner автоматически.
 
+Marker progression strategy (Sprint 2.2.3):
+- marker хранится в `PollingMarkerState` (по умолчанию in-memory);
+- marker продвигается только после успешно обработанного batch;
+- пустой batch может продвинуть marker, если source вернул более новый `nextMarker`;
+- при любой ошибке source marker не меняется;
+- при частичной/полной ошибке sink marker не меняется (at-least-once replay семантика);
+- регресс marker запрещён: применяется только монотонное продвижение вперёд.
+
 ### `WebhookReceiver`
 
 Назначение:
