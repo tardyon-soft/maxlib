@@ -5,6 +5,9 @@ import java.util.Optional;
 
 /**
  * Result of dispatcher processing for one update.
+ *
+ * @param status dispatch status
+ * @param error optional runtime error, present only for {@link DispatchStatus#FAILED}
  */
 public record DispatchResult(
         DispatchStatus status,
@@ -30,8 +33,10 @@ public record DispatchResult(
         return status == DispatchStatus.HANDLED;
     }
 
+    /**
+     * Optional runtime error details for {@link DispatchStatus#FAILED}.
+     */
     public Optional<Throwable> errorOpt() {
         return Optional.ofNullable(error);
     }
 }
-

@@ -7,7 +7,8 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 ## Current Status
 
 - Sprint 2 (`Polling/Webhook ingestion`) завершён.
-- Следующий этап: Sprint 3 (`Dispatcher/Router`).
+- Sprint 3 (`Dispatcher/Router runtime foundation`) завершён.
+- Следующий этап: Sprint 4 (`Filters/Middleware`).
 
 ## Sprint 0 — Spec/API Contract Freeze
 
@@ -52,7 +53,9 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - router graph + `includeRouter` semantics;
 - observer registration (`message`, `callback`);
 - deterministic handler resolution (first-match);
-- базовые routing tests.
+- runtime error boundary + `error` observer;
+- ingestion integration through `UpdateConsumer` (`Dispatcher` as ingestion target);
+- расширенные routing/integration tests.
 
 ## Sprint 4 — Filters/Middleware
 

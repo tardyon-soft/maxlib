@@ -6,7 +6,10 @@
 `Dispatcher`, `Router`, `EventObserver`, `Handler` и базовый dispatch pipeline
 поверх ingestion layer из Sprint 2.
 
-Это спецификация контракта, а не полная реализация runtime.
+Состояние к концу Sprint 3:
+- контракт зафиксирован;
+- базовая реализация runtime layer присутствует в `max-dispatcher`;
+- документ остаётся источником истины по публичной семантике.
 
 ## Sprint 3 boundaries
 

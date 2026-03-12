@@ -34,42 +34,74 @@ public final class Router {
         return name;
     }
 
+    /**
+     * Low-level access to generic update observer registry.
+     */
     public EventObserver<Update> updates() {
         return updates;
     }
 
+    /**
+     * Registers generic update handler.
+     */
     public Router update(EventHandler<Update> handler) {
         updates.register(Objects.requireNonNull(handler, "handler"));
         return this;
     }
 
+    /**
+     * Low-level access to message observer registry.
+     */
     public EventObserver<Message> messages() {
         return messages;
     }
 
+    /**
+     * Registers message handler.
+     */
     public Router message(EventHandler<Message> handler) {
         messages.register(Objects.requireNonNull(handler, "handler"));
         return this;
     }
 
+    /**
+     * Low-level access to callback observer registry.
+     */
     public EventObserver<Callback> callbacks() {
         return callbacks;
     }
 
+    /**
+     * Registers callback handler.
+     */
     public Router callback(EventHandler<Callback> handler) {
         callbacks.register(Objects.requireNonNull(handler, "handler"));
         return this;
     }
 
+    /**
+     * Low-level access to error observer registry.
+     */
     public EventObserver<ErrorEvent> errors() {
         return errors;
     }
 
+    /**
+     * Registers runtime error handler.
+     */
     public Router error(EventHandler<ErrorEvent> handler) {
         errors.register(Objects.requireNonNull(handler, "handler"));
         return this;
     }
 
+    /**
+     * Includes child router into this router tree.
+     *
+     * <p>Rules:
+     * 1. self-include is forbidden;
+     * 2. cycles are forbidden;
+     * 3. child can have only one parent.</p>
+     */
     public Router includeRouter(Router child) {
         Router router = Objects.requireNonNull(child, "child");
         if (router == this) {
@@ -90,6 +122,9 @@ public final class Router {
         return Optional.ofNullable(parent);
     }
 
+    /**
+     * Immutable snapshot of direct child routers in include order.
+     */
     public List<Router> children() {
         return Collections.unmodifiableList(children);
     }

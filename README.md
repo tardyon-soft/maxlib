@@ -6,11 +6,12 @@ Java framework для разработки ботов на платформе MA
 
 ## Sprint status
 
-Текущий этап: `Sprint 3 — Dispatcher/Router foundation`.
+Текущий этап: `Sprint 4 — Filters + Middleware foundation`.
 
 Завершённые этапы:
 - Sprint 1 (`client/DTO/errors`);
-- Sprint 2 (`polling + webhook ingestion layer`).
+- Sprint 2 (`polling + webhook ingestion layer`);
+- Sprint 3 (`dispatcher/router/runtime foundation`).
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -35,7 +36,7 @@ Java framework для разработки ботов на платформе MA
 
 - `max-client-core` — Java SDK поверх MAX API.
 - `max-model` — DTO, enum и value objects для MAX domain.
-- `max-dispatcher` — заготовка runtime-слоя dispatcher/router.
+- `max-dispatcher` — runtime foundation: dispatcher, router tree, observers, dispatch/error model, ingestion integration.
 - `max-fsm` — заготовка FSM abstractions.
 - `max-spring-boot-starter` — заготовка Spring Boot integration.
 - `max-testkit` — заготовка framework test utilities.
@@ -129,9 +130,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 
 ## Current limitations
 
-Ограничения текущего этапа (Sprint 3 prep):
-- runtime Sprint 3 пока на уровне контракта: каркас `Dispatcher/Router` pipeline только начинается;
-- Router пока предоставляет только базовые observer registries без полноценного routing runtime;
+Ограничения текущего этапа (Sprint 4 prep):
 - filters полноценного уровня ещё не реализованы;
 - middleware runtime chain ещё не реализован;
 - DI runtime и FSM/scenes runtime ещё не реализованы;
@@ -146,6 +145,15 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - polling и webhook сведены к единому `UpdatePipeline`;
 - зафиксированы marker strategy, lifecycle/shutdown semantics и overload control;
 - добавлены integration-style fixtures/tests как regression safety net перед Sprint 3.
+
+## Sprint 3 Summary
+
+- реализован runtime orchestration слой: `Dispatcher` + `Router` + observer model;
+- поддержан router tree (`includeRouter`) с deterministic DFS propagation и first-match semantics;
+- добавлен dispatch result/error model (`HANDLED`/`IGNORED`/`FAILED`, typed runtime error categories);
+- реализован `feedUpdate()` pipeline и event mapping layer (`UpdateEventResolver`);
+- `Dispatcher` интегрирован с ingestion layer как `UpdateConsumer` (и `asUpdateSink` adapter для legacy path);
+- добавлены unit и integration-style тесты runtime + ingestion linkage как Sprint 3 regression safety net.
 
 ## Low-level Long Polling Example
 

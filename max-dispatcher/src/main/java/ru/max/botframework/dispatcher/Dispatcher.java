@@ -14,6 +14,9 @@ import ru.max.botframework.model.Update;
 
 /**
  * Root runtime orchestrator that owns root routing graph and dispatch entrypoint.
+ *
+ * <p>This type is transport-agnostic and integrates with ingestion layer through
+ * {@link UpdateConsumer}.</p>
  */
 public final class Dispatcher implements UpdateConsumer {
     private final List<Router> rootRouters = new ArrayList<>();
@@ -27,6 +30,11 @@ public final class Dispatcher implements UpdateConsumer {
         this.eventResolver = Objects.requireNonNull(eventResolver, "eventResolver");
     }
 
+    /**
+     * Includes root router in dispatcher graph.
+     *
+     * <p>Only routers without parent can be included as roots.</p>
+     */
     public Dispatcher includeRouter(Router router) {
         Router candidate = Objects.requireNonNull(router, "router");
         if (candidate.parent().isPresent()) {
@@ -39,6 +47,9 @@ public final class Dispatcher implements UpdateConsumer {
         return this;
     }
 
+    /**
+     * Includes several root routers preserving include order.
+     */
     public Dispatcher includeRouters(Router... routers) {
         Objects.requireNonNull(routers, "routers");
         for (Router router : routers) {
@@ -75,6 +86,9 @@ public final class Dispatcher implements UpdateConsumer {
         return feedUpdate(update);
     }
 
+    /**
+     * Ingestion boundary adapter for runtime dispatch.
+     */
     @Override
     public CompletionStage<UpdateHandlingResult> handle(Update update) {
         return feedUpdate(update).handle((result, throwable) -> {
