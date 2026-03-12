@@ -212,6 +212,18 @@ public CompletionStage<Void> onMessage(
 ) { ... }
 ```
 
+## Sprint 5 DI Examples
+
+- `examples/sprint-5-di-invocation/README.md`
+- `examples/sprint-5-di-invocation/HandlerDiExample.java`
+
+Ключевые сценарии в примере:
+- core runtime/update параметры в handler signature (`Message`, `Update`, `User`, `Chat`);
+- filter-derived parameter (`String` suffix из `BuiltInFilters.textStartsWith(...)`);
+- middleware-derived parameter (`Integer` enrichment);
+- custom shared service (`Dispatcher.registerService(...)`);
+- combined pipeline (`outer -> filters -> invocation`) на одном update.
+
 ## Sprint 2 Summary
 
 - реализован transport-level ingestion для polling и webhook;
