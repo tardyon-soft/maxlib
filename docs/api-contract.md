@@ -71,6 +71,21 @@
 Детальная спецификация runtime contracts:
 - [runtime-contract.md](runtime-contract.md)
 
+## Filters and middleware layer (Sprint 4)
+
+### Назначение
+
+Контракты Sprint 4 задают базовый runtime pipeline поверх Sprint 3:
+outer middleware -> filters -> inner middleware -> handler.
+
+### Границы Sprint 4
+
+- В scope: базовый filter DSL, middleware execution order, request-scoped context enrichment.
+- Вне scope: полноценный DI parameter resolution, FSM/scenes runtime.
+
+Детальная спецификация Sprint 4 contracts:
+- [filters-and-middleware.md](filters-and-middleware.md)
+
 ## MaxBotClient
 
 ### Назначение

@@ -139,6 +139,18 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - webhook source runtime loop пока не реализован (есть receiver + pipeline foundation);
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
 
+## Sprint 4 Goal
+
+Sprint 4 фокусируется на runtime ergonomics поверх готового dispatcher/router foundation:
+- базовый filter layer;
+- outer/inner middleware layer;
+- request-scoped context enrichment;
+- сохранение first-match dispatch semantics из Sprint 3.
+
+В Sprint 4 пока не делаем:
+- полноценный DI parameter resolution;
+- FSM/scenes runtime.
+
 ## Sprint 2 Summary
 
 - реализован transport-level ingestion для polling и webhook;
@@ -385,6 +397,7 @@ if (result.status() == WebhookReceiveStatus.ACCEPTED) {
 - Product vision and target DX: [docs/product-spec.md](docs/product-spec.md)
 - Core API contract: [docs/api-contract.md](docs/api-contract.md)
 - Runtime contract (Sprint 3): [docs/runtime-contract.md](docs/runtime-contract.md)
+- Filters/Middleware contract (Sprint 4): [docs/filters-and-middleware.md](docs/filters-and-middleware.md)
 - Event model: [docs/event-model.md](docs/event-model.md)
 - Update ingestion contract (Sprint 2): [docs/update-ingestion.md](docs/update-ingestion.md)
 - Roadmap: [docs/roadmap.md](docs/roadmap.md)
