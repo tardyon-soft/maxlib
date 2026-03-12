@@ -483,6 +483,12 @@ Sprint 3 runtime test coverage:
 - integration-style: router tree dispatch propagation и ingestion linkage (`polling -> runner -> dispatcher`, `webhook -> receiver -> dispatcher`);
 - reused fixtures: `max-dispatcher/src/test/resources/fixtures/ingestion`.
 
+Sprint 5 DI/invocation test coverage:
+- unit: `ResolverRegistry`, built-in parameter resolvers, enrichment resolvers, application-data resolver,
+  shared service registration/injection, `DefaultHandlerInvoker`, resolution/invocation failure scenarios;
+- integration-style: `dispatcher + router + filters + middleware + invocation`,
+  mixed multi-source parameter signatures, error observer propagation for resolution failures.
+
 ## Low-level Webhook Handling Example
 
 ```java

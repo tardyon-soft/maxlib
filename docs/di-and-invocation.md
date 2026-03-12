@@ -234,6 +234,18 @@ router.message(
 - Не смешивать resolution contracts с transport/web framework API.
 - Сохранять совместимость с текущим dispatcher/filter/middleware pipeline.
 
+## Test coverage (Sprint 5.3)
+
+- unit coverage:
+  - `ResolverRegistry` ordering/fallback/error propagation;
+  - built-in and enrichment resolvers;
+  - application data resolver and shared service injection path;
+  - `DefaultHandlerInvoker` happy-path + failure taxonomy.
+- integration-style coverage:
+  - full dispatch pipeline (`outer -> filters -> inner -> invocation`);
+  - multi-source parameter resolution (`event/runtime/filter/middleware/application`);
+  - `error` observer behavior for resolution failures.
+
 ## Related docs
 
 - [api-contract.md](api-contract.md)

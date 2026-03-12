@@ -103,7 +103,7 @@ class DispatcherApplicationDataInjectionTest {
         DispatchResult result = dispatcher.feedUpdate(messageUpdate("max")).toCompletableFuture().join();
 
         assertEquals(DispatchStatus.FAILED, result.status());
-        assertTrue(result.errorOpt().orElseThrow() instanceof UnsupportedHandlerParameterException);
+        assertTrue(result.errorOpt().orElseThrow() instanceof MissingHandlerDependencyException);
         assertNull(probe.lastGreeting.get());
     }
 

@@ -2,6 +2,7 @@ package ru.max.botframework.dispatcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -124,6 +125,39 @@ class DispatcherInvocationPipelineIntegrationTest {
         assertEquals(1, probe.calls.get());
     }
 
+    @Test
+    void fullPipelineRoutesResolutionFailureToErrorObserver() throws Exception {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("failures");
+        Method method = MissingServiceProbe.class.getDeclaredMethod("onMessage", Message.class, PaymentService.class);
+        List<String> order = new ArrayList<>();
+        AtomicInteger errorCalls = new AtomicInteger();
+
+        dispatcher.outerMiddleware((ctx, next) -> {
+            order.add("outer-pre");
+            return next.proceed().whenComplete((ignored, throwable) -> order.add("outer-post"));
+        });
+        router.innerMiddleware((ctx, next) -> {
+            order.add("inner-pre");
+            return next.proceed().whenComplete((ignored, throwable) -> order.add("inner-post"));
+        });
+        router.message(BuiltInFilters.textStartsWith("pay:"), new MissingServiceProbe(), method);
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertEquals(RuntimeDispatchErrorType.PARAMETER_RESOLUTION_FAILURE, error.type());
+            assertTrue(error.error() instanceof MissingHandlerDependencyException);
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("pay:10")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertTrue(result.errorOpt().orElseThrow() instanceof MissingHandlerDependencyException);
+        assertEquals(1, errorCalls.get());
+        assertEquals(List.of("outer-pre", "inner-pre", "inner-post", "outer-post"), order);
+    }
+
     private interface PaymentService {
         String map(String suffix);
     }
@@ -189,6 +223,13 @@ class DispatcherInvocationPipelineIntegrationTest {
             this.service = service;
             this.serviceResult = service.make(suffix);
             calls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private static final class MissingServiceProbe {
+        @SuppressWarnings("unused")
+        public CompletableFuture<Void> onMessage(Message message, PaymentService service) {
             return CompletableFuture.completedFuture(null);
         }
     }
