@@ -190,6 +190,19 @@ Sprint 6.1 contracts:
 - `docs/messaging-api.md` (MessageTarget, MessageBuilder, Messages factory, KeyboardBuilder, Buttons, callback/chat-action abstractions);
 - `docs/api-contract.md` (Sprint 6 section, boundaries и интеграция с existing SDK/runtime).
 
+Sprint 6.1 foundation implemented:
+- `MessageTarget` abstraction (`ru.max.botframework.message.MessageTarget`) with `chat(...)` and `user(...)` targets.
+
+Пример:
+
+```java
+MessageTarget chatTarget = MessageTarget.chat(new ChatId("chat-1"));
+MessageTarget userTarget = MessageTarget.user(new UserId("user-1"));
+
+// low-level SDK send/edit path expects ChatId
+ChatId chatId = userTarget.toChatId(userId -> resolveUserChat(userId));
+```
+
 ## Shared Services Injection (Sprint 5.2.3)
 
 ```java
