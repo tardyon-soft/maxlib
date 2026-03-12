@@ -7,9 +7,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletionStage;
+import ru.max.botframework.client.auth.AuthorizationHeaderInterceptor;
 import ru.max.botframework.client.error.MaxApiException;
 import ru.max.botframework.client.http.MaxHttpClient;
 import ru.max.botframework.client.http.MaxHttpRequest;
+import ru.max.botframework.client.http.MaxHttpRequestInterceptor;
 import ru.max.botframework.client.http.MaxHttpResponse;
 import ru.max.botframework.client.serialization.JsonCodec;
 
@@ -17,7 +19,6 @@ import ru.max.botframework.client.serialization.JsonCodec;
  * Default request execution pipeline that bridges typed requests and raw transport.
  */
 public final class DefaultMaxBotClient implements MaxBotClient {
-    private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String USER_AGENT_HEADER = "User-Agent";
     private static final String CONTENT_TYPE_HEADER = "Content-Type";
     private static final String APPLICATION_JSON = "application/json";
@@ -25,17 +26,29 @@ public final class DefaultMaxBotClient implements MaxBotClient {
     private final MaxApiClientConfig config;
     private final MaxHttpClient transport;
     private final JsonCodec jsonCodec;
+    private final MaxHttpRequestInterceptor authInterceptor;
 
     public DefaultMaxBotClient(MaxApiClientConfig config, MaxHttpClient transport, JsonCodec jsonCodec) {
+        this(config, transport, jsonCodec, new AuthorizationHeaderInterceptor(config.authProvider()));
+    }
+
+    public DefaultMaxBotClient(
+            MaxApiClientConfig config,
+            MaxHttpClient transport,
+            JsonCodec jsonCodec,
+            MaxHttpRequestInterceptor authInterceptor
+    ) {
         this.config = Objects.requireNonNull(config, "config");
         this.transport = Objects.requireNonNull(transport, "transport");
         this.jsonCodec = Objects.requireNonNull(jsonCodec, "jsonCodec");
+        this.authInterceptor = Objects.requireNonNull(authInterceptor, "authInterceptor");
     }
 
     @Override
     public <T> T execute(MaxRequest<T> request) {
         MaxHttpRequest httpRequest = mapRequest(request);
-        MaxHttpResponse response = transport.execute(httpRequest);
+        MaxHttpRequest authorizedRequest = authInterceptor.intercept(httpRequest);
+        MaxHttpResponse response = transport.execute(authorizedRequest);
 
         if (response.statusCode() >= 400) {
             throw new MaxApiException(response.statusCode(), new String(response.body(), StandardCharsets.UTF_8));
@@ -63,7 +76,6 @@ public final class DefaultMaxBotClient implements MaxBotClient {
 
         Map<String, String> headers = new LinkedHashMap<>(request.headers());
         headers.putIfAbsent(USER_AGENT_HEADER, config.userAgent());
-        headers.putIfAbsent(AUTHORIZATION_HEADER, authorizationHeaderValue(config.token()));
 
         if (requestBody.length > 0) {
             headers.putIfAbsent(CONTENT_TYPE_HEADER, APPLICATION_JSON);
@@ -105,13 +117,5 @@ public final class DefaultMaxBotClient implements MaxBotClient {
 
     private static String encode(String value) {
         return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8);
-    }
-
-    private static String authorizationHeaderValue(String token) {
-        String normalizedToken = token.trim();
-        if (normalizedToken.regionMatches(true, 0, "Bearer ", 0, "Bearer ".length())) {
-            return normalizedToken;
-        }
-        return "Bearer " + normalizedToken;
     }
 }

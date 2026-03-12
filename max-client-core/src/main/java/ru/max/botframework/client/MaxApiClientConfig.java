@@ -3,6 +3,7 @@ package ru.max.botframework.client;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
+import ru.max.botframework.client.auth.AuthProvider;
 
 /**
  * Immutable builder-based configuration contract for MAX API clients.
@@ -25,6 +26,10 @@ public interface MaxApiClientConfig {
     String userAgent();
 
     RetryPolicy retryPolicy();
+
+    default AuthProvider authProvider() {
+        return () -> authorizationHeaderValue(token());
+    }
 
     static Builder builder() {
         return new Builder();
@@ -115,5 +120,13 @@ public interface MaxApiClientConfig {
                 throw new IllegalArgumentException("userAgent must not be blank");
             }
         }
+    }
+
+    private static String authorizationHeaderValue(String token) {
+        String normalized = token.trim();
+        if (normalized.regionMatches(true, 0, "Bearer ", 0, "Bearer ".length())) {
+            return normalized;
+        }
+        return "Bearer " + normalized;
     }
 }
