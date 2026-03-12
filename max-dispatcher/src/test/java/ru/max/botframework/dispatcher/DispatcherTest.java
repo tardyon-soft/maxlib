@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -353,6 +354,30 @@ class DispatcherTest {
 
         assertEquals(DispatchStatus.HANDLED, result.status());
         assertEquals(1, handled.get());
+    }
+
+    @Test
+    void dispatcherInvokesReflectiveHandlerThroughInvoker() throws Exception {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        ReflectiveHandlerProbe probe = new ReflectiveHandlerProbe();
+        Method method = ReflectiveHandlerProbe.class.getDeclaredMethod(
+                "onMessage",
+                Message.class,
+                RuntimeContext.class
+        );
+        ReflectiveEventHandler<Message> handler = ReflectiveEventHandler.of(
+                probe,
+                method,
+                DefaultHandlerInvoker.withDefaults()
+        );
+        router.message(handler);
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("hello reflective")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals("hello reflective", probe.lastText.get());
     }
 
     @Test
@@ -761,5 +786,14 @@ class DispatcherTest {
 
     private static User user() {
         return new User(new UserId("u-1"), "user", "First", "Last", "First Last", false, "ru");
+    }
+
+    private static final class ReflectiveHandlerProbe {
+        private final java.util.concurrent.atomic.AtomicReference<String> lastText = new java.util.concurrent.atomic.AtomicReference<>();
+
+        public void onMessage(Message message, RuntimeContext context) {
+            lastText.set(message.text());
+            context.putEnrichment("reflective", "ok");
+        }
     }
 }

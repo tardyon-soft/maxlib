@@ -27,6 +27,9 @@ Java framework для разработки ботов на платформе MA
 - зафиксирован runtime contract Sprint 3 (`Dispatcher`, `Router`, `EventObserver`, `Handler`, `DispatchResult`);
 - добавлена Java-friendly handler signature model Sprint 5: `ContextualEventHandler<TEvent>` (`event + RuntimeContext`);
 - добавлен typed runtime data container foundation: `RuntimeDataContainer` + `RuntimeDataKey<T>` + `RuntimeDataScope`;
+- добавлено ядро invocation engine Sprint 5:
+  `HandlerInvoker` (`DefaultHandlerInvoker`), `HandlerParameterResolver`, `ResolverRegistry`,
+  базовые resolvers для `RuntimeContext`/`Update`/event/application data;
 - реализован базовый observer layer в `max-dispatcher`: `EventObserver`, `EventHandler`, `DefaultEventObserver`, MVP observer types (`update/message/callback/error`);
 - реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not`, filter-aware handler registration в `Router` и built-in filters MVP (`Command`, `TextEquals`, `TextStartsWith`, `ChatType`, `FromUser`, `HasAttachment`, `StateFilter` placeholder);
 - реализованы middleware contracts foundation: `OuterMiddleware`, `InnerMiddleware`, `MiddlewareNext`, `RuntimeContext`/`ContextKey` и chain executor с short-circuit support;

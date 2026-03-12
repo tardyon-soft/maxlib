@@ -60,6 +60,10 @@
 - transport ingestion детали;
 - lifecycle shared services.
 
+MVP implementation baseline:
+- `DefaultHandlerInvoker` (reflection + lightweight metadata cache);
+- supports method return types `void` and `CompletionStage<?>`.
+
 ### `HandlerParameterResolver`
 
 Назначение:
@@ -75,6 +79,12 @@
 - типобезопасность;
 - понятная диагностика при ошибке.
 
+MVP built-ins:
+- `RuntimeContextParameterResolver`;
+- `UpdateParameterResolver`;
+- `EventParameterResolver`;
+- `ApplicationDataParameterResolver`.
+
 ### `ResolverRegistry`
 
 Назначение:
@@ -84,6 +94,10 @@
 - хранить resolver chain в фиксированном порядке;
 - применять first-success-wins policy;
 - возвращать diagnostics при unresolved/ambiguous cases.
+
+MVP contract:
+- `ResolverRegistry.register(...)` добавляет resolver в конец chain;
+- resolution order определяется порядком регистрации.
 
 ## Invocation context model
 
