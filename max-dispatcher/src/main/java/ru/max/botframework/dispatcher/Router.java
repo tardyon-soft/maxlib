@@ -52,9 +52,25 @@ public final class Router {
     }
 
     /**
+     * Registers generic update handler with runtime context access.
+     */
+    public Router update(ContextualEventHandler<Update> handler) {
+        updates.register(Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
      * Registers generic update handler with explicit filter.
      */
     public Router update(Filter<Update> filter, EventHandler<Update> handler) {
+        updates.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
+     * Registers generic update handler with explicit filter and runtime context access.
+     */
+    public Router update(Filter<Update> filter, ContextualEventHandler<Update> handler) {
         updates.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
         return this;
     }
@@ -75,9 +91,25 @@ public final class Router {
     }
 
     /**
+     * Registers message handler with runtime context access.
+     */
+    public Router message(ContextualEventHandler<Message> handler) {
+        messages.register(Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
      * Registers message handler with explicit filter.
      */
     public Router message(Filter<Message> filter, EventHandler<Message> handler) {
+        messages.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
+     * Registers message handler with explicit filter and runtime context access.
+     */
+    public Router message(Filter<Message> filter, ContextualEventHandler<Message> handler) {
         messages.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
         return this;
     }
@@ -98,9 +130,25 @@ public final class Router {
     }
 
     /**
+     * Registers callback handler with runtime context access.
+     */
+    public Router callback(ContextualEventHandler<Callback> handler) {
+        callbacks.register(Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
      * Registers callback handler with explicit filter.
      */
     public Router callback(Filter<Callback> filter, EventHandler<Callback> handler) {
+        callbacks.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
+     * Registers callback handler with explicit filter and runtime context access.
+     */
+    public Router callback(Filter<Callback> filter, ContextualEventHandler<Callback> handler) {
         callbacks.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
         return this;
     }
@@ -121,9 +169,25 @@ public final class Router {
     }
 
     /**
+     * Registers runtime error handler with runtime context access.
+     */
+    public Router error(ContextualEventHandler<ErrorEvent> handler) {
+        errors.register(Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
      * Registers runtime error handler with explicit filter.
      */
     public Router error(Filter<ErrorEvent> filter, EventHandler<ErrorEvent> handler) {
+        errors.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
+        return this;
+    }
+
+    /**
+     * Registers runtime error handler with explicit filter and runtime context access.
+     */
+    public Router error(Filter<ErrorEvent> filter, ContextualEventHandler<ErrorEvent> handler) {
         errors.register(Objects.requireNonNull(filter, "filter"), Objects.requireNonNull(handler, "handler"));
         return this;
     }

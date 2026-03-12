@@ -93,6 +93,7 @@ outer middleware -> filters -> inner middleware -> handler.
 Контракты Sprint 5 задают runtime invocation boundary:
 - вызов handler-а через `HandlerInvoker`;
 - резолв параметров через `HandlerParameterResolver` + `ResolverRegistry`.
+- Java-friendly signature model: `ContextualEventHandler<TEvent>` (`event + RuntimeContext`).
 
 ### Границы Sprint 5
 

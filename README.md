@@ -17,6 +17,8 @@ Java framework для разработки ботов на платформе MA
 Текущая цель Sprint 5.1:
 - зафиксировать invocation/parameter-resolution contracts (`HandlerInvoker`, `HandlerParameterResolver`, `ResolverRegistry`)
   поверх уже готового runtime pipeline.
+- ввести Java-friendly handler signature model через `ContextualEventHandler<TEvent>`
+  (`event + RuntimeContext`) как основу для будущих resolvers.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -367,6 +369,15 @@ Dispatcher dispatcher = new Dispatcher()
         return next.proceed();
     })
     .includeRouter(root);
+```
+
+Sprint 5 handler signature model (current):
+
+```java
+router.message((Message message, RuntimeContext ctx) -> {
+    String suffix = ctx.enrichmentValue(BuiltInFilters.TEXT_SUFFIX_KEY, String.class).orElse("n/a");
+    return CompletableFuture.completedFuture(null);
+});
 ```
 
 Event mapping strategy:

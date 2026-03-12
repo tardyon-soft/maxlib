@@ -27,6 +27,23 @@
 
 ## Core contracts
 
+## Chosen invocation model (Sprint 5.1)
+
+Выбранный подход: typed functional interfaces как primary API + runtime extension points.
+
+- Базовый контракт остаётся `EventHandler<TEvent>` (обратная совместимость с Sprint 3/4).
+- Для Sprint 5 введён `ContextualEventHandler<TEvent>`:
+  - сигнатура handler-а: `(TEvent event, RuntimeContext context) -> CompletionStage<Void>`;
+  - удобно для Java-лямбд и без reflection-heavy magic.
+- Method-based reflective handlers остаются возможным future extension,
+  но не являются MVP-моделью Sprint 5.1.
+
+Почему это практично для Java:
+- типы параметров видны на этапе компиляции;
+- API читается как обычные лямбды/functional interfaces;
+- не нужен annotation-heavy runtime на раннем этапе;
+- легко расширить до parameter resolvers без ломающего redesign.
+
 ### `HandlerInvoker`
 
 Назначение:

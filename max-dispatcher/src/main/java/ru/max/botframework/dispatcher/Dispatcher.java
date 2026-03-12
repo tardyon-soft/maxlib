@@ -261,7 +261,7 @@ public final class Dispatcher implements UpdateConsumer {
         return MiddlewareChainExecutor.executeInner(
                         context,
                         router.innerMiddlewares(),
-                        () -> invokeHandler(handler, event, enrichment)
+                        () -> invokeHandler(handler, event, context, enrichment)
                 )
                 .handle((dispatchResult, throwable) -> {
                     if (throwable != null) {
@@ -282,10 +282,18 @@ public final class Dispatcher implements UpdateConsumer {
     private static <TEvent> CompletionStage<DispatchResult> invokeHandler(
             EventHandler<TEvent> handler,
             TEvent event,
+            RuntimeContext context,
             Map<String, Object> enrichment
     ) {
         try {
-            CompletionStage<Void> stage = Objects.requireNonNull(handler.handle(event), "handler result");
+            CompletionStage<Void> stage;
+            if (handler instanceof ContextualEventHandler<?> contextualHandler) {
+                @SuppressWarnings("unchecked")
+                ContextualEventHandler<TEvent> typed = (ContextualEventHandler<TEvent>) contextualHandler;
+                stage = Objects.requireNonNull(typed.handle(event, context), "handler result");
+            } else {
+                stage = Objects.requireNonNull(handler.handle(event), "handler result");
+            }
             return stage.handle((ignored, throwable) -> throwable == null
                     ? DispatchResult.handled(enrichment)
                     : DispatchResult.failed(HandlerInvocationException.wrap(unwrap(throwable))));

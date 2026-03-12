@@ -105,6 +105,31 @@ class DispatcherTest {
     }
 
     @Test
+    void feedUpdateInvokesContextualHandlerWithRuntimeContext() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger handled = new AtomicInteger();
+        ContextKey<String> traceKey = ContextKey.of("traceId", String.class);
+
+        dispatcher.outerMiddleware((ctx, next) -> {
+            ctx.putEnrichment(traceKey, "trace-ctx-1");
+            return next.proceed();
+        });
+        router.message((message, ctx) -> {
+            handled.incrementAndGet();
+            assertEquals("hello", message.text());
+            assertEquals("trace-ctx-1", ctx.enrichmentValue(traceKey).orElse(null));
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, handled.get());
+    }
+
+    @Test
     void feedUpdateSkipsHandlerWhenFilterDoesNotMatch() {
         Dispatcher dispatcher = new Dispatcher();
         Router router = new Router("main");
@@ -276,6 +301,34 @@ class DispatcherTest {
         assertEquals(DispatchStatus.HANDLED, result.status());
         assertEquals("42", result.enrichment().get(BuiltInFilters.TEXT_SUFFIX_KEY));
         assertEquals(1, handled.get());
+    }
+
+    @Test
+    void contextualHandlerCanUseFilterAndMiddlewareEnrichment() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        ContextKey<String> serviceKey = ContextKey.of("serviceName", String.class);
+        AtomicInteger handled = new AtomicInteger();
+
+        dispatcher.outerMiddleware((ctx, next) -> {
+            ctx.put(serviceKey, "orders");
+            ctx.putEnrichment("trace", "trace-500");
+            return next.proceed();
+        });
+        router.message(BuiltInFilters.textStartsWith("pay:"), (message, ctx) -> {
+            handled.incrementAndGet();
+            assertEquals("orders", ctx.get(serviceKey).orElse(null));
+            assertEquals("500", ctx.enrichmentValue(BuiltInFilters.TEXT_SUFFIX_KEY, String.class).orElse(null));
+            assertEquals("trace-500", ctx.enrichmentValue("trace", String.class).orElse(null));
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("pay:500")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, handled.get());
+        assertEquals("500", result.enrichment().get(BuiltInFilters.TEXT_SUFFIX_KEY));
     }
 
     @Test
