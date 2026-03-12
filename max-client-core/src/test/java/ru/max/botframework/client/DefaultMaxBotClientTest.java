@@ -26,6 +26,7 @@ import ru.max.botframework.client.http.MaxHttpClient;
 import ru.max.botframework.client.http.MaxHttpResponse;
 import ru.max.botframework.client.http.okhttp.OkHttpMaxHttpClient;
 import ru.max.botframework.client.serialization.JacksonJsonCodec;
+import ru.max.botframework.model.BotInfo;
 
 class DefaultMaxBotClientTest {
 
@@ -110,6 +111,32 @@ class DefaultMaxBotClientTest {
 
         assertThatThrownBy(() -> client.execute(new EchoRequest(HttpMethod.GET, null)))
                 .isInstanceOf(MaxNotFoundException.class);
+    }
+
+    @Test
+    void shouldCallGetMeAndReturnTypedBotInfo() throws Exception {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("""
+                        {
+                          "id": "b-1",
+                          "username": "max_helper_bot",
+                          "displayName": "MAX Helper Bot",
+                          "about": "Utility bot",
+                          "avatarUrl": "https://cdn.max.ru/bot.png"
+                        }
+                        """));
+
+        BotInfo botInfo = client.getMe();
+
+        RecordedRequest recorded = server.takeRequest();
+        assertThat(recorded.getMethod()).isEqualTo("GET");
+        assertThat(recorded.getPath()).isEqualTo("/me");
+        assertThat(recorded.getHeader("Authorization")).isEqualTo("Bearer test-token");
+
+        assertThat(botInfo.id().value()).isEqualTo("b-1");
+        assertThat(botInfo.username()).isEqualTo("max_helper_bot");
+        assertThat(botInfo.displayName()).isEqualTo("MAX Helper Bot");
     }
 
     @Test

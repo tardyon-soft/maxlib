@@ -105,6 +105,7 @@ Java framework для разработки ботов на платформе MA
 - reusable pagination foundation в `max-client-core` для marker-based MAX API: `Page<T>`, `MarkerPage<T>`, `MarkerPageRequest`, `PaginationHelper` (query params + safe page traversal helpers);
 - базовый retry hook в transport pipeline (`RetryPolicy`): по умолчанию без retry (`maxAttempts=1`), при включении — консервативный retry для безопасных `GET` на временных сбоях (`429`/`503`) и transport errors;
 - rate-limit awareness в transport pipeline: корректная обработка `429` (включая `Retry-After`) и лёгкий client-side hook `RequestRateLimiter` (`noop`/`cooldown`) как задел под ограничение частоты запросов;
+- первый domain-level метод в `max-client-core`: `getMe()` (`GET /me`) поверх существующих transport/auth/serialization/error abstractions с типизированным `BotInfo` результатом;
 - базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
 - request DTO для message/callback API в `max-model`: `NewMessageBody`, `SendMessageRequest`, `EditMessageRequest`, `AnswerCallbackRequest`, минимальные attachment-related структуры;
 - typed value objects в `max-model` для id/reference-полей (`UserId`, `ChatId`, `MessageId`, `UpdateId`, `CallbackId`, `FileId`) вместо магических `String` в core DTO/request моделях;
@@ -134,6 +135,14 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
     .retryPolicy(RetryPolicy.fixed(2, Duration.ofMillis(200)))
     .rateLimiter(RequestRateLimiter.cooldown(Duration.ofSeconds(1)))
     .build();
+```
+
+## Domain Method Example (`getMe`)
+
+```java
+MaxBotClient botClient = new DefaultMaxBotClient(config, transport, new JacksonJsonCodec());
+BotInfo me = botClient.getMe();
+System.out.println(me.username());
 ```
 
 ## Build
