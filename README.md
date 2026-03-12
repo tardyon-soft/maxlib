@@ -78,7 +78,11 @@ Java framework для разработки ботов на платформе MA
 - FSM/scenes contract: [docs/fsm-scenes-contract.md](docs/fsm-scenes-contract.md)
 - Callback contract: [docs/callback-contract.md](docs/callback-contract.md)
 - Event model specification: [docs/event-model.md](docs/event-model.md)
-- Router model ADR: [docs/adr/0001-router-model.md](docs/adr/0001-router-model.md)
+- Architecture ADR index: [docs/adr/README.md](docs/adr/README.md)
+- ADR-0001 Dispatcher/Router model: [docs/adr/0001-router-model.md](docs/adr/0001-router-model.md)
+- ADR-0002 Multi-module structure: [docs/adr/0002-multi-module-structure.md](docs/adr/0002-multi-module-structure.md)
+- ADR-0003 Client/runtime separation: [docs/adr/0003-client-runtime-separation.md](docs/adr/0003-client-runtime-separation.md)
+- ADR-0004 Unified polling/webhook pipeline: [docs/adr/0004-unified-update-pipeline.md](docs/adr/0004-unified-update-pipeline.md)
 
 ## Current status
 
