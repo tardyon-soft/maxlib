@@ -78,6 +78,7 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Ввести handler argument resolution model в runtime.
 
 Основные результаты:
+- invocation contract (`HandlerInvoker`, `HandlerParameterResolver`, `ResolverRegistry`);
 - injection sources: context/update, framework services, filter data, middleware data, app container;
 - qualifiers (`FromFilter`, `FromContext`, container qualifiers);
 - диагностируемые resolution errors;

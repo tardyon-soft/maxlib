@@ -14,6 +14,10 @@ Java framework для разработки ботов на платформе MA
 - Sprint 3 (`dispatcher/router/runtime foundation`);
 - Sprint 4 (`filters/middleware/context enrichment`).
 
+Текущая цель Sprint 5.1:
+- зафиксировать invocation/parameter-resolution contracts (`HandlerInvoker`, `HandlerParameterResolver`, `ResolverRegistry`)
+  поверх уже готового runtime pipeline.
+
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
 - `max-client-core` foundation слой (transport, auth, serialization, errors, retry/rate-limit hooks, pagination);
@@ -156,6 +160,7 @@ Sprint 4 завершён:
 Следующий этап (Sprint 5):
 - DI / handler parameter resolution;
 - источники инъекции: runtime context, filter data, middleware data, framework services.
+- без полноценного IoC container и без Spring-specific integration на этом этапе.
 
 ## Sprint 2 Summary
 
@@ -461,6 +466,7 @@ if (result.status() == WebhookReceiveStatus.ACCEPTED) {
 - Core API contract: [docs/api-contract.md](docs/api-contract.md)
 - Runtime contract (Sprint 3): [docs/runtime-contract.md](docs/runtime-contract.md)
 - Filters/Middleware contract (Sprint 4): [docs/filters-and-middleware.md](docs/filters-and-middleware.md)
+- DI and invocation contract (Sprint 5): [docs/di-and-invocation.md](docs/di-and-invocation.md)
 - Event model: [docs/event-model.md](docs/event-model.md)
 - Update ingestion contract (Sprint 2): [docs/update-ingestion.md](docs/update-ingestion.md)
 - Roadmap: [docs/roadmap.md](docs/roadmap.md)

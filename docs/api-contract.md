@@ -86,6 +86,22 @@ outer middleware -> filters -> inner middleware -> handler.
 Детальная спецификация Sprint 4 contracts:
 - [filters-and-middleware.md](filters-and-middleware.md)
 
+## DI and invocation layer (Sprint 5)
+
+### Назначение
+
+Контракты Sprint 5 задают runtime invocation boundary:
+- вызов handler-а через `HandlerInvoker`;
+- резолв параметров через `HandlerParameterResolver` + `ResolverRegistry`.
+
+### Границы Sprint 5
+
+- В scope: parameter resolution contract и invocation diagnostics.
+- Вне scope: полноценный IoC container, Spring integration, FSM/scenes runtime.
+
+Детальная спецификация Sprint 5 contracts:
+- [di-and-invocation.md](di-and-invocation.md)
+
 ## MaxBotClient
 
 ### Назначение
