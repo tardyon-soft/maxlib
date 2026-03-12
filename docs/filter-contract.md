@@ -62,6 +62,9 @@ public record NotMatched() implements FilterResult {}
 - `F.stateIs(String state)` — интеграция с `FSMContext`.
 - `F.custom(Filter<C>)` — явное подключение пользовательского фильтра.
 
+Детальный контракт `StateFilter`, scopes и интеграции со сценами:
+- [fsm-scenes-contract.md](fsm-scenes-contract.md)
+
 ## Filter composition rules
 
 ### `and`

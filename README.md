@@ -75,6 +75,7 @@ Java framework для разработки ботов на платформе MA
 - Dependency injection model: [docs/di-model.md](docs/di-model.md)
 - Message API contract: [docs/message-api-contract.md](docs/message-api-contract.md)
 - Upload/media contract: [docs/upload-media-contract.md](docs/upload-media-contract.md)
+- FSM/scenes contract: [docs/fsm-scenes-contract.md](docs/fsm-scenes-contract.md)
 - Callback contract: [docs/callback-contract.md](docs/callback-contract.md)
 - Event model specification: [docs/event-model.md](docs/event-model.md)
 - Router model ADR: [docs/adr/0001-router-model.md](docs/adr/0001-router-model.md)
