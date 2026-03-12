@@ -2,8 +2,6 @@ package ru.max.botframework.client.serialization;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import ru.max.botframework.client.error.MaxSerializationException;
 
 /**
@@ -13,13 +11,7 @@ public final class JacksonJsonCodec implements JsonCodec {
     private final ObjectMapper objectMapper;
 
     public JacksonJsonCodec() {
-        this(new ObjectMapper()
-                .registerModule(new ParameterNamesModule())
-                .registerModule(new JavaTimeModule()));
-    }
-
-    public JacksonJsonCodec(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+        this.objectMapper = SharedObjectMapper.instance();
     }
 
     @Override
