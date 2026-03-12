@@ -19,7 +19,7 @@ Java framework для разработки ботов на платформе MA
 - `max-model` с базовыми DTO, typed value objects и enum-контрактами;
 - зафиксирован runtime contract Sprint 3 (`Dispatcher`, `Router`, `EventObserver`, `Handler`, `DispatchResult`);
 - реализован базовый observer layer в `max-dispatcher`: `EventObserver`, `EventHandler`, `DefaultEventObserver`, MVP observer types (`update/message/callback/error`);
-- реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not` и filter-aware handler registration в `Router`;
+- реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not`, filter-aware handler registration в `Router` и built-in filters MVP (`Command`, `TextEquals`, `TextStartsWith`, `ChatType`, `FromUser`, `HasAttachment`, `StateFilter` placeholder);
 - ingestion target contract в `max-dispatcher`: `UpdateConsumer` (async, preferred) + `UpdateSink` (compat alias) + `UpdateHandlingResult`;
 - polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
 - long polling runtime foundation: `DefaultLongPollingRunner` с lifecycle API (`start/stop/shutdown/isRunning`);
@@ -295,6 +295,11 @@ Router admin = new Router("admin")
     .message(message -> CompletableFuture.completedFuture(null));
 
 router.includeRouter(admin);
+
+router
+    .message(BuiltInFilters.command("start"), message -> CompletableFuture.completedFuture(null))
+    .message(BuiltInFilters.textStartsWith("pay:"), message -> CompletableFuture.completedFuture(null))
+    .callback(BuiltInFilters.fromCallbackUser(new UserId("u-1")), callback -> CompletableFuture.completedFuture(null));
 ```
 
 ## Dispatcher Role (Sprint 3 foundation)
