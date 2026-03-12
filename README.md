@@ -457,12 +457,20 @@ First-match and propagation rules:
 Runtime error boundary:
 - runtime dispatch ошибки классифицируются как:
   `FILTER_FAILURE`, `OUTER_MIDDLEWARE_FAILURE`, `INNER_MIDDLEWARE_FAILURE`,
-  `ENRICHMENT_FAILURE`, `HANDLER_FAILURE`, `EVENT_MAPPING_FAILURE`, `OBSERVER_EXECUTION_FAILURE`;
+  `ENRICHMENT_FAILURE`, `PARAMETER_RESOLUTION_FAILURE`, `INVOCATION_FAILURE`,
+  `HANDLER_FAILURE`, `EVENT_MAPPING_FAILURE`, `OBSERVER_EXECUTION_FAILURE`;
 - все они передаются в `error` observer текущего router как `ErrorEvent`;
 - исключение: outer middleware failure на уровне dispatcher отправляется в `error` observer первого root router
   (предпочтительно первого root router с зарегистрированным error handler);
 - даже при успешном `error` handler итог dispatch остаётся `FAILED`;
 - если `error` handler сам падает, его ошибка добавляется в `suppressed` исходной runtime ошибки.
+
+DI/invocation-specific behavior:
+- unresolved core/runtime parameter -> `UnsupportedHandlerParameterException`;
+- missing required service/data -> `MissingHandlerDependencyException`;
+- ambiguous typed resolution -> `ParameterResolutionException` (`AMBIGUOUS_RESOLUTION`);
+- resolver thrown exception -> `ParameterResolutionException` (`RESOLVER_FAILURE`);
+- invalid reflective method contract/access issues -> `ReflectiveInvocationException`.
 
 Dispatcher <-> ingestion integration:
 - `Dispatcher` реализует `UpdateConsumer` и может быть передан напрямую в:

@@ -712,6 +712,82 @@ class DispatcherTest {
     }
 
     @Test
+    void feedUpdateRoutesMissingDependencyToErrorObserverAsResolutionFailure() throws Exception {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        MissingDependencyProbe probe = new MissingDependencyProbe();
+        Method method = MissingDependencyProbe.class.getDeclaredMethod("onMessage", Message.class, PaymentService.class);
+        AtomicInteger errorCalls = new AtomicInteger();
+
+        router.message(probe, method);
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertTrue(error.error() instanceof MissingHandlerDependencyException);
+            assertEquals(RuntimeDispatchErrorType.PARAMETER_RESOLUTION_FAILURE, error.type());
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertTrue(result.errorOpt().orElseThrow() instanceof MissingHandlerDependencyException);
+        assertEquals(1, errorCalls.get());
+    }
+
+    @Test
+    void feedUpdateRoutesAmbiguousResolutionToErrorObserverAsResolutionFailure() throws Exception {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AmbiguousResolutionProbe probe = new AmbiguousResolutionProbe();
+        Method method = AmbiguousResolutionProbe.class.getDeclaredMethod("onMessage", Message.class, String.class);
+        AtomicInteger errorCalls = new AtomicInteger();
+
+        dispatcher.registerApplicationData(RuntimeDataKey.application("app.one", String.class), "one");
+        dispatcher.registerApplicationData(RuntimeDataKey.application("app.two", String.class), "two");
+        router.message(probe, method);
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertTrue(error.error() instanceof ParameterResolutionException);
+            ParameterResolutionException resolution = (ParameterResolutionException) error.error();
+            assertEquals(ParameterResolutionException.Reason.AMBIGUOUS_RESOLUTION, resolution.reason());
+            assertEquals(RuntimeDispatchErrorType.PARAMETER_RESOLUTION_FAILURE, error.type());
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertTrue(result.errorOpt().orElseThrow() instanceof ParameterResolutionException);
+        assertEquals(1, errorCalls.get());
+    }
+
+    @Test
+    void feedUpdateRoutesReflectiveInfrastructureFailureToErrorObserver() throws Exception {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        ReflectiveInvalidReturnProbe probe = new ReflectiveInvalidReturnProbe();
+        Method method = ReflectiveInvalidReturnProbe.class.getDeclaredMethod("onMessage", Message.class);
+        AtomicInteger errorCalls = new AtomicInteger();
+
+        router.message(probe, method);
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertTrue(error.error() instanceof ReflectiveInvocationException);
+            assertEquals(RuntimeDispatchErrorType.INVOCATION_FAILURE, error.type());
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertTrue(result.errorOpt().orElseThrow() instanceof ReflectiveInvocationException);
+        assertEquals(1, errorCalls.get());
+    }
+
+    @Test
     void feedUpdateReturnsFailedWhenNoErrorObserverHandlerRegistered() {
         Dispatcher dispatcher = new Dispatcher();
         Router router = new Router("main");
@@ -850,6 +926,28 @@ class DispatcherTest {
 
         public void onPayment(Message message, String derivedValue) {
             lastDerived.set(derivedValue);
+        }
+    }
+
+    private interface PaymentService {
+    }
+
+    private static final class MissingDependencyProbe {
+        @SuppressWarnings("unused")
+        public void onMessage(Message message, PaymentService service) {
+        }
+    }
+
+    private static final class AmbiguousResolutionProbe {
+        @SuppressWarnings("unused")
+        public void onMessage(Message message, String anyString) {
+        }
+    }
+
+    private static final class ReflectiveInvalidReturnProbe {
+        @SuppressWarnings("unused")
+        public String onMessage(Message message) {
+            return message.text();
         }
     }
 }

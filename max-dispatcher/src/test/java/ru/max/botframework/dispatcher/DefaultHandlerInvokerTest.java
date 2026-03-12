@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import ru.max.botframework.model.Chat;
@@ -98,7 +99,7 @@ class DefaultHandlerInvokerTest {
                 new ResolverRegistry().register(new EventParameterResolver())
         );
         HandlerSamples samples = new HandlerSamples();
-        Method method = HandlerSamples.class.getDeclaredMethod("unsupported", Integer.class);
+        Method method = HandlerSamples.class.getDeclaredMethod("unsupportedCore", RuntimeContext.class);
         RuntimeContext context = new RuntimeContext(messageUpdate("x"));
 
         CompletionException thrown = assertThrows(
@@ -109,6 +110,106 @@ class DefaultHandlerInvokerTest {
         );
 
         assertTrue(thrown.getCause() instanceof UnsupportedHandlerParameterException);
+        ParameterResolutionException resolution = (ParameterResolutionException) thrown.getCause();
+        assertEquals(ParameterResolutionException.Reason.UNSUPPORTED_PARAMETER, resolution.reason());
+    }
+
+    @Test
+    void missingDependencyProducesResolutionFailure() throws Exception {
+        DefaultHandlerInvoker invoker = DefaultHandlerInvoker.withDefaults();
+        HandlerSamples samples = new HandlerSamples();
+        Method method = HandlerSamples.class.getDeclaredMethod("missingService", DemoService.class);
+        RuntimeContext context = new RuntimeContext(messageUpdate("x"));
+
+        CompletionException thrown = assertThrows(
+                CompletionException.class,
+                () -> invoker.invoke(samples, method, new HandlerInvocationContext(message("x"), context))
+                        .toCompletableFuture()
+                        .join()
+        );
+
+        assertTrue(thrown.getCause() instanceof MissingHandlerDependencyException);
+        ParameterResolutionException resolution = (ParameterResolutionException) thrown.getCause();
+        assertEquals(ParameterResolutionException.Reason.MISSING_DEPENDENCY, resolution.reason());
+    }
+
+    @Test
+    void ambiguousResolutionProducesResolutionFailure() throws Exception {
+        DefaultHandlerInvoker invoker = DefaultHandlerInvoker.withDefaults();
+        HandlerSamples samples = new HandlerSamples();
+        Method method = HandlerSamples.class.getDeclaredMethod("stringOnly", String.class);
+        RuntimeContext context = new RuntimeContext(messageUpdate("x"));
+        context.putData(RuntimeDataKey.application("app.a", String.class), "a");
+        context.putData(RuntimeDataKey.application("app.b", String.class), "b");
+
+        CompletionException thrown = assertThrows(
+                CompletionException.class,
+                () -> invoker.invoke(samples, method, new HandlerInvocationContext(message("x"), context))
+                        .toCompletableFuture()
+                        .join()
+        );
+
+        assertTrue(thrown.getCause() instanceof ParameterResolutionException);
+        ParameterResolutionException resolution = (ParameterResolutionException) thrown.getCause();
+        assertEquals(ParameterResolutionException.Reason.AMBIGUOUS_RESOLUTION, resolution.reason());
+    }
+
+    @Test
+    void resolverFailureProducesResolutionFailure() throws Exception {
+        HandlerParameterResolver failingResolver = (parameter, ctx) -> {
+            throw new IllegalStateException("resolver boom");
+        };
+        DefaultHandlerInvoker invoker = new DefaultHandlerInvoker(new ResolverRegistry().register(failingResolver));
+        HandlerSamples samples = new HandlerSamples();
+        Method method = HandlerSamples.class.getDeclaredMethod("stringOnly", String.class);
+        RuntimeContext context = new RuntimeContext(messageUpdate("x"));
+
+        CompletionException thrown = assertThrows(
+                CompletionException.class,
+                () -> invoker.invoke(samples, method, new HandlerInvocationContext(message("x"), context))
+                        .toCompletableFuture()
+                        .join()
+        );
+
+        assertTrue(thrown.getCause() instanceof ParameterResolutionException);
+        ParameterResolutionException resolution = (ParameterResolutionException) thrown.getCause();
+        assertEquals(ParameterResolutionException.Reason.RESOLVER_FAILURE, resolution.reason());
+    }
+
+    @Test
+    void invalidReflectiveReturnTypeProducesInvocationFailure() throws Exception {
+        DefaultHandlerInvoker invoker = new DefaultHandlerInvoker(new ResolverRegistry().register(new EventParameterResolver()));
+        HandlerSamples samples = new HandlerSamples();
+        Method method = HandlerSamples.class.getDeclaredMethod("invalidReturnType", Message.class);
+        RuntimeContext context = new RuntimeContext(messageUpdate("x"));
+
+        CompletionException thrown = assertThrows(
+                CompletionException.class,
+                () -> invoker.invoke(samples, method, new HandlerInvocationContext(message("x"), context))
+                        .toCompletableFuture()
+                        .join()
+        );
+
+        assertTrue(thrown.getCause() instanceof ReflectiveInvocationException);
+    }
+
+    @Test
+    void partialResolutionSuccessStillFailsAtomicallyWhenNextParameterMissing() throws Exception {
+        DefaultHandlerInvoker invoker = new DefaultHandlerInvoker(new ResolverRegistry()
+                .register(new EventParameterResolver()));
+        HandlerSamples samples = new HandlerSamples();
+        Method method = HandlerSamples.class.getDeclaredMethod("partialThenMissing", Message.class, DemoService.class);
+        RuntimeContext context = new RuntimeContext(messageUpdate("x"));
+
+        CompletionException thrown = assertThrows(
+                CompletionException.class,
+                () -> invoker.invoke(samples, method, new HandlerInvocationContext(message("x"), context))
+                        .toCompletableFuture()
+                        .join()
+        );
+
+        assertTrue(thrown.getCause() instanceof MissingHandlerDependencyException);
+        assertEquals(0, samples.partialInvocations.get());
     }
 
     private static final class HandlerSamples {
@@ -116,6 +217,7 @@ class DefaultHandlerInvokerTest {
         private final AtomicReference<RuntimeContext> lastContext = new AtomicReference<>();
         private final AtomicReference<Update> lastUpdate = new AtomicReference<>();
         private final AtomicReference<String> lastString = new AtomicReference<>();
+        private final AtomicInteger partialInvocations = new AtomicInteger();
 
         public void single(Message message) {
             lastMessage.set(message);
@@ -134,6 +236,23 @@ class DefaultHandlerInvokerTest {
 
         public void unsupported(Integer ignored) {
         }
+
+        public void unsupportedCore(RuntimeContext ignored) {
+        }
+
+        public void missingService(DemoService service) {
+        }
+
+        public String invalidReturnType(Message message) {
+            return message.text();
+        }
+
+        public void partialThenMissing(Message message, DemoService service) {
+            partialInvocations.incrementAndGet();
+        }
+    }
+
+    private interface DemoService {
     }
 
     private static Update messageUpdate(String text) {

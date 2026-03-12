@@ -186,9 +186,20 @@ Resolution failure должен включать:
 - этап (какой resolver chain segment завершился неуспехом);
 - reason (`UNRESOLVED`, `AMBIGUOUS`, `TYPE_MISMATCH`).
 
+Реализованная runtime-модель Sprint 5.3:
+- `UnsupportedHandlerParameterException` (`UNSUPPORTED_PARAMETER`) — параметр не может быть
+  легально резолвлен текущей resolver-конфигурацией;
+- `MissingHandlerDependencyException` (`MISSING_DEPENDENCY`) — отсутствует обязательный service/data;
+- `ParameterResolutionException` (`AMBIGUOUS_RESOLUTION`) — найдено несколько кандидатов без qualifier;
+- `ParameterResolutionException` (`RESOLVER_FAILURE`) — resolver выбросил исключение;
+- `ReflectiveInvocationException` — ошибка reflective infrastructure
+  (например, некорректный return contract method handler-а).
+
 Invocation boundary:
 - parameter resolution errors считаются runtime dispatch errors;
 - передаются в существующий error pipeline (`error` observer).
+- reflective invocation infrastructure errors также считаются runtime dispatch errors.
+- ошибки бизнес-логики внутри handler body/CompletionStage остаются `HANDLER_FAILURE`.
 
 ## Expected DX (handler signatures)
 

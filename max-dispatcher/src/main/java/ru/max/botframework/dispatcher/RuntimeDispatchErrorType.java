@@ -14,6 +14,10 @@ public enum RuntimeDispatchErrorType {
     INNER_MIDDLEWARE_FAILURE,
     /** Runtime context enrichment merge failed because of conflict/type mismatch. */
     ENRICHMENT_FAILURE,
+    /** Handler parameter resolution failed (unsupported/ambiguous/missing dependency/resolver failure). */
+    PARAMETER_RESOLUTION_FAILURE,
+    /** Reflection-based invocation infrastructure failed (signature/access/return contract issues). */
+    INVOCATION_FAILURE,
     /** Update-to-event mapping failed in resolver. */
     EVENT_MAPPING_FAILURE,
     /** Observer invocation failed outside of handler body. */

@@ -431,8 +431,15 @@ public final class Dispatcher implements UpdateConsumer {
             return new FailureClassification(middlewareFailure.rootCause(), type);
         }
         if (unwrapped instanceof HandlerInvocationException handlerFailure) {
+            Throwable root = handlerFailure.rootCause();
+            if (root instanceof ParameterResolutionException) {
+                return new FailureClassification(root, RuntimeDispatchErrorType.PARAMETER_RESOLUTION_FAILURE);
+            }
+            if (root instanceof ReflectiveInvocationException) {
+                return new FailureClassification(root, RuntimeDispatchErrorType.INVOCATION_FAILURE);
+            }
             return new FailureClassification(
-                    handlerFailure.rootCause(),
+                    root,
                     RuntimeDispatchErrorType.HANDLER_FAILURE
             );
         }

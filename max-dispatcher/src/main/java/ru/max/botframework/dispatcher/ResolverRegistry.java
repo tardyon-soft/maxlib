@@ -24,10 +24,17 @@ public final class ResolverRegistry {
         Objects.requireNonNull(parameter, "parameter");
         Objects.requireNonNull(context, "context");
         for (HandlerParameterResolver resolver : resolvers) {
-            HandlerParameterResolution resolution = Objects.requireNonNull(
-                    resolver.resolve(parameter, context),
-                    "resolver result"
-            );
+            HandlerParameterResolution resolution;
+            try {
+                resolution = Objects.requireNonNull(
+                        resolver.resolve(parameter, context),
+                        "resolver result"
+                );
+            } catch (ParameterResolutionException known) {
+                throw known;
+            } catch (Throwable throwable) {
+                throw new ResolverExecutionException(resolver.getClass(), throwable);
+            }
             if (resolution.supported()) {
                 return Optional.of(resolution.value());
             }

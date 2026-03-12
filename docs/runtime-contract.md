@@ -157,6 +157,10 @@ MVP outcomes:
 
 Dispatch-layer runtime ошибки в Sprint 3:
 - `HANDLER_FAILURE` — исключение/failed completion в `update`/`message`/`callback` handler;
+- `PARAMETER_RESOLUTION_FAILURE` — ошибка resolution параметров handler-а
+  (unsupported/ambiguous/missing dependency/resolver failure);
+- `INVOCATION_FAILURE` — reflective invocation infrastructure failure
+  (например, некорректная method signature/return contract);
 - `EVENT_MAPPING_FAILURE` — ошибка при `Update -> observer/event` resolution;
 - `OBSERVER_EXECUTION_FAILURE` — ошибка во время вызова observer execution contract.
 

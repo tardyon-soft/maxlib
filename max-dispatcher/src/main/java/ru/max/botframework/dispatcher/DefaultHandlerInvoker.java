@@ -9,6 +9,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import ru.max.botframework.model.Callback;
+import ru.max.botframework.model.Chat;
+import ru.max.botframework.model.Message;
+import ru.max.botframework.model.Update;
+import ru.max.botframework.model.User;
 
 /**
  * Default reflective handler invoker with lightweight method metadata cache.
@@ -43,17 +48,19 @@ public final class DefaultHandlerInvoker implements HandlerInvoker {
         Objects.requireNonNull(context, "context");
 
         HandlerMethodMetadata metadata = metadataCache.computeIfAbsent(method, this::introspect);
-        Object[] args = resolveArguments(method, metadata, context);
         try {
+            Object[] args = resolveArguments(method, metadata, context);
             if (!method.canAccess(target)) {
                 method.setAccessible(true);
             }
             Object result = method.invoke(target, args);
-            return normalizeResult(result);
+            return normalizeResult(method, result);
         } catch (InvocationTargetException e) {
             return CompletableFuture.failedFuture(unwrap(e.getTargetException()));
+        } catch (ParameterResolutionException known) {
+            return CompletableFuture.failedFuture(known);
         } catch (Throwable throwable) {
-            return CompletableFuture.failedFuture(unwrap(throwable));
+            return CompletableFuture.failedFuture(ReflectiveInvocationException.invocationFailure(method, unwrap(throwable)));
         }
     }
 
@@ -65,8 +72,41 @@ public final class DefaultHandlerInvoker implements HandlerInvoker {
         Object[] args = new Object[metadata.parameters().length];
         for (int i = 0; i < metadata.parameters().length; i++) {
             HandlerParameterDescriptor parameter = metadata.parameters()[i];
-            Optional<Object> resolved = registry.resolve(parameter, context);
+            Optional<Object> resolved;
+            try {
+                resolved = registry.resolve(parameter, context);
+            } catch (ParameterResolutionException known) {
+                throw known;
+            } catch (ResolverExecutionException resolverFailure) {
+                Throwable cause = resolverFailure.getCause() == null ? resolverFailure : resolverFailure.getCause();
+                if (cause instanceof IllegalStateException ambiguous
+                        && ambiguous.getMessage() != null
+                        && ambiguous.getMessage().toLowerCase().contains("ambiguous")) {
+                    throw ParameterResolutionException.ambiguous(
+                            method,
+                            parameter,
+                            resolverFailure.resolverType().getSimpleName(),
+                            ambiguous
+                    );
+                }
+                throw ParameterResolutionException.resolverFailure(
+                        method,
+                        parameter,
+                        resolverFailure.resolverType().getSimpleName(),
+                        cause
+                );
+            } catch (Throwable throwable) {
+                throw ParameterResolutionException.resolverFailure(
+                        method,
+                        parameter,
+                        "unknown",
+                        throwable
+                );
+            }
             if (resolved.isEmpty()) {
+                if (isLikelyDependencyParameter(parameter, context)) {
+                    throw new MissingHandlerDependencyException(method, parameter);
+                }
                 throw new UnsupportedHandlerParameterException(method, parameter);
             }
             args[i] = resolved.orElseThrow();
@@ -74,14 +114,14 @@ public final class DefaultHandlerInvoker implements HandlerInvoker {
         return args;
     }
 
-    private static CompletionStage<Void> normalizeResult(Object result) {
+    private static CompletionStage<Void> normalizeResult(Method method, Object result) {
         if (result == null) {
             return CompletableFuture.completedFuture(null);
         }
         if (result instanceof CompletionStage<?> stage) {
             return stage.thenApply(ignored -> null);
         }
-        throw new IllegalStateException("handler method must return void or CompletionStage");
+        throw ReflectiveInvocationException.invalidReturnType(method, result);
     }
 
     private HandlerMethodMetadata introspect(Method method) {
@@ -98,6 +138,22 @@ public final class DefaultHandlerInvoker implements HandlerInvoker {
             return completion.getCause();
         }
         return throwable;
+    }
+
+    private static boolean isLikelyDependencyParameter(
+            HandlerParameterDescriptor parameter,
+            HandlerInvocationContext context
+    ) {
+        Class<?> type = parameter.type();
+        if (type == RuntimeContext.class
+                || type == Update.class
+                || type == Message.class
+                || type == Callback.class
+                || type == User.class
+                || type == Chat.class) {
+            return false;
+        }
+        return !type.isInstance(context.event());
     }
 
     private record HandlerMethodMetadata(HandlerParameterDescriptor[] parameters) {
