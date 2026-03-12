@@ -61,6 +61,18 @@ public final class MessageBuilder {
         return new MessageBuilder(text, notify, Objects.requireNonNull(value, "value"), link, attachments, keyboard);
     }
 
+    public MessageBuilder plain() {
+        return format(TextFormat.PLAIN);
+    }
+
+    public MessageBuilder markdown() {
+        return format(TextFormat.MARKDOWN);
+    }
+
+    public MessageBuilder html() {
+        return format(TextFormat.HTML);
+    }
+
     public MessageBuilder link(String value) {
         Objects.requireNonNull(value, "value");
         if (value.isBlank()) {

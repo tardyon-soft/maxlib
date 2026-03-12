@@ -54,6 +54,31 @@ class MessageBuilderTest {
     }
 
     @Test
+    void markdownAndHtmlConvenienceMethodsMapToLowLevelFormat() {
+        NewMessageBody markdownBody = Messages.text("*hello*").markdown().toNewMessageBody();
+        NewMessageBody htmlBody = Messages.text("<b>hello</b>").html().toNewMessageBody();
+
+        assertEquals(TextFormat.MARKDOWN, markdownBody.format());
+        assertEquals("*hello*", markdownBody.text());
+        assertEquals(TextFormat.HTML, htmlBody.format());
+        assertEquals("<b>hello</b>", htmlBody.text());
+    }
+
+    @Test
+    void messagesFactoryFormattingEntrypointsSetExpectedFormat() {
+        SendMessageRequest markdownRequest = Messages.markdown("*hello*")
+                .toSendRequest(new ChatId("chat-md"));
+        SendMessageRequest htmlRequest = Messages.html("<b>hello</b>")
+                .toSendRequest(new ChatId("chat-html"));
+        SendMessageRequest plainRequest = Messages.plain("hello")
+                .toSendRequest(new ChatId("chat-plain"));
+
+        assertEquals(TextFormat.MARKDOWN, markdownRequest.body().format());
+        assertEquals(TextFormat.HTML, htmlRequest.body().format());
+        assertEquals(TextFormat.PLAIN, plainRequest.body().format());
+    }
+
+    @Test
     void supportsAttachmentsExtensionPointInBodyMapping() {
         NewMessageAttachment attachment = new NewMessageAttachment(
                 MessageAttachmentType.FILE,

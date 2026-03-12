@@ -208,6 +208,12 @@ SendMessageRequest request = Messages.text("Привет")
     .notify(false)
     .link("https://example.com")
     .toSendRequest(chatId);
+
+SendMessageRequest md = Messages.markdown("*Привет*")
+    .toSendRequest(chatId);
+
+SendMessageRequest html = Messages.html("<b>Привет</b>")
+    .toSendRequest(chatId);
 ```
 
 ## Shared Services Injection (Sprint 5.2.3)

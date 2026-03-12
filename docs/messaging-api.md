@@ -75,6 +75,8 @@ MVP поля:
 
 ```java
 Messages.text("Привет");
+Messages.markdown("*Привет*");
+Messages.html("<b>Привет</b>");
 Messages.reply("Готово");
 Messages.edit("Новый текст");
 Messages.delete();
