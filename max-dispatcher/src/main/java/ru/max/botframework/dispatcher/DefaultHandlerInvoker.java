@@ -25,8 +25,12 @@ public final class DefaultHandlerInvoker implements HandlerInvoker {
         return new DefaultHandlerInvoker(new ResolverRegistry()
                 .register(new RuntimeContextParameterResolver())
                 .register(new UpdateParameterResolver())
+                .register(new MessageParameterResolver())
+                .register(new CallbackParameterResolver())
+                .register(new UserParameterResolver())
+                .register(new ChatParameterResolver())
                 .register(new EventParameterResolver())
-                .register(new ApplicationDataParameterResolver()));
+        );
     }
 
     @Override

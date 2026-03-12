@@ -96,6 +96,7 @@ outer middleware -> filters -> inner middleware -> handler.
 - Java-friendly signature model: `ContextualEventHandler<TEvent>` (`event + RuntimeContext`).
 - typed runtime data model: `RuntimeDataContainer` + `RuntimeDataKey<T>` + source scopes.
 - method-based adapter path: `ReflectiveEventHandler<TEvent>` + `DefaultHandlerInvoker`.
+- built-in resolver coverage: `Update`, `Message`, `Callback`, `User`, `Chat`, `RuntimeContext`.
 
 ### Границы Sprint 5
 

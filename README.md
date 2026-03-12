@@ -29,7 +29,7 @@ Java framework для разработки ботов на платформе MA
 - добавлен typed runtime data container foundation: `RuntimeDataContainer` + `RuntimeDataKey<T>` + `RuntimeDataScope`;
 - добавлено ядро invocation engine Sprint 5:
   `HandlerInvoker` (`DefaultHandlerInvoker`), `HandlerParameterResolver`, `ResolverRegistry`,
-  базовые resolvers для `RuntimeContext`/`Update`/event/application data;
+  базовые resolvers для `RuntimeContext`/`Update`/`Message`/`Callback`/`User`/`Chat`/event;
 - реализован базовый observer layer в `max-dispatcher`: `EventObserver`, `EventHandler`, `DefaultEventObserver`, MVP observer types (`update/message/callback/error`);
 - реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not`, filter-aware handler registration в `Router` и built-in filters MVP (`Command`, `TextEquals`, `TextStartsWith`, `ChatType`, `FromUser`, `HasAttachment`, `StateFilter` placeholder);
 - реализованы middleware contracts foundation: `OuterMiddleware`, `InnerMiddleware`, `MiddlewareNext`, `RuntimeContext`/`ContextKey` и chain executor с short-circuit support;
@@ -382,6 +382,10 @@ Sprint 5 handler signature model (current):
 ```java
 router.message((Message message, RuntimeContext ctx) -> {
     String suffix = ctx.enrichmentValue(BuiltInFilters.TEXT_SUFFIX_KEY, String.class).orElse("n/a");
+    return CompletableFuture.completedFuture(null);
+});
+
+router.callback((Callback callback, User actor, Chat chat, RuntimeContext ctx) -> {
     return CompletableFuture.completedFuture(null);
 });
 ```

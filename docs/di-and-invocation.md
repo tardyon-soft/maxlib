@@ -82,8 +82,15 @@ MVP implementation baseline:
 MVP built-ins:
 - `RuntimeContextParameterResolver`;
 - `UpdateParameterResolver`;
+- `MessageParameterResolver`;
+- `CallbackParameterResolver`;
+- `UserParameterResolver`;
+- `ChatParameterResolver`;
 - `EventParameterResolver`;
-- `ApplicationDataParameterResolver`.
+
+Примечание текущего этапа:
+- `ApplicationDataParameterResolver` существует как инфраструктурный extension point,
+  но не включён в default resolver chain Sprint 5.2.1.
 
 ### `ResolverRegistry`
 
