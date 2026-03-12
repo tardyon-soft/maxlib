@@ -2,7 +2,6 @@ package ru.max.botframework.ingestion;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,7 +12,7 @@ import ru.max.botframework.model.Update;
  */
 public final class DefaultLongPollingRunner implements LongPollingRunner {
     private final PollingUpdateSource source;
-    private final UpdateSink sink;
+    private final UpdatePipeline pipeline;
     private final LongPollingRunnerConfig config;
     private final ExecutorService executor;
     private final PollingMarkerState markerState;
@@ -21,21 +20,29 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile Future<?> worker;
     public DefaultLongPollingRunner(PollingUpdateSource source, UpdateSink sink) {
-        this(source, sink, LongPollingRunnerConfig.defaults());
+        this(source, new DefaultUpdatePipeline(sink), LongPollingRunnerConfig.defaults());
     }
 
     public DefaultLongPollingRunner(PollingUpdateSource source, UpdateSink sink, LongPollingRunnerConfig config) {
-        this(source, sink, config, new InMemoryPollingMarkerState(config.request().marker()));
+        this(source, new DefaultUpdatePipeline(sink), config, new InMemoryPollingMarkerState(config.request().marker()));
+    }
+
+    public DefaultLongPollingRunner(PollingUpdateSource source, UpdatePipeline pipeline) {
+        this(source, pipeline, LongPollingRunnerConfig.defaults());
+    }
+
+    public DefaultLongPollingRunner(PollingUpdateSource source, UpdatePipeline pipeline, LongPollingRunnerConfig config) {
+        this(source, pipeline, config, new InMemoryPollingMarkerState(config.request().marker()));
     }
 
     public DefaultLongPollingRunner(
             PollingUpdateSource source,
-            UpdateSink sink,
+            UpdatePipeline pipeline,
             LongPollingRunnerConfig config,
             PollingMarkerState markerState
     ) {
         this.source = Objects.requireNonNull(source, "source");
-        this.sink = Objects.requireNonNull(sink, "sink");
+        this.pipeline = Objects.requireNonNull(pipeline, "pipeline");
         this.config = Objects.requireNonNull(config, "config");
         this.executor = config.executor();
         this.markerState = Objects.requireNonNull(markerState, "markerState");
@@ -115,13 +122,13 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
 
     private boolean handleUpdate(Update update) {
         try {
-            UpdateHandlingResult result = sink.handle(update).toCompletableFuture().join();
-            if (result == null || !result.isSuccess()) {
+            UpdatePipelineResult result = pipeline.process(update, UpdatePipelineContext.POLLING).toCompletableFuture().join();
+            if (result == null || !result.isAccepted()) {
                 sleep(config.sinkErrorDelay());
                 return false;
             }
             return true;
-        } catch (CompletionException | RuntimeException ignored) {
+        } catch (RuntimeException ignored) {
             sleep(config.sinkErrorDelay());
             return false;
         }

@@ -155,8 +155,23 @@ Marker progression strategy (Sprint 2.2.3):
 - единая точка передачи в следующий runtime слой.
 
 Граница:
-- в Sprint 2 может быть минимальным `UpdateSink`-совместимым контрактом;
+- в Sprint 2 реализован как отдельный контракт поверх `UpdateSink`;
 - не обязан содержать routing/middleware semantics на этом этапе.
+
+Контракт (минимальный):
+- `CompletionStage<UpdatePipelineResult> process(Update update, UpdatePipelineContext context)`.
+
+`UpdatePipelineContext`:
+- `POLLING`
+- `WEBHOOK`
+
+`UpdatePipelineResult`:
+- `ACCEPTED` — update обработан sink успешно;
+- `REJECTED` — update не прошёл ingestion delivery (sink failure/exception).
+
+Extension points:
+- `UpdatePipelineHook` (`onBefore` / `onAfter`) для logging/metrics;
+- замена `DefaultUpdatePipeline` на кастомную реализацию перед Sprint 3 dispatcher integration.
 
 ## Update lifecycle (ingestion layer)
 
@@ -169,13 +184,14 @@ Marker progression strategy (Sprint 2.2.3):
 - обязательные поля/тип update проверяются на уровне ingestion validation.
 
 3. Передача в sink:
-- normalized `Update` передаётся в единый `UpdateSink`/`UpdatePipeline`;
-- polling и webhook используют один и тот же sink contract.
+- normalized `Update` передаётся в единый `UpdatePipeline`;
+- `UpdatePipeline` делегирует обработку в `UpdateSink`;
+- polling и webhook используют один и тот же pipeline contract.
 
 4. Ошибки ingestion-слоя:
 - transport/decoding/normalization ошибки обрабатываются в ingestion boundary;
 - ошибка одного update не должна приводить к падению всего ingestion runtime без явной policy;
-- sink-ошибки выражаются через `UpdateHandlingResult.FAILURE` (или exceptional completion на boundary уровне);
+- sink-ошибки маппятся в `UpdatePipelineResult.REJECTED`;
 - policy retry/backoff/skip фиксируется ingestion runtime и не смешивается с business routing.
 
 ## Unified flow requirement

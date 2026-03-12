@@ -20,6 +20,7 @@ Sprint 1 (`client/DTO/errors`) завершён.
 - marker progression contract: monotonic marker state с продвижением только после успешного batch handling;
 - webhook secret validation foundation: `WebhookSecretValidator` + typed validation result/error contracts;
 - webhook receiver foundation: `DefaultWebhookReceiver` (`WebhookRequest` -> `WebhookReceiveResult`);
+- unified ingestion pipeline foundation: `UpdatePipeline` + `DefaultUpdatePipeline` + `UpdatePipelineContext`;
 - domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
 - тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
 
@@ -186,6 +187,13 @@ runner.stop();
 - `ACCEPTED`
 - `SKIPPED_NO_SECRET_CONFIGURED`
 - `REJECTED` (`SECRET_HEADER_MISSING` или `SECRET_MISMATCH`).
+
+## Unified Ingestion Pipeline
+
+- polling runner и webhook receiver используют один transport-level contract: `UpdatePipeline`;
+- стандартная реализация: `DefaultUpdatePipeline`, которая делегирует в `UpdateSink`;
+- контекст источника фиксируется через `UpdatePipelineContext` (`POLLING` / `WEBHOOK`);
+- расширение для observability: `UpdatePipelineHook` (`onBefore` / `onAfter`).
 
 ## Low-level Webhook Handling Example
 

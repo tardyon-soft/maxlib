@@ -42,6 +42,8 @@
   (`WebhookRequest` -> `WebhookReceiveResult`).
 - `WebhookReceiveResult` — result contract для web adapter integration.
 - `UpdatePipeline` — unified ingress контракт для downstream обработки.
+- `UpdatePipelineContext`/`UpdatePipelineResult` — transport context и результат pipeline delivery.
+- `UpdatePipelineHook` — internal extension point для logging/metrics/dispatcher bridge.
 
 ### Границы Sprint 2
 

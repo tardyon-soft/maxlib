@@ -3,7 +3,6 @@ package ru.max.botframework.ingestion;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import ru.max.botframework.client.error.MaxSerializationException;
 import ru.max.botframework.client.serialization.JsonCodec;
@@ -15,12 +14,16 @@ import ru.max.botframework.model.Update;
 public final class DefaultWebhookReceiver implements WebhookReceiver {
     private final WebhookSecretValidator secretValidator;
     private final JsonCodec jsonCodec;
-    private final UpdateSink sink;
+    private final UpdatePipeline pipeline;
 
     public DefaultWebhookReceiver(WebhookSecretValidator secretValidator, JsonCodec jsonCodec, UpdateSink sink) {
+        this(secretValidator, jsonCodec, new DefaultUpdatePipeline(sink));
+    }
+
+    public DefaultWebhookReceiver(WebhookSecretValidator secretValidator, JsonCodec jsonCodec, UpdatePipeline pipeline) {
         this.secretValidator = Objects.requireNonNull(secretValidator, "secretValidator");
         this.jsonCodec = Objects.requireNonNull(jsonCodec, "jsonCodec");
-        this.sink = Objects.requireNonNull(sink, "sink");
+        this.pipeline = Objects.requireNonNull(pipeline, "pipeline");
     }
 
     @Override
@@ -46,34 +49,17 @@ public final class DefaultWebhookReceiver implements WebhookReceiver {
             );
         }
 
-        CompletionStage<UpdateHandlingResult> sinkStage;
-        try {
-            sinkStage = sink.handle(update);
-        } catch (RuntimeException runtimeException) {
-            return CompletableFuture.completedFuture(
-                    WebhookReceiveResult.internalError("Update sink failed before completion stage creation", runtimeException)
-            );
-        }
-
-        return sinkStage.handle((result, error) -> {
+        return pipeline.process(update, UpdatePipelineContext.WEBHOOK).handle((pipelineResult, error) -> {
             if (error != null) {
-                Throwable unwrapped = unwrap(error);
-                return WebhookReceiveResult.internalError("Update sink completion failed", unwrapped);
+                return WebhookReceiveResult.internalError("Update pipeline completion failed", error);
             }
-            if (result == null || !result.isSuccess()) {
+            if (pipelineResult == null || !pipelineResult.isAccepted()) {
                 return WebhookReceiveResult.internalError(
-                        "Update sink reported handling failure",
-                        result == null ? null : result.error().orElse(null)
+                        "Update pipeline reported handling failure",
+                        pipelineResult == null ? null : pipelineResult.error().orElse(null)
                 );
             }
             return WebhookReceiveResult.accepted(validationResult);
         });
-    }
-
-    private static Throwable unwrap(Throwable throwable) {
-        if (throwable instanceof CompletionException completionException && completionException.getCause() != null) {
-            return completionException.getCause();
-        }
-        return throwable;
     }
 }
