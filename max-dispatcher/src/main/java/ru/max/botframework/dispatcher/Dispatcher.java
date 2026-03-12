@@ -104,16 +104,57 @@ public final class Dispatcher implements UpdateConsumer {
     }
 
     private CompletionStage<DispatchResult> notifyRouter(Router router, Update update) {
-        return router.updates().notify(update)
-                .thenCompose(result -> {
+        return notifyObserver(router.updates(), update, router, update)
+                .thenCompose(genericResult -> {
+                    if (genericResult.status() != DispatchStatus.IGNORED) {
+                        return CompletableFuture.completedFuture(genericResult);
+                    }
+                    UpdateEventResolution resolution;
+                    try {
+                        resolution = eventResolver.resolve(update);
+                    } catch (Throwable throwable) {
+                        return handleFailure(
+                                router,
+                                update,
+                                throwable,
+                                RuntimeDispatchErrorType.EVENT_MAPPING_FAILURE
+                        );
+                    }
+                    return notifyResolvedObserver(router, update, resolution);
+                });
+    }
+
+    private <TEvent> CompletionStage<DispatchResult> notifyObserver(
+            EventObserver<TEvent> observer,
+            TEvent event,
+            Router router,
+            Update update
+    ) {
+        CompletionStage<HandlerExecutionResult> stage;
+        try {
+            stage = observer.notify(event);
+        } catch (Throwable throwable) {
+            return handleFailure(router, update, throwable, RuntimeDispatchErrorType.OBSERVER_EXECUTION_FAILURE);
+        }
+        return stage.handle((result, throwable) -> new ObserverNotificationOutcome(result, throwable))
+                .thenCompose(outcome -> {
+                    if (outcome.throwable() != null) {
+                        return handleFailure(
+                                router,
+                                update,
+                                unwrap(outcome.throwable()),
+                                RuntimeDispatchErrorType.OBSERVER_EXECUTION_FAILURE
+                        );
+                    }
+                    HandlerExecutionResult result = outcome.result();
                     if (result.status() == HandlerExecutionStatus.HANDLED) {
                         return CompletableFuture.completedFuture(DispatchResult.handled());
                     }
                     if (result.status() == HandlerExecutionStatus.FAILED) {
-                        return handleFailure(router, update, result.errorOpt().orElseThrow());
+                        Throwable failure = result.errorOpt().orElseGet(() -> new IllegalStateException("handler failed without error"));
+                        return handleFailure(router, update, failure, RuntimeDispatchErrorType.HANDLER_FAILURE);
                     }
-                    UpdateEventResolution resolution = eventResolver.resolve(update);
-                    return notifyResolvedObserver(router, update, resolution);
+                    return CompletableFuture.completedFuture(DispatchResult.ignored());
                 });
     }
 
@@ -122,36 +163,44 @@ public final class Dispatcher implements UpdateConsumer {
             Update update,
             UpdateEventResolution resolution
     ) {
-        CompletionStage<HandlerExecutionResult> stage;
         if (resolution.eventType() == ResolvedUpdateEventType.MESSAGE) {
             if (update.message() == null) {
                 return CompletableFuture.completedFuture(DispatchResult.ignored());
             }
-            stage = router.messages().notify(update.message());
+            return notifyObserver(router.messages(), update.message(), router, update);
         } else if (resolution.eventType() == ResolvedUpdateEventType.CALLBACK) {
             if (update.callback() == null) {
                 return CompletableFuture.completedFuture(DispatchResult.ignored());
             }
-            stage = router.callbacks().notify(update.callback());
+            return notifyObserver(router.callbacks(), update.callback(), router, update);
         } else {
             return CompletableFuture.completedFuture(DispatchResult.ignored());
         }
-
-        return stage.thenCompose(result -> {
-            if (result.status() == HandlerExecutionStatus.HANDLED) {
-                return CompletableFuture.completedFuture(DispatchResult.handled());
-            }
-            if (result.status() == HandlerExecutionStatus.FAILED) {
-                return handleFailure(router, update, result.errorOpt().orElseThrow());
-            }
-            return CompletableFuture.completedFuture(DispatchResult.ignored());
-        });
     }
 
-    private CompletionStage<DispatchResult> handleFailure(Router router, Update update, Throwable error) {
-        ErrorEvent event = new ErrorEvent(update, error);
-        return router.errors().notify(event)
-                .handle((ignored, throwable) -> DispatchResult.failed(error));
+    private CompletionStage<DispatchResult> handleFailure(
+            Router router,
+            Update update,
+            Throwable error,
+            RuntimeDispatchErrorType type
+    ) {
+        ErrorEvent event = new ErrorEvent(update, error, type);
+        CompletionStage<HandlerExecutionResult> stage;
+        try {
+            stage = router.errors().notify(event);
+        } catch (Throwable throwable) {
+            error.addSuppressed(throwable);
+            return CompletableFuture.completedFuture(DispatchResult.failed(error));
+        }
+        return stage
+                .handle((result, throwable) -> {
+                    if (throwable != null) {
+                        error.addSuppressed(unwrap(throwable));
+                    } else if (result.status() == HandlerExecutionStatus.FAILED) {
+                        result.errorOpt().ifPresent(error::addSuppressed);
+                    }
+                    return DispatchResult.failed(error);
+                });
     }
 
     private static Throwable unwrap(Throwable throwable) {
@@ -159,5 +208,8 @@ public final class Dispatcher implements UpdateConsumer {
             return throwable.getCause();
         }
         return throwable;
+    }
+
+    private record ObserverNotificationOutcome(HandlerExecutionResult result, Throwable throwable) {
     }
 }

@@ -297,6 +297,12 @@ First-match and propagation rules:
 - если handler не найден во всей цепочке, результат `DispatchResult.IGNORED`;
 - если handler падает, результат `DispatchResult.FAILED`, и вызывается `error` observer текущего router.
 
+Runtime error boundary:
+- runtime dispatch ошибки классифицируются как `HANDLER_FAILURE`, `EVENT_MAPPING_FAILURE`, `OBSERVER_EXECUTION_FAILURE`;
+- все они передаются в `error` observer текущего router как `ErrorEvent`;
+- даже при успешном `error` handler итог dispatch остаётся `FAILED`;
+- если `error` handler сам падает, его ошибка добавляется в `suppressed` исходной runtime ошибки.
+
 ## Low-level Webhook Handling Example
 
 ```java

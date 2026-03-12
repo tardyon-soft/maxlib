@@ -231,6 +231,7 @@ class DispatcherTest {
         router.error(error -> {
             errorCalls.incrementAndGet();
             assertSame(failure, error.error());
+            assertEquals(RuntimeDispatchErrorType.HANDLER_FAILURE, error.type());
             return CompletableFuture.completedFuture(null);
         });
         dispatcher.includeRouter(router);
@@ -239,6 +240,62 @@ class DispatcherTest {
 
         assertEquals(DispatchStatus.FAILED, result.status());
         assertSame(failure, result.errorOpt().orElseThrow());
+        assertEquals(1, errorCalls.get());
+    }
+
+    @Test
+    void feedUpdateReturnsFailedWhenNoErrorObserverHandlerRegistered() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        RuntimeException failure = new RuntimeException("handler failed");
+        router.message(message -> CompletableFuture.failedFuture(failure));
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertSame(failure, result.errorOpt().orElseThrow());
+        assertEquals(0, failure.getSuppressed().length);
+    }
+
+    @Test
+    void feedUpdateAddsSuppressedWhenErrorObserverHandlerFails() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        RuntimeException originalFailure = new RuntimeException("handler failed");
+        RuntimeException errorObserverFailure = new RuntimeException("error observer failed");
+
+        router.message(message -> CompletableFuture.failedFuture(originalFailure));
+        router.error(error -> CompletableFuture.failedFuture(errorObserverFailure));
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        Throwable failure = result.errorOpt().orElseThrow();
+        assertSame(originalFailure, failure);
+        assertEquals(1, failure.getSuppressed().length);
+        assertSame(errorObserverFailure, failure.getSuppressed()[0]);
+    }
+
+    @Test
+    void feedUpdateRoutesEventMappingFailureToErrorObserver() {
+        UpdateEventResolver failingResolver = update -> {
+            throw new IllegalStateException("resolver failed");
+        };
+        Dispatcher dispatcher = new Dispatcher(failingResolver);
+        Router router = new Router("main");
+        AtomicInteger errorCalls = new AtomicInteger();
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertEquals(RuntimeDispatchErrorType.EVENT_MAPPING_FAILURE, error.type());
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
         assertEquals(1, errorCalls.get());
     }
 

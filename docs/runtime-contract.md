@@ -149,3 +149,21 @@ MVP outcomes:
 
 Требование:
 - polling и webhook обязаны приходить в один и тот же dispatch pipeline без расхождения внутренней логики.
+
+## Runtime error boundary
+
+Dispatch-layer runtime ошибки в Sprint 3:
+- `HANDLER_FAILURE` — исключение/failed completion в `update`/`message`/`callback` handler;
+- `EVENT_MAPPING_FAILURE` — ошибка при `Update -> observer/event` resolution;
+- `OBSERVER_EXECUTION_FAILURE` — ошибка во время вызова observer execution contract.
+
+Propagation model:
+- runtime error пробрасывается в `error` observer текущего router как `ErrorEvent(update, error, type)`;
+- dispatch result остаётся `FAILED` даже если `error` handler выполнился успешно;
+- если `error` handler отсутствует, ошибка остаётся `FAILED` без дополнительной обработки;
+- если `error` handler сам падает, его ошибка добавляется в `suppressed` к исходной runtime ошибке.
+
+Boundary с ingestion:
+- ingestion-level transport ошибки (polling/webhook parse/IO/secret validation) остаются в ingestion layer;
+- runtime dispatch ошибки (routing/handler/event resolution) остаются в dispatcher layer;
+- `Dispatcher` адаптируется к ingestion через `UpdateConsumer.handle(Update)` без смешивания transport-ошибок и runtime-ошибок.
