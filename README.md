@@ -222,6 +222,13 @@ runner.stop();
 - sink failures (`INTERNAL_ERROR`);
 - fixtures path: `max-dispatcher/src/test/resources/fixtures/ingestion`.
 
+## Sprint 2 Examples
+
+- low-level examples directory: `examples/sprint-2-low-level`;
+- files:
+- `LongPollingExample.java`
+- `WebhookHandlingExample.java`
+
 ## Low-level Webhook Handling Example
 
 ```java
