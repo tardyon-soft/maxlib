@@ -32,6 +32,7 @@ public final class DefaultHandlerInvoker implements HandlerInvoker {
                 .register(new EventParameterResolver())
                 .register(new FilterDataParameterResolver())
                 .register(new MiddlewareDataParameterResolver())
+                .register(new ApplicationDataParameterResolver())
         );
     }
 

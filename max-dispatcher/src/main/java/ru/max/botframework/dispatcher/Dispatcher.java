@@ -22,6 +22,7 @@ import ru.max.botframework.model.Update;
 public final class Dispatcher implements UpdateConsumer {
     private final List<Router> rootRouters = new ArrayList<>();
     private final List<OuterMiddleware> outerMiddlewares = new ArrayList<>();
+    private final Map<RuntimeDataKey<?>, Object> applicationData = new java.util.concurrent.ConcurrentHashMap<>();
     private final UpdateEventResolver eventResolver;
 
     public Dispatcher() {
@@ -77,6 +78,53 @@ public final class Dispatcher implements UpdateConsumer {
     }
 
     /**
+     * Registers shared application data for parameter resolution.
+     *
+     * <p>Only {@link RuntimeDataScope#APPLICATION} keys are allowed.
+     * Dispatcher keeps references as-is and does not manage lifecycle of registered objects.</p>
+     */
+    public <T> Dispatcher registerApplicationData(RuntimeDataKey<T> key, T value) {
+        Objects.requireNonNull(key, "key");
+        Objects.requireNonNull(value, "value");
+        if (key.scope() != RuntimeDataScope.APPLICATION) {
+            throw new IllegalArgumentException("only APPLICATION scope keys can be registered on dispatcher");
+        }
+        if (!key.type().isInstance(value)) {
+            throw new IllegalArgumentException("value type does not match runtime data key type");
+        }
+        for (RuntimeDataKey<?> existingKey : applicationData.keySet()) {
+            if (existingKey.name().equals(key.name()) && !existingKey.type().equals(key.type())) {
+                throw new IllegalArgumentException(
+                        "application data key '%s' is already registered with type %s"
+                                .formatted(key.name(), existingKey.type().getName())
+                );
+            }
+        }
+        Object existing = applicationData.putIfAbsent(key, value);
+        if (existing != null && !Objects.equals(existing, value)) {
+            throw new RuntimeDataConflictException(key.name(), existing, value, key.scope());
+        }
+        return this;
+    }
+
+    /**
+     * Registers shared service by type.
+     *
+     * <p>This is a typed convenience wrapper over {@link #registerApplicationData(RuntimeDataKey, Object)}.</p>
+     */
+    public <T> Dispatcher registerService(Class<T> type, T service) {
+        Objects.requireNonNull(type, "type");
+        return registerApplicationData(RuntimeDataKey.application("service:" + type.getName(), type), service);
+    }
+
+    /**
+     * Immutable snapshot of registered application data.
+     */
+    public Map<RuntimeDataKey<?>, Object> applicationData() {
+        return Map.copyOf(applicationData);
+    }
+
+    /**
      * Backward-compatible ingestion adapter for APIs that still require {@link UpdateSink}.
      */
     @Deprecated(forRemoval = false)
@@ -90,6 +138,7 @@ public final class Dispatcher implements UpdateConsumer {
     public CompletionStage<DispatchResult> feedUpdate(Update update) {
         Objects.requireNonNull(update, "update");
         RuntimeContext context = new RuntimeContext(update);
+        injectApplicationData(context);
         return MiddlewareChainExecutor.executeOuter(
                 context,
                 outerMiddlewares,
@@ -307,6 +356,17 @@ public final class Dispatcher implements UpdateConsumer {
             return;
         }
         context.mergeFilterEnrichment(enrichment);
+    }
+
+    private void injectApplicationData(RuntimeContext context) {
+        for (Map.Entry<RuntimeDataKey<?>, Object> entry : applicationData.entrySet()) {
+            putApplicationData(context, entry.getKey(), entry.getValue());
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void putApplicationData(RuntimeContext context, RuntimeDataKey<?> key, Object value) {
+        context.putData((RuntimeDataKey) key, value);
     }
 
     private CompletionStage<DispatchResult> handleFailure(

@@ -31,6 +31,9 @@ Java framework для разработки ботов на платформе MA
   `HandlerInvoker` (`DefaultHandlerInvoker`), `HandlerParameterResolver`, `ResolverRegistry`,
   базовые resolvers для `RuntimeContext`/`Update`/`Message`/`Callback`/`User`/`Chat`/event
   и enrichment-derived parameters (filter data, middleware data);
+- добавлен application-level injection bridge:
+  `Dispatcher.registerService(...)` и `Dispatcher.registerApplicationData(...)`
+  + built-in `ApplicationDataParameterResolver` в default invoker chain;
 - реализован базовый observer layer в `max-dispatcher`: `EventObserver`, `EventHandler`, `DefaultEventObserver`, MVP observer types (`update/message/callback/error`);
 - реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not`, filter-aware handler registration в `Router` и built-in filters MVP (`Command`, `TextEquals`, `TextStartsWith`, `ChatType`, `FromUser`, `HasAttachment`, `StateFilter` placeholder);
 - реализованы middleware contracts foundation: `OuterMiddleware`, `InnerMiddleware`, `MiddlewareNext`, `RuntimeContext`/`ContextKey` и chain executor с short-circuit support;
@@ -170,6 +173,27 @@ Sprint 4 завершён:
 - источники инъекции: runtime context, filter data, middleware data, framework services.
 - без полноценного IoC container и без Spring-specific integration на этом этапе.
 - runtime data model основан на request-scoped typed container (framework/filter/middleware/application scopes).
+
+## Shared Services Injection (Sprint 5.2.3)
+
+```java
+Dispatcher dispatcher = new Dispatcher();
+dispatcher.registerService(OrderService.class, new OrderService());
+
+Router router = new Router("orders");
+Method method = OrderHandlers.class.getDeclaredMethod(
+    "onMessage",
+    Message.class,
+    OrderService.class
+);
+router.message(ReflectiveEventHandler.of(new OrderHandlers(), method, DefaultHandlerInvoker.withDefaults()));
+dispatcher.includeRouter(router);
+```
+
+Правила:
+- shared objects регистрируются явно на уровне `Dispatcher`;
+- resolution идёт по типу параметра (`ApplicationDataParameterResolver`);
+- framework не управляет lifecycle сервисов и не делает IoC/scopes.
 
 ## Sprint 2 Summary
 

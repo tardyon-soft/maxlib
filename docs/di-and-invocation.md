@@ -91,8 +91,8 @@ MVP built-ins:
 - `MiddlewareDataParameterResolver`.
 
 Примечание текущего этапа:
-- `ApplicationDataParameterResolver` существует как инфраструктурный extension point,
-  но не включён в default resolver chain Sprint 5.2.1.
+- `ApplicationDataParameterResolver` включён в default resolver chain
+  и резолвит shared application services/data по типу параметра.
 - Приоритет enrichment-derived parameters в default chain:
   `filter data` -> `middleware data`.
 
@@ -158,6 +158,9 @@ Framework должен уметь резолвить:
 5. Shared services/application data
 - заранее зарегистрированные сервисы приложения;
 - lookup по типу и/или qualifier.
+ - регистрация выполняется через `Dispatcher.registerService(...)`
+   или `Dispatcher.registerApplicationData(RuntimeDataKey.application(...), value)`.
+ - lifecycle ownership остаётся у приложения (framework хранит только ссылки).
 
 ## Resolution order contract
 
