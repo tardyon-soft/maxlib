@@ -312,17 +312,95 @@ class DispatcherTest {
     void conflictingMiddlewareAndFilterEnrichmentFailsDispatch() {
         Dispatcher dispatcher = new Dispatcher();
         Router router = new Router("main");
+        AtomicInteger errorCalls = new AtomicInteger();
         dispatcher.outerMiddleware((ctx, next) -> {
             ctx.putEnrichment(BuiltInFilters.TEXT_SUFFIX_KEY, "outer");
             return next.proceed();
         });
         router.message(BuiltInFilters.textStartsWith("pay:"), message -> CompletableFuture.completedFuture(null));
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertEquals(RuntimeDispatchErrorType.ENRICHMENT_FAILURE, error.type());
+            return CompletableFuture.completedFuture(null);
+        });
         dispatcher.includeRouter(router);
 
         DispatchResult result = dispatcher.feedUpdate(messageUpdateWithText("pay:9")).toCompletableFuture().join();
 
         assertEquals(DispatchStatus.FAILED, result.status());
         assertTrue(result.errorOpt().orElseThrow() instanceof EnrichmentConflictException);
+        assertEquals(1, errorCalls.get());
+    }
+
+    @Test
+    void feedUpdateRoutesFilterFailureToErrorObserver() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger errorCalls = new AtomicInteger();
+        RuntimeException filterFailure = new RuntimeException("filter failed");
+        router.message(
+                message -> CompletableFuture.completedFuture(FilterResult.failed(filterFailure)),
+                message -> CompletableFuture.completedFuture(null)
+        );
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertSame(filterFailure, error.error());
+            assertEquals(RuntimeDispatchErrorType.FILTER_FAILURE, error.type());
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertSame(filterFailure, result.errorOpt().orElseThrow());
+        assertEquals(1, errorCalls.get());
+    }
+
+    @Test
+    void feedUpdateRoutesInnerMiddlewareFailureToErrorObserver() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger errorCalls = new AtomicInteger();
+        RuntimeException middlewareFailure = new RuntimeException("inner middleware failed");
+        router.innerMiddleware((ctx, next) -> CompletableFuture.failedFuture(middlewareFailure));
+        router.message(message -> CompletableFuture.completedFuture(null));
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertSame(middlewareFailure, error.error());
+            assertEquals(RuntimeDispatchErrorType.INNER_MIDDLEWARE_FAILURE, error.type());
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertSame(middlewareFailure, result.errorOpt().orElseThrow());
+        assertEquals(1, errorCalls.get());
+    }
+
+    @Test
+    void feedUpdateRoutesOuterMiddlewareFailureToErrorObserver() {
+        Dispatcher dispatcher = new Dispatcher();
+        Router router = new Router("main");
+        AtomicInteger errorCalls = new AtomicInteger();
+        RuntimeException middlewareFailure = new RuntimeException("outer middleware failed");
+
+        dispatcher.outerMiddleware((ctx, next) -> CompletableFuture.failedFuture(middlewareFailure));
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertSame(middlewareFailure, error.error());
+            assertEquals(RuntimeDispatchErrorType.OUTER_MIDDLEWARE_FAILURE, error.type());
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate()).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertSame(middlewareFailure, result.errorOpt().orElseThrow());
+        assertEquals(1, errorCalls.get());
     }
 
     @Test

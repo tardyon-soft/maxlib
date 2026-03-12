@@ -73,19 +73,21 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
         try {
             filterStage = Objects.requireNonNull(registration.filter().test(event), "filter result");
         } catch (Throwable throwable) {
-            return CompletableFuture.completedFuture(HandlerExecutionResult.failed(throwable));
+            return CompletableFuture.completedFuture(HandlerExecutionResult.failed(FilterExecutionException.wrap(throwable)));
         }
         return filterStage.handle((result, throwable) -> new FilterEvaluationOutcome(result, throwable))
                 .thenCompose(outcome -> {
                     if (outcome.throwable() != null) {
                         return CompletableFuture.completedFuture(
-                                HandlerExecutionResult.failed(unwrap(outcome.throwable()))
+                                HandlerExecutionResult.failed(FilterExecutionException.wrap(unwrap(outcome.throwable())))
                         );
                     }
                     FilterResult result = outcome.result();
                     if (result.status() == FilterStatus.FAILED) {
                         return CompletableFuture.completedFuture(
-                                HandlerExecutionResult.failed(result.errorOpt().orElseGet(() -> new IllegalStateException("filter failed")))
+                                HandlerExecutionResult.failed(FilterExecutionException.wrap(
+                                        result.errorOpt().orElseGet(() -> new IllegalStateException("filter failed"))
+                                ))
                         );
                     }
                     if (result.status() == FilterStatus.NOT_MATCHED) {

@@ -94,7 +94,17 @@ public final class Dispatcher implements UpdateConsumer {
                 context,
                 outerMiddlewares,
                 () -> dispatchFromRoots(update, context, 0)
-        );
+        ).handle((result, throwable) -> new FeedUpdateOutcome(result, throwable))
+                .thenCompose(outcome -> {
+                    if (outcome.throwable() == null) {
+                        return CompletableFuture.completedFuture(outcome.result());
+                    }
+                    FailureClassification classification = classifyFailure(unwrap(outcome.throwable()));
+                    if (classification.type() == RuntimeDispatchErrorType.OUTER_MIDDLEWARE_FAILURE) {
+                        return handleGlobalFailure(update, classification.error(), classification.type());
+                    }
+                    return CompletableFuture.completedFuture(DispatchResult.failed(classification.error()));
+                });
     }
 
     /**
@@ -200,18 +210,20 @@ public final class Dispatcher implements UpdateConsumer {
                         try {
                             mergeFilterEnrichment(context, result.enrichment());
                         } catch (Throwable throwable) {
+                            FailureClassification classification = classifyFailure(throwable);
                             return handleFailure(
                                     router,
                                     update,
-                                    throwable,
-                                    RuntimeDispatchErrorType.HANDLER_FAILURE
+                                    classification.error(),
+                                    classification.type()
                             );
                         }
                         return CompletableFuture.completedFuture(DispatchResult.handled(context.enrichment()));
                     }
                     if (result.status() == HandlerExecutionStatus.FAILED) {
                         Throwable failure = result.errorOpt().orElseGet(() -> new IllegalStateException("handler failed without error"));
-                        return handleFailure(router, update, failure, RuntimeDispatchErrorType.HANDLER_FAILURE);
+                        FailureClassification classification = classifyFailure(failure);
+                        return handleFailure(router, update, classification.error(), classification.type());
                     }
                     return CompletableFuture.completedFuture(DispatchResult.ignored());
                 });
@@ -276,9 +288,9 @@ public final class Dispatcher implements UpdateConsumer {
             CompletionStage<Void> stage = Objects.requireNonNull(handler.handle(event), "handler result");
             return stage.handle((ignored, throwable) -> throwable == null
                     ? DispatchResult.handled(enrichment)
-                    : DispatchResult.failed(unwrap(throwable)));
+                    : DispatchResult.failed(HandlerInvocationException.wrap(unwrap(throwable))));
         } catch (Throwable throwable) {
-            return CompletableFuture.completedFuture(DispatchResult.failed(throwable));
+            return CompletableFuture.completedFuture(DispatchResult.failed(HandlerInvocationException.wrap(throwable)));
         }
     }
 
@@ -314,6 +326,50 @@ public final class Dispatcher implements UpdateConsumer {
                 });
     }
 
+    private CompletionStage<DispatchResult> handleGlobalFailure(
+            Update update,
+            Throwable error,
+            RuntimeDispatchErrorType type
+    ) {
+        if (rootRouters.isEmpty()) {
+            return CompletableFuture.completedFuture(DispatchResult.failed(error));
+        }
+        Router router = rootRouters.stream()
+                .filter(candidate -> !candidate.errors().handlers().isEmpty())
+                .findFirst()
+                .orElse(rootRouters.getFirst());
+        return handleFailure(router, update, error, type);
+    }
+
+    private static FailureClassification classifyFailure(Throwable failure) {
+        Throwable unwrapped = unwrap(failure);
+        if (unwrapped instanceof FilterExecutionException filterFailure) {
+            return new FailureClassification(
+                    filterFailure.rootCause(),
+                    RuntimeDispatchErrorType.FILTER_FAILURE
+            );
+        }
+        if (unwrapped instanceof MiddlewareExecutionException middlewareFailure) {
+            RuntimeDispatchErrorType type = middlewareFailure.phase() == MiddlewareExecutionException.Phase.OUTER
+                    ? RuntimeDispatchErrorType.OUTER_MIDDLEWARE_FAILURE
+                    : RuntimeDispatchErrorType.INNER_MIDDLEWARE_FAILURE;
+            return new FailureClassification(middlewareFailure.rootCause(), type);
+        }
+        if (unwrapped instanceof HandlerInvocationException handlerFailure) {
+            return new FailureClassification(
+                    handlerFailure.rootCause(),
+                    RuntimeDispatchErrorType.HANDLER_FAILURE
+            );
+        }
+        if (unwrapped instanceof EnrichmentConflictException enrichmentConflict) {
+            return new FailureClassification(
+                    enrichmentConflict,
+                    RuntimeDispatchErrorType.ENRICHMENT_FAILURE
+            );
+        }
+        return new FailureClassification(unwrapped, RuntimeDispatchErrorType.HANDLER_FAILURE);
+    }
+
     private static Throwable unwrap(Throwable throwable) {
         if (throwable instanceof CompletionException && throwable.getCause() != null) {
             return throwable.getCause();
@@ -322,5 +378,11 @@ public final class Dispatcher implements UpdateConsumer {
     }
 
     private record ObserverNotificationOutcome(HandlerExecutionResult result, Throwable throwable) {
+    }
+
+    private record FeedUpdateOutcome(DispatchResult result, Throwable throwable) {
+    }
+
+    private record FailureClassification(Throwable error, RuntimeDispatchErrorType type) {
     }
 }

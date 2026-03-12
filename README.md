@@ -341,8 +341,12 @@ First-match and propagation rules:
 - итоговый `DispatchResult.enrichment()` возвращает merged enrichment текущего handled path.
 
 Runtime error boundary:
-- runtime dispatch ошибки классифицируются как `HANDLER_FAILURE`, `EVENT_MAPPING_FAILURE`, `OBSERVER_EXECUTION_FAILURE`;
+- runtime dispatch ошибки классифицируются как:
+  `FILTER_FAILURE`, `OUTER_MIDDLEWARE_FAILURE`, `INNER_MIDDLEWARE_FAILURE`,
+  `ENRICHMENT_FAILURE`, `HANDLER_FAILURE`, `EVENT_MAPPING_FAILURE`, `OBSERVER_EXECUTION_FAILURE`;
 - все они передаются в `error` observer текущего router как `ErrorEvent`;
+- исключение: outer middleware failure на уровне dispatcher отправляется в `error` observer первого root router
+  (предпочтительно первого root router с зарегистрированным error handler);
 - даже при успешном `error` handler итог dispatch остаётся `FAILED`;
 - если `error` handler сам падает, его ошибка добавляется в `suppressed` исходной runtime ошибки.
 

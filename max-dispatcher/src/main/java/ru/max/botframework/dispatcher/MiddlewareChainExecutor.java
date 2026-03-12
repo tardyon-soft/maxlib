@@ -19,7 +19,7 @@ public final class MiddlewareChainExecutor {
             List<OuterMiddleware> chain,
             Supplier<CompletionStage<DispatchResult>> terminal
     ) {
-        return execute(context, List.copyOf(chain), terminal);
+        return execute(context, List.copyOf(chain), terminal, MiddlewareExecutionException.Phase.OUTER);
     }
 
     public static CompletionStage<DispatchResult> executeInner(
@@ -27,18 +27,28 @@ public final class MiddlewareChainExecutor {
             List<InnerMiddleware> chain,
             Supplier<CompletionStage<DispatchResult>> terminal
     ) {
-        return execute(context, List.copyOf(chain), terminal);
+        return execute(context, List.copyOf(chain), terminal, MiddlewareExecutionException.Phase.INNER);
     }
 
     private static CompletionStage<DispatchResult> execute(
             RuntimeContext context,
             List<? extends Middleware> chain,
-            Supplier<CompletionStage<DispatchResult>> terminal
+            Supplier<CompletionStage<DispatchResult>> terminal,
+            MiddlewareExecutionException.Phase phase
     ) {
         Objects.requireNonNull(context, "context");
         Objects.requireNonNull(chain, "chain");
         Objects.requireNonNull(terminal, "terminal");
-        return proceed(context, chain, 0, terminal);
+        CompletableFuture<DispatchResult> result = new CompletableFuture<>();
+        proceed(context, chain, 0, terminal)
+                .whenComplete((dispatchResult, throwable) -> {
+                    if (throwable != null) {
+                        result.completeExceptionally(MiddlewareExecutionException.wrap(phase, unwrap(throwable)));
+                    } else {
+                        result.complete(dispatchResult);
+                    }
+                });
+        return result;
     }
 
     private static CompletionStage<DispatchResult> proceed(
@@ -56,5 +66,11 @@ public final class MiddlewareChainExecutor {
                         Objects.requireNonNull(result, "middleware result")
                 ));
     }
-}
 
+    private static Throwable unwrap(Throwable throwable) {
+        if (throwable instanceof java.util.concurrent.CompletionException completion && completion.getCause() != null) {
+            return completion.getCause();
+        }
+        return throwable;
+    }
+}

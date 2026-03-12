@@ -9,7 +9,7 @@
 
 Это спецификация публичного поведения, а не полная реализация.
 
-Текущее состояние (Sprint 4.2.4):
+Текущее состояние (Sprint 4.3.1):
 - filter foundation реализован в `max-dispatcher`;
 - middleware contracts и chain executor foundation реализованы;
 - middleware встроены в dispatcher runtime pipeline:
@@ -163,8 +163,10 @@ MVP contract:
 - runtime errors (filters/middleware/handler) остаются в dispatcher/runtime layer.
 
 Обработка ошибок в Sprint 4:
-- filter failure -> runtime `FAILED` + error observer;
-- middleware failure -> runtime `FAILED` + error observer;
+- filter failure -> runtime `FAILED` + error observer (`FILTER_FAILURE`);
+- outer middleware failure -> runtime `FAILED` + error observer (`OUTER_MIDDLEWARE_FAILURE`);
+- inner middleware failure -> runtime `FAILED` + error observer (`INNER_MIDDLEWARE_FAILURE`);
+- enrichment merge conflict -> runtime `FAILED` + error observer (`ENRICHMENT_FAILURE`);
 - handler failure -> runtime `FAILED` + error observer (уже в Sprint 3).
 
 ## Design constraints
