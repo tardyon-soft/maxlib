@@ -242,6 +242,13 @@ runner.stop();
 - `LongPollingExample.java`
 - `WebhookHandlingExample.java`
 
+## Sprint 3 Examples
+
+- runtime examples directory: `examples/sprint-3-runtime`;
+- files:
+- `DispatcherRouterExample.java` (dispatcher/router handlers + includeRouter + feedUpdate);
+- `DispatcherIngestionIntegrationExample.java` (dispatcher as ingestion target for polling/webhook).
+
 ## Router Registration (Sprint 3 foundation)
 
 ```java
