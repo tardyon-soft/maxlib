@@ -24,11 +24,17 @@ public final class BuiltInFilters {
     private BuiltInFilters() {
     }
 
+    /**
+     * Matches slash command (for example {@code /start}) and exposes command + args enrichment.
+     */
     public static Filter<Message> command(String command) {
         String normalized = normalizeCommand(command);
         return message -> CompletableFuture.completedFuture(matchCommand(message, normalized));
     }
 
+    /**
+     * Matches exact message text.
+     */
     public static Filter<Message> textEquals(String text) {
         Objects.requireNonNull(text, "text");
         return message -> CompletableFuture.completedFuture(
@@ -38,6 +44,9 @@ public final class BuiltInFilters {
         );
     }
 
+    /**
+     * Matches message text prefix and exposes suffix as {@link #TEXT_SUFFIX_KEY}.
+     */
     public static Filter<Message> textStartsWith(String prefix) {
         Objects.requireNonNull(prefix, "prefix");
         if (prefix.isEmpty()) {
@@ -52,6 +61,9 @@ public final class BuiltInFilters {
         };
     }
 
+    /**
+     * Matches message chat type and exposes normalized type value as {@link #CHAT_TYPE_KEY}.
+     */
     public static Filter<Message> chatType(ChatType expectedType) {
         Objects.requireNonNull(expectedType, "expectedType");
         return message -> {
@@ -62,20 +74,32 @@ public final class BuiltInFilters {
         };
     }
 
+    /**
+     * Matches message sender by user id and exposes user id as {@link #USER_ID_KEY}.
+     */
     public static Filter<Message> fromUser(UserId userId) {
         Objects.requireNonNull(userId, "userId");
         return fromUser(userId, Message::from);
     }
 
+    /**
+     * Matches callback sender by user id and exposes user id as {@link #USER_ID_KEY}.
+     */
     public static Filter<Callback> fromCallbackUser(UserId userId) {
         Objects.requireNonNull(userId, "userId");
         return fromUser(userId, Callback::from);
     }
 
+    /**
+     * Generic sender matcher for custom event types.
+     */
     public static <TEvent> Filter<TEvent> fromUser(UserId userId, Function<TEvent, User> extractor) {
         return fromUserInternal(userId, extractor);
     }
 
+    /**
+     * Matches message with at least one attachment.
+     */
     public static Filter<Message> hasAttachment() {
         return message -> CompletableFuture.completedFuture(
                 message != null && message.attachments() != null && !message.attachments().isEmpty()
@@ -91,7 +115,7 @@ public final class BuiltInFilters {
         Objects.requireNonNull(state, "state");
         return event -> CompletableFuture.completedFuture(
                 FilterResult.failed(new UnsupportedOperationException(
-                        "StateFilter requires FSM runtime, not available in Sprint 4.1"
+                        "StateFilter requires FSM runtime, not available in Sprint 4"
                 ))
         );
     }

@@ -8,7 +8,8 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 
 - Sprint 2 (`Polling/Webhook ingestion`) завершён.
 - Sprint 3 (`Dispatcher/Router runtime foundation`) завершён.
-- Следующий этап: Sprint 4 (`Filters/Middleware`).
+- Sprint 4 (`Filters/Middleware/context enrichment`) завершён.
+- Следующий этап: Sprint 5 (`DI / handler parameter resolution`).
 
 ## Sprint 0 — Spec/API Contract Freeze
 
@@ -66,7 +67,10 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - built-in MVP filters;
 - `and/or/not` композиция;
 - outer/inner middleware execution order;
-- error propagation через middleware -> dispatcher error policy.
+- request-scoped context enrichment from filters and middleware;
+- runtime error policy для `filter/middleware/enrichment/handler`;
+- unit + integration-style regression safety net;
+- usage examples for filter/middleware runtime API.
 
 ## Sprint 5 — DI
 

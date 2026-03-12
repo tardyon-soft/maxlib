@@ -37,6 +37,10 @@ public interface EventObserver<TEvent> {
 
     /**
      * Notifies observer about one event using custom matched-handler execution strategy.
+     *
+     * <p>Framework-internal extension point used by dispatcher pipeline to wrap handler execution
+     * with runtime phases (for example inner middleware). Application code should prefer
+     * {@link #notify(Object)}.</p>
      */
     CompletionStage<HandlerExecutionResult> notify(TEvent event, HandlerExecutionStrategy<TEvent> strategy);
 }

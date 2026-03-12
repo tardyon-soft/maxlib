@@ -7,6 +7,10 @@ import java.util.Optional;
 
 /**
  * Result of one filter execution.
+ *
+ * @param status filter outcome
+ * @param enrichment matched enrichment values (only for {@link FilterStatus#MATCHED})
+ * @param error optional failure cause (only for {@link FilterStatus#FAILED})
  */
 public record FilterResult(
         FilterStatus status,
@@ -25,6 +29,9 @@ public record FilterResult(
         return new FilterResult(FilterStatus.MATCHED, Map.of(), null);
     }
 
+    /**
+     * Matched result with enrichment payload.
+     */
     public static FilterResult matched(Map<String, Object> enrichment) {
         return new FilterResult(FilterStatus.MATCHED, enrichment, null);
     }
@@ -33,6 +40,9 @@ public record FilterResult(
         return new FilterResult(FilterStatus.NOT_MATCHED, Map.of(), null);
     }
 
+    /**
+     * Failed result with execution error.
+     */
     public static FilterResult failed(Throwable error) {
         return new FilterResult(FilterStatus.FAILED, Map.of(), Objects.requireNonNull(error, "error"));
     }

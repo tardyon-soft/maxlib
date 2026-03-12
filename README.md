@@ -6,12 +6,13 @@ Java framework для разработки ботов на платформе MA
 
 ## Sprint status
 
-Текущий этап: `Sprint 4 — Filters + Middleware foundation`.
+Текущий этап: `Sprint 5 — DI / handler parameter resolution`.
 
 Завершённые этапы:
 - Sprint 1 (`client/DTO/errors`);
 - Sprint 2 (`polling + webhook ingestion layer`);
-- Sprint 3 (`dispatcher/router/runtime foundation`).
+- Sprint 3 (`dispatcher/router/runtime foundation`);
+- Sprint 4 (`filters/middleware/context enrichment`).
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -132,7 +133,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 
 ## Current limitations
 
-Ограничения текущего этапа (Sprint 4 prep):
+Ограничения текущего этапа (Sprint 5 prep):
 - rich filter DSL ещё не реализован (доступен только базовый filter contract);
 - middleware встроены в dispatcher pipeline (`outer -> filters -> inner -> handler`), но без advanced inheritance/scoping;
 - DI runtime и FSM/scenes runtime ещё не реализованы;
@@ -141,18 +142,20 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - webhook source runtime loop пока не реализован (есть receiver + pipeline foundation);
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
 
-## Sprint 4 Goal
+## Sprint 4 Summary
 
-Sprint 4 фокусируется на runtime ergonomics поверх готового dispatcher/router foundation:
-- базовый filter layer;
-- outer/inner middleware layer;
-- request-scoped context enrichment;
-- сохранение first-match dispatch semantics из Sprint 3.
-- regression safety net: unit и integration-style покрытие для filter/middleware pipeline.
+Sprint 4 завершён:
+- реализован filter layer (`Filter`, `FilterResult`, `BuiltInFilters`, `and/or/not`);
+- filters встроены в handler matching с first-match semantics;
+- реализован middleware layer (`OuterMiddleware`, `InnerMiddleware`) и runtime order
+  `outer -> filters -> inner -> handler`;
+- реализован request-scoped context enrichment для filters/middleware/dispatch result;
+- зафиксирована и реализована runtime error model для filter/middleware/enrichment/handler фаз;
+- добавлены usage examples и regression safety net (unit + integration-style tests).
 
-В Sprint 4 пока не делаем:
-- полноценный DI parameter resolution;
-- FSM/scenes runtime.
+Следующий этап (Sprint 5):
+- DI / handler parameter resolution;
+- источники инъекции: runtime context, filter data, middleware data, framework services.
 
 ## Sprint 2 Summary
 

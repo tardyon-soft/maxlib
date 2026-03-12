@@ -7,6 +7,8 @@ import java.util.concurrent.CompletionStage;
  */
 @FunctionalInterface
 public interface MiddlewareNext {
+    /**
+     * Continues middleware chain and returns downstream dispatch result.
+     */
     CompletionStage<DispatchResult> proceed();
 }
-

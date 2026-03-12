@@ -8,6 +8,9 @@ import java.util.concurrent.CompletionStage;
 /**
  * Strategy hook for executing matched handler after filter evaluation.
  *
+ * <p>This API is primarily intended for framework runtime internals. Library users typically
+ * interact with {@link Dispatcher} and {@link Router} directly.</p>
+ *
  * @param <TEvent> event type
  */
 @FunctionalInterface
@@ -25,11 +28,17 @@ public interface HandlerExecutionStrategy<TEvent> {
                 CompletionStage<Void> stage = Objects.requireNonNull(handler.handle(event), "handler result");
                 return stage.handle((ignored, throwable) -> throwable == null
                         ? HandlerExecutionResult.handled(enrichment)
-                        : HandlerExecutionResult.failed(throwable));
+                        : HandlerExecutionResult.failed(unwrap(throwable)));
             } catch (Throwable throwable) {
                 return CompletableFuture.completedFuture(HandlerExecutionResult.failed(throwable));
             }
         };
     }
-}
 
+    private static Throwable unwrap(Throwable throwable) {
+        if (throwable instanceof java.util.concurrent.CompletionException completion && completion.getCause() != null) {
+            return completion.getCause();
+        }
+        return throwable;
+    }
+}

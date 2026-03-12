@@ -8,6 +8,10 @@ import ru.max.botframework.model.Update;
 
 /**
  * Request-scoped runtime context used by middleware and future DI/resolution layers.
+ *
+ * <p>Context has two namespaces:
+ * typed attributes (`ContextKey`) and string-key enrichment map. Enrichment values are merged
+ * from filters and middleware for one update lifecycle and never shared across updates.</p>
  */
 public final class RuntimeContext {
     private final Update update;
@@ -65,10 +69,20 @@ public final class RuntimeContext {
         return this;
     }
 
+    /**
+     * @deprecated Prefer {@link #putEnrichment(String, Object)} for middleware and internal filter merge path.
+     */
+    @Deprecated(forRemoval = false)
     public RuntimeContext putAllEnrichment(Map<String, Object> values) {
         return mergeFilterEnrichment(values);
     }
 
+    /**
+     * Framework-internal filter enrichment merge.
+     *
+     * <p>Conflict policy: if the same key already exists with a different value,
+     * {@link EnrichmentConflictException} is thrown.</p>
+     */
     RuntimeContext mergeFilterEnrichment(Map<String, Object> values) {
         Objects.requireNonNull(values, "values");
         for (Map.Entry<String, Object> entry : values.entrySet()) {

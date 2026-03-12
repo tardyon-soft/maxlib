@@ -9,7 +9,7 @@
 
 Это спецификация публичного поведения, а не полная реализация.
 
-Текущее состояние (Sprint 4.3.1):
+Текущее состояние (Sprint 4.4.2):
 - filter foundation реализован в `max-dispatcher`;
 - middleware contracts и chain executor foundation реализованы;
 - middleware встроены в dispatcher runtime pipeline:

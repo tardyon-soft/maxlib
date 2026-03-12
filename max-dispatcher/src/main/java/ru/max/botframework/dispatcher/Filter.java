@@ -13,8 +13,14 @@ import java.util.function.Predicate;
 @FunctionalInterface
 public interface Filter<TEvent> {
 
+    /**
+     * Evaluates filter against one event.
+     */
     CompletionStage<FilterResult> test(TEvent event);
 
+    /**
+     * Logical AND composition with short-circuit semantics.
+     */
     default Filter<TEvent> and(Filter<? super TEvent> other) {
         Objects.requireNonNull(other, "other");
         return event -> test(event).thenCompose(left -> {
@@ -30,6 +36,9 @@ public interface Filter<TEvent> {
         });
     }
 
+    /**
+     * Logical OR composition with short-circuit semantics.
+     */
     default Filter<TEvent> or(Filter<? super TEvent> other) {
         Objects.requireNonNull(other, "other");
         return event -> test(event).thenCompose(left -> {
@@ -40,6 +49,9 @@ public interface Filter<TEvent> {
         });
     }
 
+    /**
+     * Logical NOT composition. Enrichment from source filter is never propagated.
+     */
     default Filter<TEvent> not() {
         return event -> test(event).thenApply(result -> {
             if (result.status() == FilterStatus.FAILED) {
@@ -51,10 +63,16 @@ public interface Filter<TEvent> {
         });
     }
 
+    /**
+     * Filter that always returns {@link FilterStatus#MATCHED}.
+     */
     static <TEvent> Filter<TEvent> any() {
         return event -> CompletableFuture.completedFuture(FilterResult.matched());
     }
 
+    /**
+     * Adapts synchronous predicate to {@link Filter}.
+     */
     static <TEvent> Filter<TEvent> of(Predicate<TEvent> predicate) {
         Objects.requireNonNull(predicate, "predicate");
         return event -> {
