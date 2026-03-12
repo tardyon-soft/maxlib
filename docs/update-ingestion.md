@@ -54,9 +54,18 @@
 Назначение:
 - единый контракт потребителя normalized `Update`;
 - целевая точка, куда `UpdateSource` передаёт событие после нормализации.
+- асинхронная граница обработки update с явным результатом.
 
 Граница:
 - ingestion-слой не требует знания про router/filters/fsm.
+- transport-детали не протекают наружу: sink работает только с `Update` и result-моделью.
+
+Контракт (минимальный):
+- `CompletionStage<UpdateHandlingResult> handle(Update update)`.
+
+`UpdateHandlingResult`:
+- `SUCCESS` — update принят downstream-слоем;
+- `FAILURE` — update завершился ошибкой в ingestion boundary.
 
 ### `LongPollingRunner`
 
@@ -106,6 +115,7 @@
 4. Ошибки ingestion-слоя:
 - transport/decoding/normalization ошибки обрабатываются в ingestion boundary;
 - ошибка одного update не должна приводить к падению всего ingestion runtime без явной policy;
+- sink-ошибки выражаются через `UpdateHandlingResult.FAILURE` (или exceptional completion на boundary уровне);
 - policy retry/backoff/skip фиксируется ingestion runtime и не смешивается с business routing.
 
 ## Unified flow requirement

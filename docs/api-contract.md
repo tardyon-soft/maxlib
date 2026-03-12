@@ -31,7 +31,8 @@
 - `UpdateSource` — lifecycle-контракт источника update (`start`/`stop`).
 - `PollingUpdateSource` — источник update через long polling.
 - `WebhookUpdateSource` — источник update через webhook ingress.
-- `UpdateSink` (`UpdateConsumer`) — единая точка приёма normalized `Update`.
+- `UpdateSink` (`UpdateConsumer`) — единая async-точка приёма normalized `Update`
+  с `UpdateHandlingResult` (`SUCCESS`/`FAILURE`).
 - `LongPollingRunner` — управляющий цикл long polling ingestion.
 - `WebhookReceiver` — boundary между HTTP webhook endpoint и ingestion source.
 - `UpdatePipeline` — unified ingress контракт для downstream обработки.

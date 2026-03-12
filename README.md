@@ -14,6 +14,7 @@ Sprint 1 (`client/DTO/errors`) завершён.
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
 - `max-client-core` foundation слой (transport, auth, serialization, errors, retry/rate-limit hooks, pagination);
 - `max-model` с базовыми DTO, typed value objects и enum-контрактами;
+- ingestion target contract в `max-dispatcher`: `UpdateSink` (async) + `UpdateHandlingResult` для unified polling/webhook flow;
 - domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
 - тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
 
