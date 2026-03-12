@@ -7,4 +7,13 @@ public final class MaxBadRequestException extends MaxClientErrorException {
     public MaxBadRequestException(String responseBody, String requestMethod, String requestPath) {
         super(400, responseBody, requestMethod, requestPath);
     }
+
+    public MaxBadRequestException(
+            String responseBody,
+            String requestMethod,
+            String requestPath,
+            MaxApiErrorPayload errorPayload
+    ) {
+        super(400, responseBody, requestMethod, requestPath, errorPayload);
+    }
 }

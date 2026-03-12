@@ -16,10 +16,19 @@ class DefaultMaxApiErrorDecoderTest {
 
     @Test
     void shouldMap400ToBadRequestException() {
-        MaxApiException exception = decode(400, "bad request", Map.of());
+        MaxApiException exception = decode(
+                400,
+                "{\"error_code\":\"VALIDATION_FAILED\",\"message\":\"invalid payload\",\"details\":{\"field\":\"text\"}}",
+                Map.of()
+        );
 
         assertThat(exception).isInstanceOf(MaxBadRequestException.class);
         assertThat(exception.statusCode()).isEqualTo(400);
+        assertThat(exception.errorPayload().status()).isEqualTo(400);
+        assertThat(exception.errorPayload().errorCode()).isEqualTo("VALIDATION_FAILED");
+        assertThat(exception.errorPayload().message()).isEqualTo("invalid payload");
+        assertThat(exception.errorPayload().details()).isInstanceOf(Map.class);
+        assertThat(exception.errorPayload().rawBody()).contains("VALIDATION_FAILED");
     }
 
     @Test
@@ -40,12 +49,30 @@ class DefaultMaxApiErrorDecoderTest {
 
     @Test
     void shouldMap429ToRateLimitExceptionAndParseRetryAfterHeader() {
-        MaxApiException exception = decode(429, "too many requests", Map.of("Retry-After", List.of("12")));
+        MaxApiException exception = decode(
+                429,
+                "{\"error\":\"RATE_LIMIT\",\"message\":\"too many requests\"}",
+                Map.of("Retry-After", List.of("12"))
+        );
 
         assertThat(exception).isInstanceOf(MaxRateLimitException.class);
         MaxRateLimitException rateLimitException = (MaxRateLimitException) exception;
         assertThat(rateLimitException.retryAfterSeconds()).isEqualTo(12L);
         assertThat(rateLimitException.statusCode()).isEqualTo(429);
+        assertThat(rateLimitException.errorPayload().errorCode()).isEqualTo("RATE_LIMIT");
+        assertThat(rateLimitException.errorPayload().message()).isEqualTo("too many requests");
+    }
+
+    @Test
+    void shouldKeepRawBodyWhenPayloadIsNotJson() {
+        MaxApiException exception = decode(500, "gateway failed", Map.of());
+
+        assertThat(exception).isInstanceOf(MaxServerErrorException.class);
+        assertThat(exception.errorPayload().status()).isEqualTo(500);
+        assertThat(exception.errorPayload().errorCode()).isNull();
+        assertThat(exception.errorPayload().message()).isNull();
+        assertThat(exception.errorPayload().details()).isNull();
+        assertThat(exception.errorPayload().rawBody()).isEqualTo("gateway failed");
     }
 
     @Test

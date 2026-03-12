@@ -11,13 +11,13 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 /**
  * Centralized shared ObjectMapper for the whole MAX client SDK layer.
  */
-final class SharedObjectMapper {
+public final class SharedObjectMapper {
     private static final ObjectMapper INSTANCE = build();
 
     private SharedObjectMapper() {
     }
 
-    static ObjectMapper instance() {
+    public static ObjectMapper instance() {
         return INSTANCE;
     }
 

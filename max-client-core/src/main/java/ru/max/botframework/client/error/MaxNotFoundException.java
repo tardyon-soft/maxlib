@@ -7,4 +7,13 @@ public final class MaxNotFoundException extends MaxClientErrorException {
     public MaxNotFoundException(String responseBody, String requestMethod, String requestPath) {
         super(404, responseBody, requestMethod, requestPath);
     }
+
+    public MaxNotFoundException(
+            String responseBody,
+            String requestMethod,
+            String requestPath,
+            MaxApiErrorPayload errorPayload
+    ) {
+        super(404, responseBody, requestMethod, requestPath, errorPayload);
+    }
 }

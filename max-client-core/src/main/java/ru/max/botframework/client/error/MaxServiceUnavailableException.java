@@ -7,4 +7,13 @@ public final class MaxServiceUnavailableException extends MaxServerErrorExceptio
     public MaxServiceUnavailableException(String responseBody, String requestMethod, String requestPath) {
         super(503, responseBody, requestMethod, requestPath);
     }
+
+    public MaxServiceUnavailableException(
+            String responseBody,
+            String requestMethod,
+            String requestPath,
+            MaxApiErrorPayload errorPayload
+    ) {
+        super(503, responseBody, requestMethod, requestPath, errorPayload);
+    }
 }

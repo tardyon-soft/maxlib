@@ -16,6 +16,17 @@ public final class MaxRateLimitException extends MaxClientErrorException {
         this.retryAfterSeconds = retryAfterSeconds;
     }
 
+    public MaxRateLimitException(
+            String responseBody,
+            String requestMethod,
+            String requestPath,
+            Long retryAfterSeconds,
+            MaxApiErrorPayload errorPayload
+    ) {
+        super(429, responseBody, requestMethod, requestPath, errorPayload);
+        this.retryAfterSeconds = retryAfterSeconds;
+    }
+
     public Long retryAfterSeconds() {
         return retryAfterSeconds;
     }

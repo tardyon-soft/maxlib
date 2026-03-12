@@ -100,7 +100,7 @@ class DefaultMaxBotClientTest {
         server.enqueue(new MockResponse()
                 .setResponseCode(429)
                 .setHeader("Retry-After", "7")
-                .setBody("{\"error\":\"rate_limit\"}"));
+                .setBody("{\"error_code\":\"RATE_LIMIT\",\"message\":\"Slow down\",\"details\":{\"scope\":\"global\"}}"));
 
         assertThatThrownBy(() -> client.execute(new EchoRequest(HttpMethod.GET, null)))
                 .isInstanceOf(MaxRateLimitException.class)
@@ -108,7 +108,9 @@ class DefaultMaxBotClientTest {
                     MaxRateLimitException exception = (MaxRateLimitException) ex;
                     assertThat(exception.statusCode()).isEqualTo(429);
                     assertThat(exception.retryAfterSeconds()).isEqualTo(7L);
-                    assertThat(exception.responseBody()).contains("rate_limit");
+                    assertThat(exception.responseBody()).contains("RATE_LIMIT");
+                    assertThat(exception.errorPayload().errorCode()).isEqualTo("RATE_LIMIT");
+                    assertThat(exception.errorPayload().message()).isEqualTo("Slow down");
                 });
     }
 
