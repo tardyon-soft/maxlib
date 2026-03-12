@@ -107,6 +107,7 @@ Java framework для разработки ботов на платформе MA
 - rate-limit awareness в transport pipeline: корректная обработка `429` (включая `Retry-After`) и лёгкий client-side hook `RequestRateLimiter` (`noop`/`cooldown`) как задел под ограничение частоты запросов;
 - первый domain-level метод в `max-client-core`: `getMe()` (`GET /me`) поверх существующих transport/auth/serialization/error abstractions с типизированным `BotInfo` результатом;
 - foundation для message operations в `max-client-core`: `sendMessage`, `editMessage`, `deleteMessage`, `getMessage`, `getMessages` как typed domain-level методы поверх существующих DTO/transport abstractions;
+- поддержка callback answer в `max-client-core`: `answerCallback()` (`POST /answers`) с typed request/response API;
 - базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
 - request DTO для message/callback API в `max-model`: `NewMessageBody`, `SendMessageRequest`, `EditMessageRequest`, `AnswerCallbackRequest`, минимальные attachment-related структуры;
 - typed value objects в `max-model` для id/reference-полей (`UserId`, `ChatId`, `MessageId`, `UpdateId`, `CallbackId`, `FileId`) вместо магических `String` в core DTO/request моделях;
@@ -166,6 +167,17 @@ boolean edited = botClient.editMessage(new EditMessageRequest(
 Message fetched = botClient.getMessage(sent.messageId());
 List<Message> chatMessages = botClient.getMessages(new ChatId("c-100"));
 boolean deleted = botClient.deleteMessage(sent.messageId());
+```
+
+## Callback Answer Example
+
+```java
+boolean answered = botClient.answerCallback(new AnswerCallbackRequest(
+    new CallbackId("cb-1"),
+    "Done",
+    false,
+    3
+));
 ```
 
 ## Build

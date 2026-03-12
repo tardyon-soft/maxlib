@@ -3,6 +3,7 @@ package ru.max.botframework.client;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.List;
+import ru.max.botframework.client.method.AnswerCallbackMethodRequest;
 import ru.max.botframework.client.method.DeleteMessageMethodRequest;
 import ru.max.botframework.client.method.EditMessageMethodRequest;
 import ru.max.botframework.client.method.GetMeRequest;
@@ -13,6 +14,7 @@ import ru.max.botframework.model.BotInfo;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.Message;
 import ru.max.botframework.model.MessageId;
+import ru.max.botframework.model.request.AnswerCallbackRequest;
 import ru.max.botframework.model.request.EditMessageRequest;
 import ru.max.botframework.model.request.SendMessageRequest;
 
@@ -69,6 +71,14 @@ public interface MaxBotClient {
 
     default List<Message> getMessages(List<MessageId> messageIds) {
         return execute(new GetMessagesMethodRequest(messageIds)).messages();
+    }
+
+    default boolean answerCallback(AnswerCallbackRequest request) {
+        return execute(new AnswerCallbackMethodRequest(request)).success();
+    }
+
+    default CompletionStage<Boolean> answerCallbackAsync(AnswerCallbackRequest request) {
+        return executeAsync(new AnswerCallbackMethodRequest(request)).thenApply(response -> response.success());
     }
 
     default <T> CompletionStage<T> executeAsync(MaxRequest<T> request) {

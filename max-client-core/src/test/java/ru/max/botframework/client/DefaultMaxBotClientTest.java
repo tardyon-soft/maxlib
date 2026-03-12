@@ -31,6 +31,8 @@ import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.Message;
 import ru.max.botframework.model.MessageId;
 import ru.max.botframework.model.TextFormat;
+import ru.max.botframework.model.CallbackId;
+import ru.max.botframework.model.request.AnswerCallbackRequest;
 import ru.max.botframework.model.request.EditMessageRequest;
 import ru.max.botframework.model.request.NewMessageBody;
 import ru.max.botframework.model.request.SendMessageRequest;
@@ -290,6 +292,28 @@ class DefaultMaxBotClientTest {
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).isEqualTo("/messages?message_ids=m-1%2Cm-2");
         assertThat(messages).isEmpty();
+    }
+
+    @Test
+    void shouldAnswerCallbackViaDomainMethod() {
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"success\":true}"));
+
+        boolean success = client.answerCallback(new AnswerCallbackRequest(
+                new CallbackId("cb-1"),
+                "OK",
+                false,
+                5
+        ));
+
+        RecordedRequest recorded = takeRecordedRequestUnchecked();
+        assertThat(recorded.getMethod()).isEqualTo("POST");
+        assertThat(recorded.getPath()).isEqualTo("/answers");
+        String body = recorded.getBody().readUtf8();
+        assertThat(body).contains("\"callbackId\":\"cb-1\"");
+        assertThat(body).contains("\"text\":\"OK\"");
+        assertThat(success).isTrue();
     }
 
     @Test
