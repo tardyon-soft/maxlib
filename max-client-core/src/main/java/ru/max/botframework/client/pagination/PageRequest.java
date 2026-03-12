@@ -3,8 +3,11 @@ package ru.max.botframework.client.pagination;
 import java.util.Objects;
 
 /**
- * Basic pagination input abstraction for cursor-based MAX endpoints.
+ * Basic pagination input abstraction for marker-based MAX endpoints.
+ *
+ * @deprecated Use {@link MarkerPageRequest} for marker-based MAX APIs.
  */
+@Deprecated(since = "0.1.0", forRemoval = false)
 public record PageRequest(int limit, String cursor) {
 
     public PageRequest {
@@ -16,5 +19,9 @@ public record PageRequest(int limit, String cursor) {
 
     public static PageRequest firstPage(int limit) {
         return new PageRequest(limit, "");
+    }
+
+    public MarkerPageRequest toMarkerPageRequest() {
+        return new MarkerPageRequest(limit, cursor);
     }
 }

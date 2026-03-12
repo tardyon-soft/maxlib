@@ -102,6 +102,7 @@ Java framework для разработки ботов на платформе MA
 - auth layer в `max-client-core`: автоматический `Authorization` header через отдельный interceptor component;
 - централизованный JSON serialization layer в `max-client-core`: единый shared mapper и единые правила (non-null serialization, ISO dates, ignore unknown fields);
 - error model в `max-client-core`: иерархия `MaxApiException` + специализированные исключения (400/401/404/429/503 и generic 4xx/5xx) через единый `MaxApiErrorDecoder`, включая structured payload (`status`, `errorCode`, `message`, `details`, `rawBody`);
+- reusable pagination foundation в `max-client-core` для marker-based MAX API: `Page<T>`, `MarkerPage<T>`, `MarkerPageRequest`, `PaginationHelper` (query params + safe page traversal helpers);
 - базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
 - request DTO для message/callback API в `max-model`: `NewMessageBody`, `SendMessageRequest`, `EditMessageRequest`, `AnswerCallbackRequest`, минимальные attachment-related структуры;
 - typed value objects в `max-model` для id/reference-полей (`UserId`, `ChatId`, `MessageId`, `UpdateId`, `CallbackId`, `FileId`) вместо магических `String` в core DTO/request моделях;
