@@ -27,6 +27,8 @@ public interface MaxApiClientConfig {
 
     RetryPolicy retryPolicy();
 
+    RequestRateLimiter rateLimiter();
+
     default AuthProvider authProvider() {
         return () -> authorizationHeaderValue(token());
     }
@@ -42,6 +44,7 @@ public interface MaxApiClientConfig {
         private Duration readTimeout = DEFAULT_READ_TIMEOUT;
         private String userAgent = DEFAULT_USER_AGENT;
         private RetryPolicy retryPolicy = RetryPolicy.none();
+        private RequestRateLimiter rateLimiter = RequestRateLimiter.noop();
 
         public Builder baseUri(URI baseUri) {
             this.baseUri = Objects.requireNonNull(baseUri, "baseUri");
@@ -79,6 +82,11 @@ public interface MaxApiClientConfig {
             return this;
         }
 
+        public Builder rateLimiter(RequestRateLimiter rateLimiter) {
+            this.rateLimiter = Objects.requireNonNull(rateLimiter, "rateLimiter");
+            return this;
+        }
+
         public MaxApiClientConfig build() {
             return new DefaultMaxApiClientConfig(
                     baseUri,
@@ -86,7 +94,8 @@ public interface MaxApiClientConfig {
                     connectTimeout,
                     readTimeout,
                     userAgent,
-                    retryPolicy
+                    retryPolicy,
+                    rateLimiter
             );
         }
     }
@@ -97,7 +106,8 @@ public interface MaxApiClientConfig {
             Duration connectTimeout,
             Duration readTimeout,
             String userAgent,
-            RetryPolicy retryPolicy
+            RetryPolicy retryPolicy,
+            RequestRateLimiter rateLimiter
     ) implements MaxApiClientConfig {
         public DefaultMaxApiClientConfig {
             Objects.requireNonNull(baseUri, "baseUri");
@@ -106,6 +116,7 @@ public interface MaxApiClientConfig {
             Objects.requireNonNull(readTimeout, "readTimeout");
             Objects.requireNonNull(userAgent, "userAgent");
             Objects.requireNonNull(retryPolicy, "retryPolicy");
+            Objects.requireNonNull(rateLimiter, "rateLimiter");
 
             if (connectTimeout.isNegative() || connectTimeout.isZero()) {
                 throw new IllegalArgumentException("connectTimeout must be positive");

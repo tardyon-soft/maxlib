@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -36,16 +37,8 @@ class DefaultMaxBotClientTest {
         server = new MockWebServer();
         server.start();
 
-        client = createClient(RetryPolicy.none(), createTransport(
-                MaxApiClientConfig.builder()
-                        .baseUri(URI.create(server.url("/").toString()))
-                        .token("test-token")
-                        .connectTimeout(Duration.ofSeconds(2))
-                        .readTimeout(Duration.ofSeconds(2))
-                        .userAgent("max-client-core-test/1.0")
-                        .retryPolicy(RetryPolicy.none())
-                        .build()
-        ));
+        MaxApiClientConfig config = buildConfig(RetryPolicy.none());
+        client = createClient(config, createTransport(config));
     }
 
     @AfterEach
@@ -121,7 +114,8 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldRetrySafeGetForTransientStatusWhenPolicyAllows() throws Exception {
-        client = createClient(RetryPolicy.fixed(2, Duration.ZERO), createTransport(buildConfig(RetryPolicy.fixed(2, Duration.ZERO))));
+        MaxApiClientConfig config = buildConfig(RetryPolicy.fixed(2, Duration.ZERO));
+        client = createClient(config, createTransport(config));
 
         server.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"service_unavailable\"}"));
         server.enqueue(new MockResponse()
@@ -139,7 +133,8 @@ class DefaultMaxBotClientTest {
 
     @Test
     void shouldNotRetryUnsafeMethodsByDefault() {
-        client = createClient(RetryPolicy.fixed(3, Duration.ZERO), createTransport(buildConfig(RetryPolicy.fixed(3, Duration.ZERO))));
+        MaxApiClientConfig config = buildConfig(RetryPolicy.fixed(3, Duration.ZERO));
+        client = createClient(config, createTransport(config));
         server.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"service_unavailable\"}"));
 
         assertThatThrownBy(() -> client.execute(new EchoRequest(HttpMethod.POST, new Payload("x"))))
@@ -162,7 +157,8 @@ class DefaultMaxBotClientTest {
             );
         };
 
-        client = createClient(RetryPolicy.fixed(2, Duration.ZERO), failingTransport);
+        MaxApiClientConfig config = buildConfig(RetryPolicy.fixed(2, Duration.ZERO));
+        client = createClient(config, failingTransport);
 
         EchoResponse response = client.execute(new EchoRequest(HttpMethod.GET, null));
 
@@ -170,7 +166,66 @@ class DefaultMaxBotClientTest {
         assertThat(attempts.get()).isEqualTo(2);
     }
 
+    @Test
+    void shouldNotifyRateLimiterWhen429IsReceived() {
+        CapturingRateLimiter limiter = new CapturingRateLimiter();
+        MaxApiClientConfig config = buildConfig(RetryPolicy.none(), limiter);
+        client = createClient(
+                config,
+                createTransport(config)
+        );
+        server.enqueue(new MockResponse().setResponseCode(429).setHeader("Retry-After", "3").setBody("{\"error\":\"rate_limit\"}"));
+
+        assertThatThrownBy(() -> client.execute(new EchoRequest(HttpMethod.GET, null)))
+                .isInstanceOf(MaxRateLimitException.class);
+
+        assertThat(limiter.beforeRequestCalls.get()).isEqualTo(1);
+        assertThat(limiter.rateLimitedCalls.get()).isEqualTo(1);
+        assertThat(limiter.lastRetryAfterSeconds.get()).isEqualTo(3L);
+    }
+
+    @Test
+    void shouldCallRateLimiterBeforeEachRetryAttempt() {
+        CapturingRateLimiter limiter = new CapturingRateLimiter();
+        MaxApiClientConfig config = buildConfig(RetryPolicy.fixed(2, Duration.ZERO), limiter);
+        client = createClient(
+                config,
+                createTransport(config)
+        );
+
+        server.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"temporary\"}"));
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"ok\":true,\"message\":\"done\"}"));
+
+        EchoResponse response = client.execute(new EchoRequest(HttpMethod.GET, null));
+
+        assertThat(response.message()).isEqualTo("done");
+        assertThat(limiter.beforeRequestCalls.get()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldRespectRetryAfterHeaderWhenRetrying429() {
+        MaxApiClientConfig config = buildConfig(RetryPolicy.fixed(2, Duration.ZERO));
+        client = createClient(config, createTransport(config));
+        server.enqueue(new MockResponse().setResponseCode(429).setHeader("Retry-After", "1").setBody("{\"error\":\"rate_limit\"}"));
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"ok\":true,\"message\":\"after-rate-limit\"}"));
+
+        long startedAt = System.currentTimeMillis();
+        EchoResponse response = client.execute(new EchoRequest(HttpMethod.GET, null));
+        long elapsedMillis = System.currentTimeMillis() - startedAt;
+
+        assertThat(response.message()).isEqualTo("after-rate-limit");
+        assertThat(elapsedMillis).isGreaterThanOrEqualTo(800L);
+    }
+
     private MaxApiClientConfig buildConfig(RetryPolicy retryPolicy) {
+        return buildConfig(retryPolicy, RequestRateLimiter.noop());
+    }
+
+    private MaxApiClientConfig buildConfig(RetryPolicy retryPolicy, RequestRateLimiter rateLimiter) {
         return MaxApiClientConfig.builder()
                 .baseUri(URI.create(server.url("/").toString()))
                 .token("test-token")
@@ -178,6 +233,7 @@ class DefaultMaxBotClientTest {
                 .readTimeout(Duration.ofSeconds(2))
                 .userAgent("max-client-core-test/1.0")
                 .retryPolicy(retryPolicy)
+                .rateLimiter(rateLimiter)
                 .build();
     }
 
@@ -191,9 +247,29 @@ class DefaultMaxBotClientTest {
         );
     }
 
-    private DefaultMaxBotClient createClient(RetryPolicy retryPolicy, MaxHttpClient transport) {
-        MaxApiClientConfig config = buildConfig(retryPolicy);
+    private DefaultMaxBotClient createClient(MaxApiClientConfig config, MaxHttpClient transport) {
         return new DefaultMaxBotClient(config, transport, new JacksonJsonCodec());
+    }
+
+    private static final class CapturingRateLimiter implements RequestRateLimiter {
+        private final AtomicInteger beforeRequestCalls = new AtomicInteger();
+        private final AtomicInteger rateLimitedCalls = new AtomicInteger();
+        private final AtomicLong lastRetryAfterSeconds = new AtomicLong(-1);
+
+        @Override
+        public void beforeRequest(ru.max.botframework.client.http.MaxHttpRequest request) {
+            beforeRequestCalls.incrementAndGet();
+        }
+
+        @Override
+        public void onRateLimited(
+                ru.max.botframework.client.http.MaxHttpRequest request,
+                MaxHttpResponse response,
+                Long retryAfterSeconds
+        ) {
+            rateLimitedCalls.incrementAndGet();
+            lastRetryAfterSeconds.set(retryAfterSeconds == null ? -1 : retryAfterSeconds);
+        }
     }
 
     private record EchoRequest(HttpMethod method, Object payload) implements MaxRequest<EchoResponse> {

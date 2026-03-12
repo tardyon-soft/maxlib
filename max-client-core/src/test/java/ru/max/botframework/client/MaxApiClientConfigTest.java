@@ -20,6 +20,7 @@ class MaxApiClientConfigTest {
         assertThat(config.userAgent()).isEqualTo(MaxApiClientConfig.DEFAULT_USER_AGENT);
         assertThat(config.retryPolicy().maxAttempts()).isEqualTo(1);
         assertThat(config.retryPolicy().delay()).isEqualTo(Duration.ZERO);
+        assertThat(config.rateLimiter()).isNotNull();
     }
 
     @Test

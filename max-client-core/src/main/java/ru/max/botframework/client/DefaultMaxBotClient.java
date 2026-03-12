@@ -1,7 +1,10 @@
 package ru.max.botframework.client;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -91,10 +94,14 @@ public final class DefaultMaxBotClient implements MaxBotClient {
     private MaxHttpResponse executeWithRetry(MaxHttpRequest request) {
         int attempt = 1;
         while (true) {
+            config.rateLimiter().beforeRequest(request);
             try {
                 MaxHttpResponse response = transport.execute(request);
+                if (response.statusCode() == 429) {
+                    config.rateLimiter().onRateLimited(request, response, retryAfterSeconds(response));
+                }
                 if (response.statusCode() >= 400 && config.retryPolicy().shouldRetry(request, response, attempt)) {
-                    sleepBeforeNextAttempt(attempt);
+                    sleepBeforeNextAttempt(computeRetryDelay(attempt, response));
                     attempt++;
                     continue;
                 }
@@ -103,7 +110,7 @@ public final class DefaultMaxBotClient implements MaxBotClient {
                 if (!config.retryPolicy().shouldRetry(request, transportException, attempt)) {
                     throw transportException;
                 }
-                sleepBeforeNextAttempt(attempt);
+                sleepBeforeNextAttempt(config.retryPolicy().delayBeforeAttempt(attempt));
                 attempt++;
             }
         }
@@ -162,8 +169,47 @@ public final class DefaultMaxBotClient implements MaxBotClient {
         return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private void sleepBeforeNextAttempt(int attempt) {
-        long delayMillis = config.retryPolicy().delayBeforeAttempt(attempt).toMillis();
+    private Duration computeRetryDelay(int attempt, MaxHttpResponse response) {
+        Duration retryPolicyDelay = config.retryPolicy().delayBeforeAttempt(attempt);
+        if (response.statusCode() != 429) {
+            return retryPolicyDelay;
+        }
+
+        Long retryAfterSeconds = retryAfterSeconds(response);
+        if (retryAfterSeconds == null || retryAfterSeconds <= 0) {
+            return retryPolicyDelay;
+        }
+
+        Duration retryAfterDelay = Duration.ofSeconds(retryAfterSeconds);
+        return retryAfterDelay.compareTo(retryPolicyDelay) > 0 ? retryAfterDelay : retryPolicyDelay;
+    }
+
+    private static Long retryAfterSeconds(MaxHttpResponse response) {
+        String value = findHeaderIgnoreCase(response.headers(), "Retry-After");
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private static String findHeaderIgnoreCase(Map<String, List<String>> headers, String headerName) {
+        for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+            if (entry.getKey() != null && entry.getKey().toLowerCase(Locale.ROOT).equals(headerName.toLowerCase(Locale.ROOT))) {
+                List<String> values = entry.getValue();
+                if (values != null && !values.isEmpty()) {
+                    return values.getFirst();
+                }
+            }
+        }
+        return null;
+    }
+
+    private void sleepBeforeNextAttempt(Duration delay) {
+        long delayMillis = delay == null ? 0L : delay.toMillis();
         if (delayMillis <= 0) {
             return;
         }

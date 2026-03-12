@@ -104,6 +104,7 @@ Java framework для разработки ботов на платформе MA
 - error model в `max-client-core`: иерархия `MaxApiException` + специализированные исключения (400/401/404/429/503 и generic 4xx/5xx) через единый `MaxApiErrorDecoder`, включая structured payload (`status`, `errorCode`, `message`, `details`, `rawBody`);
 - reusable pagination foundation в `max-client-core` для marker-based MAX API: `Page<T>`, `MarkerPage<T>`, `MarkerPageRequest`, `PaginationHelper` (query params + safe page traversal helpers);
 - базовый retry hook в transport pipeline (`RetryPolicy`): по умолчанию без retry (`maxAttempts=1`), при включении — консервативный retry для безопасных `GET` на временных сбоях (`429`/`503`) и transport errors;
+- rate-limit awareness в transport pipeline: корректная обработка `429` (включая `Retry-After`) и лёгкий client-side hook `RequestRateLimiter` (`noop`/`cooldown`) как задел под ограничение частоты запросов;
 - базовые DTO модели `max-model`: `User`, `BotInfo`, `Chat`, `ChatMember`, `Message`, `Update` и вложенные структуры;
 - request DTO для message/callback API в `max-model`: `NewMessageBody`, `SendMessageRequest`, `EditMessageRequest`, `AnswerCallbackRequest`, минимальные attachment-related структуры;
 - typed value objects в `max-model` для id/reference-полей (`UserId`, `ChatId`, `MessageId`, `UpdateId`, `CallbackId`, `FileId`) вместо магических `String` в core DTO/request моделях;
@@ -131,6 +132,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
     .readTimeout(Duration.ofSeconds(30))
     .userAgent("my-max-bot/1.0")
     .retryPolicy(RetryPolicy.fixed(2, Duration.ofMillis(200)))
+    .rateLimiter(RequestRateLimiter.cooldown(Duration.ofSeconds(1)))
     .build();
 ```
 
