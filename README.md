@@ -22,14 +22,15 @@ Java framework для разработки ботов на платформе MA
 
 ## Текущий статус
 
-Статус: `bootstrap` (инициализация репозитория и модульного каркаса).
+Статус: `bootstrap` (инициализация репозитория и стартовой multi-module структуры).
 
 Реализовано:
-- Gradle multi-module проект (Kotlin DSL);
+- Gradle multi-module проект (Kotlin DSL) с 6 стартовыми модулями;
 - Java toolchain 21 на уровне всех модулей;
 - базовые модульные границы и минимальные public contracts;
+- межмодульные зависимости на базовом уровне, проект собирается;
 - JUnit 5 конфигурация для тестов;
-- базовый Gradle Wrapper, `.gitignore`, стартовая документация.
+- Gradle Wrapper, `.gitignore`, стартовая документация.
 
 Пока не реализовано (следующие этапы):
 - полноценный MAX HTTP client и DTO surface;
@@ -41,15 +42,16 @@ Java framework для разработки ботов на платформе MA
 
 ## План модульности
 
-Текущий модульный план:
+Текущая стартовая модульность:
 - `max-model` — DTO/enums и унифицированные model-контракты;
 - `max-client-core` — HTTP/client abstractions и API вызовы MAX;
 - `max-dispatcher` — dispatcher, router и orchestration update pipeline;
-- `max-filters` — filters и DSL для маршрутизации;
-- `max-middleware` — outer/inner middleware chain;
 - `max-fsm` — FSM storage abstractions и scenes/wizard primitives;
 - `max-spring-boot-starter` — Spring Boot интеграция и автоконфигурация;
 - `max-testkit` — инструменты тестирования framework-level сценариев.
+
+План следующего расширения модульности:
+- выделить `max-filters` и `max-middleware` в отдельные модули после стабилизации dispatcher pipeline.
 
 ## Технологический стек
 
