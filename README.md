@@ -442,6 +442,39 @@ dispatcher.includeRouter(router);
 - chat actions;
 - runtime usage inside handlers (`RuntimeContext` shortcuts + facade parameter resolution).
 
+## Sprint 7 Upload/Media Examples
+
+- `examples/sprint-7-upload-media/README.md`
+- `examples/sprint-7-upload-media/MediaFacadeExample.java`
+- `examples/sprint-7-upload-media/RuntimeMediaHandlersExample.java`
+
+Кейсы в примерах:
+- `InputFile.fromPath(...)`;
+- `InputFile.fromBytes(...)`;
+- `sendImage(...)` и `sendFile(...)`;
+- `replyVideo(...)` и `replyAudio(...)`;
+- media API внутри handler-а (`RuntimeContext` shortcuts + `MediaMessagingFacade` resolver);
+- builder + media attachment composition.
+
+Минимальный фрагмент:
+
+```java
+InputFile image = InputFile.fromPath(Path.of("./assets/photo.jpg"));
+InputFile doc = InputFile.fromBytes(loadPdfBytes(), "invoice.pdf");
+
+MediaMessagingFacade media = new MediaMessagingFacade(uploadService, messagingFacade);
+media.sendImage(new ChatId("chat-1"), image);
+media.sendFile(new ChatId("chat-1"), doc, "Счёт");
+media.replyVideo(sourceMessage, InputFile.fromPath(Path.of("./assets/clip.mp4")), "Видео");
+media.replyAudio(sourceMessage, InputFile.fromBytes(loadAudioBytes(), "voice.mp3"), "Аудио");
+
+UploadResult uploaded = uploadService.upload(image).toCompletableFuture().join();
+messagingFacade.send(
+    new ChatId("chat-1"),
+    Messages.text("Материалы").attachment(MediaAttachment.image(uploaded).caption("Превью"))
+);
+```
+
 ## Shared Services Injection (Sprint 5.2.3)
 
 ```java
