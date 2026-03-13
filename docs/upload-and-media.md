@@ -8,6 +8,16 @@
 Состояние реализации Sprint 7.1.2:
 - реализован `InputFile` (`fromPath`, `fromBytes`, `fromStream`) в `ru.max.botframework.upload`.
 
+Состояние реализации Sprint 7.1.3:
+- реализован orchestration contract в `ru.max.botframework.upload`:
+  - `UploadService` / `DefaultUploadService`;
+  - `UploadPreparationGateway` (prepare stage, `POST /uploads`);
+  - `UploadTransferGateway` (raw upload URL transfer);
+  - `UploadFinalizeGateway` (finalize stage);
+  - `UploadResultMapper` / `DefaultUploadResultMapper`.
+- добавлены модели orchestration result chain:
+  `UploadPrepareCommand`, `UploadPreparation`, `UploadTransferReceipt`, `UploadFinalizeResult`, `UploadResult`, `UploadRef`.
+
 ## Goal
 
 Дать разработчику ergonomic API для отправки медиа в стиле framework-level DX:
@@ -62,6 +72,11 @@ Out of scope:
 - не отправляет сообщение напрямую;
 - не дублирует `MaxBotClient` transport/client stack;
 - не хранит файл-персистентность вне жизненного цикла операции.
+
+Текущая реализация Sprint 7.1.3:
+- `DefaultUploadService` orchestrates `prepare -> transfer -> finalize -> map`;
+- `UploadService.of(...)` даёт базовую wiring-точку с default mapper;
+- конкретные transport реализации gateways добавляются отдельно в следующих задачах Sprint 7.
 
 ### Multipart Upload Flow
 
