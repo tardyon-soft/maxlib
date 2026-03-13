@@ -23,6 +23,8 @@ Java framework для разработки ботов на платформе MA
 - scenes/wizard minimal runtime APIs;
 - интеграция state layer в текущий dispatcher/runtime pipeline.
 - контракт Sprint 8 зафиксирован в `docs/fsm-and-scenes.md`.
+- реализован core state model: `StateScope`, `StateKey`, `StateData`, `StateSnapshot`,
+  `StateKeyStrategy` и built-in `StateKeyStrategies` (`USER`, `CHAT`, `USER_IN_CHAT`).
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -87,7 +89,7 @@ Java framework для разработки ботов на платформе MA
 - `max-client-core` — Java SDK поверх MAX API.
 - `max-model` — DTO, enum и value objects для MAX domain.
 - `max-dispatcher` — runtime foundation: dispatcher, router tree, observers, dispatch/error model, ingestion integration.
-- `max-fsm` — заготовка FSM abstractions.
+- `max-fsm` — FSM contracts и core state model/scoping strategy foundation.
 - `max-spring-boot-starter` — заготовка Spring Boot integration.
 - `max-testkit` — заготовка framework test utilities.
 

@@ -96,23 +96,25 @@ public interface FSMStorage {
 - определить границы изоляции state.
 
 Базовые стратегии Sprint 8:
+- `USER` (state на пользователя независимо от чата);
 - `CHAT` (один state на чат);
-- `CHAT_USER` (state на пару chat+user, дефолт);
-- `USER_GLOBAL` (state на user без chat binding).
+- `USER_IN_CHAT` (state на пару chat+user, дефолт).
 
 Ожидаемый key contract:
 
 ```java
 public record StateKey(
     StateScope scope,
-    String chatId,
-    String userId
+    UserId userId,
+    ChatId chatId
 ) {}
 ```
 
 Границы:
 - scope strategy выбирается runtime-конфигурацией;
 - strategy не должна протекать в business handlers как low-level storage detail.
+- key generation выполняется из incoming `Update` через `StateKeyStrategy`, чтобы
+  storage layer и `StateFilter` использовали единый способ вычисления scope key.
 
 ### `StateFilter`
 
