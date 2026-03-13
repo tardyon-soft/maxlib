@@ -34,7 +34,7 @@ class MessagingFacadeTest {
         when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sent);
         MessagingFacade facade = new MessagingFacade(client);
 
-        Message result = facade.send(new ChatId("chat-1"), Messages.markdown("*hello*").notify(false));
+        Message result = facade.send(new ChatId("chat-1"), Messages.markdown("*hello*").canNotify(false));
 
         assertEquals(sent, result);
         ArgumentCaptor<SendMessageRequest> captor = ArgumentCaptor.forClass(SendMessageRequest.class);
@@ -78,7 +78,7 @@ class MessagingFacadeTest {
         MessagingFacade facade = new MessagingFacade(client);
         Message source = sampleMessage("m-src", "incoming");
 
-        facade.reply(source, Messages.html("<b>ok</b>").notify(false));
+        facade.reply(source, Messages.html("<b>ok</b>").canNotify(false));
 
         ArgumentCaptor<SendMessageRequest> captor = ArgumentCaptor.forClass(SendMessageRequest.class);
         verify(client).sendMessage(captor.capture());
@@ -97,7 +97,7 @@ class MessagingFacadeTest {
         MessagingFacade facade = new MessagingFacade(client);
         Message source = sampleMessage("m-edit", "old");
 
-        boolean result = facade.edit(source, Messages.text("new").markdown().notify(false));
+        boolean result = facade.edit(source, Messages.text("new").markdown().canNotify(false));
 
         assertTrue(result);
         ArgumentCaptor<EditMessageRequest> captor = ArgumentCaptor.forClass(EditMessageRequest.class);

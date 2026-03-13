@@ -1,6 +1,9 @@
 package ru.tardyon.botframework.spring.webhook;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Instant;
@@ -17,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import ru.tardyon.botframework.client.serialization.JacksonJsonCodec;
 import ru.tardyon.botframework.dispatcher.Router;
 import ru.tardyon.botframework.model.Chat;
@@ -55,46 +59,62 @@ class SpringWebhookControllerIntegrationTest {
 
     @Test
     void validWebhookRequestReturnsOkAndInvokesHandler() throws Exception {
-        mockMvc.perform(post("/hooks/max")
+        MvcResult result = mockMvc.perform(post("/hooks/max")
                         .header("X-Max-Bot-Api-Secret", "integration-secret")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validUpdateJson("hello")))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(result))
                 .andExpect(status().isOk());
 
-        org.junit.jupiter.api.Assertions.assertEquals(1, HANDLER_CALLS.get());
+        assertEquals(1, HANDLER_CALLS.get());
     }
 
     @Test
     void invalidSecretReturnsForbidden() throws Exception {
-        mockMvc.perform(post("/hooks/max")
+        MvcResult result = mockMvc.perform(post("/hooks/max")
                         .header("X-Max-Bot-Api-Secret", "wrong-secret")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validUpdateJson("hello")))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(result))
                 .andExpect(status().isForbidden());
 
-        org.junit.jupiter.api.Assertions.assertEquals(0, HANDLER_CALLS.get());
+        assertEquals(0, HANDLER_CALLS.get());
     }
 
     @Test
     void malformedPayloadReturnsBadRequest() throws Exception {
-        mockMvc.perform(post("/hooks/max")
+        MvcResult result = mockMvc.perform(post("/hooks/max")
                         .header("X-Max-Bot-Api-Secret", "integration-secret")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"broken\":"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(result))
                 .andExpect(status().isBadRequest());
 
-        org.junit.jupiter.api.Assertions.assertEquals(0, HANDLER_CALLS.get());
+        assertEquals(0, HANDLER_CALLS.get());
     }
 
     @Test
     void webhookPathDispatchesIntoRuntimePipeline() throws Exception {
-        mockMvc.perform(post("/hooks/max")
+        MvcResult result = mockMvc.perform(post("/hooks/max")
                         .header("X-Max-Bot-Api-Secret", "integration-secret")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validUpdateJson("invoke-through-webhook")))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(result))
                 .andExpect(status().isOk());
 
-        org.junit.jupiter.api.Assertions.assertEquals(1, HANDLER_CALLS.get());
+        assertEquals(1, HANDLER_CALLS.get());
     }
 
     private static String validUpdateJson(String text) {

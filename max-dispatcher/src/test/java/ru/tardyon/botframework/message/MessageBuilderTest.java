@@ -27,7 +27,7 @@ class MessageBuilderTest {
         MessageBuilder builder = Messages.text("hello");
 
         assertEquals("hello", builder.text().orElseThrow());
-        assertTrue(builder.notify());
+        assertTrue(builder.canNotify());
         assertEquals(TextFormat.PLAIN, builder.format());
         assertTrue(builder.attachments().isEmpty());
     }
@@ -35,19 +35,19 @@ class MessageBuilderTest {
     @Test
     void builderIsImmutable() {
         MessageBuilder base = Messages.text("hello");
-        MessageBuilder changed = base.notify(false).format(TextFormat.MARKDOWN);
+        MessageBuilder changed = base.canNotify(false).format(TextFormat.MARKDOWN);
 
         assertNotSame(base, changed);
-        assertTrue(base.notify());
+        assertTrue(base.canNotify());
         assertEquals(TextFormat.PLAIN, base.format());
         assertEquals(TextFormat.MARKDOWN, changed.format());
     }
 
     @Test
-    void mapsTextNotifyFormatAndLinkToBody() {
+    void mapsTextCanNotifyFormatAndLinkToBody() {
         MessageBuilder builder = Messages.text("hello")
                 .format(TextFormat.HTML)
-                .notify(false)
+                .canNotify(false)
                 .link("https://example.com");
 
         NewMessageBody body = builder.toNewMessageBody();
@@ -121,7 +121,7 @@ class MessageBuilderTest {
     @Test
     void mapsBuilderToLowLevelSendRequestForChatTarget() {
         SendMessageRequest request = Messages.text("hello")
-                .notify(false)
+                .canNotify(false)
                 .toSendRequest(new ChatId("chat-1"));
 
         assertEquals("chat-1", request.chatId().value());

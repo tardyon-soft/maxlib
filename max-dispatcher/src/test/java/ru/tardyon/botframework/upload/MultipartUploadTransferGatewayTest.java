@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,7 +26,7 @@ class MultipartUploadTransferGatewayTest {
 
         UploadTransferReceipt receipt = gateway.transfer(
                         new UploadPreparation(URI.create("https://upload.example.com/u-1"), UploadFlowType.MULTIPART, "u-1"),
-                        InputFile.fromBytes("hello".getBytes(StandardCharsets.UTF_8), "hello.txt")
+                        bytesInput("hello".getBytes(StandardCharsets.UTF_8), "hello.txt")
                                 .withContentType("text/plain")
                 )
                 .toCompletableFuture()
@@ -48,7 +49,7 @@ class MultipartUploadTransferGatewayTest {
 
         gateway.transfer(
                         new UploadPreparation(URI.create("https://upload.example.com/u-2"), UploadFlowType.MULTIPART, "u-2"),
-                        InputFile.fromBytes(new byte[]{1, 2, 3}, "file.bin")
+                        bytesInput(new byte[]{1, 2, 3}, "file.bin")
                 )
                 .toCompletableFuture()
                 .join();
@@ -66,7 +67,7 @@ class MultipartUploadTransferGatewayTest {
                 CompletionException.class,
                 () -> gateway.transfer(
                         new UploadPreparation(URI.create("https://upload.example.com/u-3"), UploadFlowType.RESUMABLE, "u-3"),
-                        InputFile.fromBytes(new byte[]{1}, "a.bin")
+                        bytesInput(new byte[]{1}, "a.bin")
                 ).toCompletableFuture().join()
         );
 
@@ -84,7 +85,7 @@ class MultipartUploadTransferGatewayTest {
                 CompletionException.class,
                 () -> gateway.transfer(
                         new UploadPreparation(URI.create("https://upload.example.com/u-4"), UploadFlowType.MULTIPART, "u-4"),
-                        InputFile.fromBytes(new byte[]{1}, "a.bin")
+                        bytesInput(new byte[]{1}, "a.bin")
                 ).toCompletableFuture().join()
         );
 
@@ -102,7 +103,7 @@ class MultipartUploadTransferGatewayTest {
                 CompletionException.class,
                 () -> gateway.transfer(
                         new UploadPreparation(URI.create("https://upload.example.com/u-5"), UploadFlowType.MULTIPART, "u-5"),
-                        InputFile.fromBytes(new byte[]{1}, "a.bin")
+                        bytesInput(new byte[]{1}, "a.bin")
                 ).toCompletableFuture().join()
         );
 
@@ -121,9 +122,9 @@ class MultipartUploadTransferGatewayTest {
                 CompletionException.class,
                 () -> gateway.transfer(
                         new UploadPreparation(URI.create("https://upload.example.com/u-6"), UploadFlowType.MULTIPART, "u-6"),
-                        InputFile.fromStream(() -> {
+                        new InputFile.StreamInputFile(() -> {
                             throw new IOException("cannot read stream");
-                        }, "broken.bin")
+                        }, "broken.bin", Optional.empty(), null)
                 ).toCompletableFuture().join()
         );
 
@@ -146,12 +147,16 @@ class MultipartUploadTransferGatewayTest {
         );
 
         UploadResult result = service.upload(
-                InputFile.fromBytes(new byte[]{1, 2, 3, 4}, "image.png").withContentType("image/png")
+                bytesInput(new byte[]{1, 2, 3, 4}, "image.png").withContentType("image/png")
         ).toCompletableFuture().join();
 
         assertEquals("ref-7", result.ref().value());
         assertEquals(4L, result.bytesTransferred());
         assertEquals(UploadFlowType.MULTIPART, result.flowType());
         assertEquals("image/png", result.contentTypeOptional().orElseThrow());
+    }
+
+    private static InputFile bytesInput(byte[] bytes, String fileName) {
+        return new InputFile.BytesInputFile(bytes, fileName, Optional.empty());
     }
 }

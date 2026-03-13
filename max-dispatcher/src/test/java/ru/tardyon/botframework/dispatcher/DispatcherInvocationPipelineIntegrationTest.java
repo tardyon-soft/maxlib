@@ -498,7 +498,7 @@ class DispatcherInvocationPipelineIntegrationTest {
                 .join();
 
         router.message(
-                BuiltInFilters.state("checkout.email").and(BuiltInFilters.textStartsWith("email:")),
+                BuiltInFilters.<Message>state("checkout.email").and(BuiltInFilters.textStartsWith("email:")),
                 (message, context) -> {
                     calls.incrementAndGet();
                     assertEquals("user@example.com", context.enrichmentValue(BuiltInFilters.TEXT_SUFFIX_KEY, String.class).orElseThrow());

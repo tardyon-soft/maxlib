@@ -5,7 +5,7 @@ import ru.tardyon.botframework.client.MaxBotClient;
 import ru.tardyon.botframework.model.response.GetUpdatesResponse;
 
 /**
- * Polling source implementation backed by {@link MaxBotClient#getUpdates(...)}.
+ * Polling source implementation backed by {@link MaxBotClient}.
  */
 public final class SdkPollingUpdateSource implements PollingUpdateSource {
     private final MaxBotClient client;

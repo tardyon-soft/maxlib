@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -192,8 +193,8 @@ class DispatcherRuntimeMessagingIntegrationTest {
                 .withUploadService(uploadService);
         Router router = new Router("media-reply");
         router.message((message, context) -> {
-            context.replyImage(InputFile.fromBytes(new byte[]{1}, "img.jpg"));
-            context.replyFile(InputFile.fromBytes(new byte[]{2}, "doc.pdf"));
+            context.replyImage(bytesInput(new byte[]{1}, "img.jpg"));
+            context.replyFile(bytesInput(new byte[]{2}, "doc.pdf"));
             return CompletableFuture.completedFuture(null);
         });
         dispatcher.includeRouter(router);
@@ -234,8 +235,8 @@ class DispatcherRuntimeMessagingIntegrationTest {
                 .withUploadService(uploadService);
         Router router = new Router("media-send");
         router.message((message, context) -> {
-            context.sendVideo(InputFile.fromBytes(new byte[]{3}, "clip.mp4"));
-            context.sendAudio(InputFile.fromBytes(new byte[]{4}, "voice.mp3"));
+            context.sendVideo(bytesInput(new byte[]{3}, "clip.mp4"));
+            context.sendAudio(bytesInput(new byte[]{4}, "voice.mp3"));
             return CompletableFuture.completedFuture(null);
         });
         dispatcher.includeRouter(router);
@@ -285,7 +286,7 @@ class DispatcherRuntimeMessagingIntegrationTest {
     void reflectiveHandlerCanComposeBuilderWithMediaAttachmentFromUploadedResult() throws Exception {
         MaxBotClient client = Mockito.mock(MaxBotClient.class);
         UploadService uploadService = Mockito.mock(UploadService.class);
-        when(uploadService.upload(any(InputFile.class), any())).thenReturn(
+        when(uploadService.upload(any(InputFile.class))).thenReturn(
                 CompletableFuture.completedFuture(uploadResult("ref-composed", UploadMediaKind.IMAGE))
         );
         when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-out", "ok"));
@@ -407,7 +408,7 @@ class DispatcherRuntimeMessagingIntegrationTest {
         @SuppressWarnings("unused")
         public CompletableFuture<Void> onMessage(Message message, MediaMessagingFacade media) {
             invoked = true;
-            media.sendImage(message.chat().id(), InputFile.fromBytes(new byte[]{9}, "p.jpg"));
+            media.sendImage(message.chat().id(), bytesInput(new byte[]{9}, "p.jpg"));
             return CompletableFuture.completedFuture(null);
         }
     }
@@ -418,7 +419,7 @@ class DispatcherRuntimeMessagingIntegrationTest {
         @SuppressWarnings("unused")
         public CompletableFuture<Void> onMessage(Message message, MessagingFacade messaging, UploadService uploadService) {
             invoked = true;
-            UploadResult uploaded = uploadService.upload(InputFile.fromBytes(new byte[]{8}, "img.jpg"))
+            UploadResult uploaded = uploadService.upload(bytesInput(new byte[]{8}, "img.jpg"))
                     .toCompletableFuture()
                     .join();
             messaging.send(
@@ -427,5 +428,9 @@ class DispatcherRuntimeMessagingIntegrationTest {
             );
             return CompletableFuture.completedFuture(null);
         }
+    }
+
+    private static InputFile bytesInput(byte[] bytes, String fileName) {
+        return new InputFile.BytesInputFile(bytes, fileName, Optional.empty());
     }
 }

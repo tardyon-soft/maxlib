@@ -1,5 +1,6 @@
 package ru.tardyon.botframework.spring.autoconfigure;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -14,6 +15,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import ru.tardyon.botframework.client.MaxApiClientConfig;
 import ru.tardyon.botframework.client.MaxBotClient;
+import ru.tardyon.botframework.client.MaxRequest;
 import ru.tardyon.botframework.client.http.MaxHttpClient;
 import ru.tardyon.botframework.action.ChatActionsFacade;
 import ru.tardyon.botframework.callback.CallbackFacade;
@@ -59,18 +61,18 @@ class MaxBotAutoConfigurationTest {
     @Test
     void autoConfigCreatesCoreSdkAndRuntimeBeans() {
         contextRunner.run(context -> {
-            assertTrue(context.hasSingleBean(MaxBotProperties.class));
-            assertTrue(context.hasSingleBean(MaxApiClientConfig.class));
-            assertTrue(context.hasSingleBean(MaxHttpClient.class));
-            assertTrue(context.hasSingleBean(MaxBotClient.class));
-            assertTrue(context.hasSingleBean(FSMStorage.class));
-            assertTrue(context.hasSingleBean(SceneRegistry.class));
-            assertTrue(context.hasSingleBean(SceneStorage.class));
-            assertTrue(context.hasSingleBean(MessagingFacade.class));
-            assertTrue(context.hasSingleBean(CallbackFacade.class));
-            assertTrue(context.hasSingleBean(ChatActionsFacade.class));
-            assertTrue(context.hasSingleBean(Dispatcher.class));
-            assertTrue(context.hasSingleBean(SpringPollingBootstrap.class));
+            assertThat(context).hasSingleBean(MaxBotProperties.class);
+            assertThat(context).hasSingleBean(MaxApiClientConfig.class);
+            assertThat(context).hasSingleBean(MaxHttpClient.class);
+            assertThat(context).hasSingleBean(MaxBotClient.class);
+            assertThat(context).hasSingleBean(FSMStorage.class);
+            assertThat(context).hasSingleBean(SceneRegistry.class);
+            assertThat(context).hasSingleBean(SceneStorage.class);
+            assertThat(context).hasSingleBean(MessagingFacade.class);
+            assertThat(context).hasSingleBean(CallbackFacade.class);
+            assertThat(context).hasSingleBean(ChatActionsFacade.class);
+            assertThat(context).hasSingleBean(Dispatcher.class);
+            assertThat(context).hasSingleBean(SpringPollingBootstrap.class);
 
             assertEquals(false, context.containsBean("springWebhookAdapter"));
             assertEquals(false, context.containsBean("mediaMessagingFacade"));
@@ -108,8 +110,11 @@ class MaxBotAutoConfigurationTest {
 
     @Test
     void backsOffWhenUserProvidesMaxBotClientBean() {
-        MaxBotClient custom = request -> {
-            throw new UnsupportedOperationException("custom");
+        MaxBotClient custom = new MaxBotClient() {
+            @Override
+            public <T> T execute(MaxRequest<T> request) {
+                throw new UnsupportedOperationException("custom");
+            }
         };
 
         contextRunner
@@ -120,9 +125,13 @@ class MaxBotAutoConfigurationTest {
     @Test
     void backsOffWhenUserProvidesFsmStorageAndMessagingFacadeBeans() {
         MemoryStorage customStorage = new MemoryStorage();
-        MessagingFacade customMessaging = new MessagingFacade(request -> {
-            throw new UnsupportedOperationException("custom");
-        });
+        MaxBotClient customClient = new MaxBotClient() {
+            @Override
+            public <T> T execute(MaxRequest<T> request) {
+                throw new UnsupportedOperationException("custom");
+            }
+        };
+        MessagingFacade customMessaging = new MessagingFacade(customClient);
         SceneRegistry customRegistry = new InMemorySceneRegistry();
         SceneStorage customSceneStorage = new MemorySceneStorage();
 
@@ -151,7 +160,7 @@ class MaxBotAutoConfigurationTest {
         contextRunner
                 .withBean(UploadService.class, () -> uploadService)
                 .run(context -> {
-                    assertTrue(context.hasSingleBean(MediaMessagingFacade.class));
+                    assertThat(context).hasSingleBean(MediaMessagingFacade.class);
                     assertSame(uploadService, context.getBean(UploadService.class));
                 });
     }
@@ -161,7 +170,7 @@ class MaxBotAutoConfigurationTest {
         AtomicReference<StateScope> seenScope = new AtomicReference<>();
         Router router = new Router("scope");
         router.message((message, fsm) -> {
-            seenScope.set(fsm.scope().scope());
+            seenScope.set(fsm.fsm().scope().scope());
             return CompletableFuture.completedFuture(null);
         });
 
@@ -186,7 +195,7 @@ class MaxBotAutoConfigurationTest {
                             ru.tardyon.botframework.ingestion.WebhookReceiveResult.accepted(null)
                     );
                 })
-                .run(context -> assertTrue(context.hasSingleBean(SpringWebhookAdapter.class)));
+                .run(context -> assertThat(context).hasSingleBean(SpringWebhookAdapter.class))  ;
     }
 
     private static Update sampleUpdate(String text) {

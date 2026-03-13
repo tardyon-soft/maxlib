@@ -8,18 +8,18 @@ import java.util.Optional;
  */
 public record UpdatePipelineResult(
         UpdatePipelineStatus status,
-        Throwable error
+        Optional<Throwable> error
 ) {
     public UpdatePipelineResult {
         Objects.requireNonNull(status, "status");
     }
 
     public static UpdatePipelineResult accepted() {
-        return new UpdatePipelineResult(UpdatePipelineStatus.ACCEPTED, null);
+        return new UpdatePipelineResult(UpdatePipelineStatus.ACCEPTED, Optional.empty());
     }
 
     public static UpdatePipelineResult rejected(Throwable error) {
-        return new UpdatePipelineResult(UpdatePipelineStatus.REJECTED, error);
+        return new UpdatePipelineResult(UpdatePipelineStatus.REJECTED, Optional.ofNullable(error));
     }
 
     public boolean isAccepted() {
@@ -27,6 +27,6 @@ public record UpdatePipelineResult(
     }
 
     public Optional<Throwable> error() {
-        return Optional.ofNullable(error);
+        return error;
     }
 }

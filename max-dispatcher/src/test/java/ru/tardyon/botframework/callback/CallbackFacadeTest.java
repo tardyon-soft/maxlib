@@ -73,7 +73,7 @@ class CallbackFacadeTest {
         CallbackFacade facade = new CallbackFacade(client);
         Callback callback = sampleCallbackWithMessage("cb-1", "src-1");
 
-        boolean result = facade.updateCurrentMessage(callback, Messages.markdown("*updated*").notify(false));
+        boolean result = facade.updateCurrentMessage(callback, Messages.markdown("*updated*").canNotify(false));
 
         assertTrue(result);
         ArgumentCaptor<EditMessageRequest> captor = ArgumentCaptor.forClass(EditMessageRequest.class);

@@ -21,7 +21,7 @@ import ru.tardyon.botframework.model.request.SendMessageRequest;
  */
 public final class MessageBuilder {
     private final String text;
-    private final boolean notify;
+    private final boolean canNotify;
     private final TextFormat format;
     private final String link;
     private final List<NewMessageAttachment> attachments;
@@ -29,14 +29,14 @@ public final class MessageBuilder {
 
     private MessageBuilder(
             String text,
-            boolean notify,
+            boolean canNotify,
             TextFormat format,
             String link,
             List<NewMessageAttachment> attachments,
             KeyboardMarkup keyboard
     ) {
         this.text = text;
-        this.notify = notify;
+        this.canNotify = canNotify;
         this.format = Objects.requireNonNull(format, "format");
         this.link = link;
         this.attachments = List.copyOf(attachments);
@@ -56,15 +56,15 @@ public final class MessageBuilder {
         if (value.isBlank()) {
             throw new IllegalArgumentException("text must not be blank");
         }
-        return new MessageBuilder(value, notify, format, link, attachments, keyboard);
+        return new MessageBuilder(value, canNotify, format, link, attachments, keyboard);
     }
 
-    public MessageBuilder notify(boolean value) {
+    public MessageBuilder canNotify(boolean value) {
         return new MessageBuilder(text, value, format, link, attachments, keyboard);
     }
 
     public MessageBuilder format(TextFormat value) {
-        return new MessageBuilder(text, notify, Objects.requireNonNull(value, "value"), link, attachments, keyboard);
+        return new MessageBuilder(text, canNotify, Objects.requireNonNull(value, "value"), link, attachments, keyboard);
     }
 
     public MessageBuilder plain() {
@@ -84,7 +84,7 @@ public final class MessageBuilder {
         if (value.isBlank()) {
             throw new IllegalArgumentException("link must not be blank");
         }
-        return new MessageBuilder(text, notify, format, value, attachments, keyboard);
+        return new MessageBuilder(text, canNotify, format, value, attachments, keyboard);
     }
 
     /**
@@ -94,7 +94,7 @@ public final class MessageBuilder {
         Objects.requireNonNull(value, "value");
         ArrayList<NewMessageAttachment> merged = new ArrayList<>(attachments);
         merged.add(value);
-        return new MessageBuilder(text, notify, format, link, merged, keyboard);
+        return new MessageBuilder(text, canNotify, format, link, merged, keyboard);
     }
 
     /**
@@ -112,14 +112,14 @@ public final class MessageBuilder {
         Objects.requireNonNull(values, "values");
         ArrayList<NewMessageAttachment> merged = new ArrayList<>(attachments);
         merged.addAll(values);
-        return new MessageBuilder(text, notify, format, link, merged, keyboard);
+        return new MessageBuilder(text, canNotify, format, link, merged, keyboard);
     }
 
     /**
      * Assigns pre-built keyboard markup.
      */
     public MessageBuilder keyboard(KeyboardMarkup value) {
-        return new MessageBuilder(text, notify, format, link, attachments, Objects.requireNonNull(value, "value"));
+        return new MessageBuilder(text, canNotify, format, link, attachments, Objects.requireNonNull(value, "value"));
     }
 
     /**
@@ -134,8 +134,8 @@ public final class MessageBuilder {
         return Optional.ofNullable(text);
     }
 
-    public boolean notify() {
-        return notify;
+    public boolean canNotify() {
+        return canNotify;
     }
 
     public TextFormat format() {
@@ -178,7 +178,7 @@ public final class MessageBuilder {
         return new SendMessageRequest(
                 Objects.requireNonNull(chatId, "chatId"),
                 toNewMessageBody(),
-                notify,
+                canNotify,
                 replyToMessageId
         );
     }
@@ -199,7 +199,7 @@ public final class MessageBuilder {
                 Objects.requireNonNull(chatId, "chatId"),
                 Objects.requireNonNull(messageId, "messageId"),
                 toNewMessageBody(),
-                notify
+                canNotify
         );
     }
 

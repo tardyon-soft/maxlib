@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -17,7 +18,7 @@ class UploadServiceTest {
     @Test
     void orchestratesPrepareTransferFinalizeAndMapsResult() {
         AtomicReference<UploadPrepareCommand> capturedCommand = new AtomicReference<>();
-        InputFile input = InputFile.fromBytes("hello".getBytes(StandardCharsets.UTF_8), "hello.txt")
+        InputFile input = bytesInput("hello".getBytes(StandardCharsets.UTF_8), "hello.txt")
                 .withContentType("text/plain");
 
         UploadService service = new DefaultUploadService(
@@ -61,7 +62,7 @@ class UploadServiceTest {
                 (preparation, receipt) -> CompletableFuture.completedFuture(new UploadFinalizeResult("ref-2", 3L, "application/octet-stream"))
         );
 
-        UploadResult result = service.upload(InputFile.fromBytes(new byte[]{1, 2, 3}, "bin.dat"))
+        UploadResult result = service.upload(bytesInput(new byte[]{1, 2, 3}, "bin.dat"))
                 .toCompletableFuture()
                 .join();
 
@@ -89,12 +90,16 @@ class UploadServiceTest {
 
         CompletionException exception = assertThrows(
                 CompletionException.class,
-                () -> service.upload(InputFile.fromBytes(new byte[]{1}, "a.bin")).toCompletableFuture().join()
+                () -> service.upload(bytesInput(new byte[]{1}, "a.bin")).toCompletableFuture().join()
         );
 
         assertTrue(exception.getCause() instanceof IllegalStateException);
         assertEquals("prepare failed", exception.getCause().getMessage());
         assertTrue(!transferCalled.get());
         assertTrue(!finalizeCalled.get());
+    }
+
+    private static InputFile bytesInput(byte[] bytes, String fileName) {
+        return new InputFile.BytesInputFile(bytes, fileName, Optional.empty());
     }
 }

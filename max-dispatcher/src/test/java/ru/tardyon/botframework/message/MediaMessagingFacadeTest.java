@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -45,7 +46,7 @@ class MediaMessagingFacadeTest {
         MessagingFacade messagingFacade = new MessagingFacade(client);
         MediaMessagingFacade mediaFacade = new MediaMessagingFacade(uploadService, messagingFacade);
 
-        mediaFacade.sendImage(new ChatId("chat-1"), InputFile.fromBytes(new byte[]{1, 2, 3}, "photo.png"));
+        mediaFacade.sendImage(new ChatId("chat-1"), bytesInput(new byte[]{1, 2, 3}, "photo.png"));
 
         ArgumentCaptor<UploadRequest> uploadRequestCaptor = ArgumentCaptor.forClass(UploadRequest.class);
         verify(uploadService).upload(any(InputFile.class), uploadRequestCaptor.capture());
@@ -80,7 +81,7 @@ class MediaMessagingFacadeTest {
         MediaMessagingFacade mediaFacade = new MediaMessagingFacade(uploadService, messagingFacade);
         Message source = sampleMessage("m-src", "incoming");
 
-        mediaFacade.replyVideo(source, InputFile.fromBytes(new byte[]{4, 5, 6}, "clip.mp4"), "clip");
+        mediaFacade.replyVideo(source, bytesInput(new byte[]{4, 5, 6}, "clip.mp4"), "clip");
 
         ArgumentCaptor<SendMessageRequest> sendCaptor = ArgumentCaptor.forClass(SendMessageRequest.class);
         verify(client).sendMessage(sendCaptor.capture());
@@ -112,8 +113,8 @@ class MediaMessagingFacadeTest {
         MessagingFacade messagingFacade = new MessagingFacade(client);
         MediaMessagingFacade mediaFacade = new MediaMessagingFacade(uploadService, messagingFacade);
 
-        mediaFacade.sendFile(new ChatId("chat-1"), InputFile.fromBytes(new byte[]{1}, "doc.pdf"));
-        mediaFacade.sendAudio(MessageTarget.chat(new ChatId("chat-1")), InputFile.fromBytes(new byte[]{2}, "voice.mp3"));
+        mediaFacade.sendFile(new ChatId("chat-1"), bytesInput(new byte[]{1}, "doc.pdf"));
+        mediaFacade.sendAudio(MessageTarget.chat(new ChatId("chat-1")), bytesInput(new byte[]{2}, "voice.mp3"));
 
         ArgumentCaptor<SendMessageRequest> sendCaptor = ArgumentCaptor.forClass(SendMessageRequest.class);
         verify(client, org.mockito.Mockito.times(2)).sendMessage(sendCaptor.capture());
@@ -157,5 +158,9 @@ class MediaMessagingFacadeTest {
                 List.of(),
                 List.of()
         );
+    }
+
+    private static InputFile bytesInput(byte[] bytes, String fileName) {
+        return new InputFile.BytesInputFile(bytes, fileName, Optional.empty());
     }
 }

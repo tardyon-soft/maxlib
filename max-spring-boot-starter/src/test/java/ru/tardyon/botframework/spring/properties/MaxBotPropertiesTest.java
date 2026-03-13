@@ -1,5 +1,6 @@
 package ru.tardyon.botframework.spring.properties;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,7 +21,7 @@ class MaxBotPropertiesTest {
         contextRunner
                 .withPropertyValues("max.bot.token=test-token")
                 .run(context -> {
-                    assertTrue(context.hasSingleBean(MaxBotProperties.class));
+                    assertThat(context).hasSingleBean(MaxBotProperties.class);
                     MaxBotProperties properties = context.getBean(MaxBotProperties.class);
 
                     assertEquals("test-token", properties.getToken());

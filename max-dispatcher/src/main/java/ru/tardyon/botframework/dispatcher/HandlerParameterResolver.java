@@ -18,5 +18,5 @@ public interface HandlerParameterResolver {
      * <p>In case of explicit resolution failure (for example, ambiguous candidates) resolver should throw
      * {@link ParameterResolutionException}.</p>
      */
-    HandlerParameterResolution resolve(HandlerParameterDescriptor parameter, HandlerInvocationContext context);
+    HandlerParameterResolution resolve(HandlerParameterDescriptor parameter, HandlerInvocationContext context) throws NoSuchMethodException;
 }

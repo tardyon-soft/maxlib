@@ -93,13 +93,13 @@ public sealed interface InputFile permits InputFile.PathInputFile, InputFile.Byt
     record PathInputFile(
             Path path,
             String fileName,
-            String contentType,
+            Optional<String> contentType,
             long size
     ) implements InputFile {
-        PathInputFile {
+        public PathInputFile {
             Objects.requireNonNull(path, "path");
             requireFileName(fileName);
-            requireOptionalContentType(contentType);
+            requireOptionalContentType(contentType.orElse(null));
             if (size < 0) {
                 throw new IllegalArgumentException("size must be non-negative");
             }
@@ -107,7 +107,7 @@ public sealed interface InputFile permits InputFile.PathInputFile, InputFile.Byt
 
         @Override
         public Optional<String> contentType() {
-            return Optional.ofNullable(contentType);
+            return contentType;
         }
 
         @Override
@@ -127,25 +127,25 @@ public sealed interface InputFile permits InputFile.PathInputFile, InputFile.Byt
 
         @Override
         public InputFile withContentType(String contentType) {
-            return new PathInputFile(path, fileName, contentType, size);
+            return new PathInputFile(path, fileName, Optional.ofNullable(contentType), size);
         }
     }
 
     record BytesInputFile(
             byte[] bytes,
             String fileName,
-            String contentType
+            Optional<String> contentType
     ) implements InputFile {
-        BytesInputFile {
+        public BytesInputFile {
             Objects.requireNonNull(bytes, "bytes");
             requireFileName(fileName);
-            requireOptionalContentType(contentType);
+            requireOptionalContentType(contentType.orElse(null));
             bytes = bytes.clone();
         }
 
         @Override
         public Optional<String> contentType() {
-            return Optional.ofNullable(contentType);
+            return contentType;
         }
 
         @Override
@@ -165,20 +165,20 @@ public sealed interface InputFile permits InputFile.PathInputFile, InputFile.Byt
 
         @Override
         public InputFile withContentType(String contentType) {
-            return new BytesInputFile(bytes, fileName, contentType);
+            return new BytesInputFile(bytes, fileName, Optional.ofNullable(contentType));
         }
     }
 
     record StreamInputFile(
             StreamSupplier streamSupplier,
             String fileName,
-            String contentType,
+            Optional<String> contentType,
             Long knownSizeValue
     ) implements InputFile {
-        StreamInputFile {
+        public StreamInputFile {
             Objects.requireNonNull(streamSupplier, "streamSupplier");
             requireFileName(fileName);
-            requireOptionalContentType(contentType);
+            requireOptionalContentType(contentType.orElse(null));
             if (knownSizeValue != null && knownSizeValue < 0) {
                 throw new IllegalArgumentException("knownSizeValue must be non-negative");
             }
@@ -186,7 +186,7 @@ public sealed interface InputFile permits InputFile.PathInputFile, InputFile.Byt
 
         @Override
         public Optional<String> contentType() {
-            return Optional.ofNullable(contentType);
+            return contentType;
         }
 
         @Override
@@ -206,7 +206,7 @@ public sealed interface InputFile permits InputFile.PathInputFile, InputFile.Byt
 
         @Override
         public InputFile withContentType(String contentType) {
-            return new StreamInputFile(streamSupplier, fileName, contentType, knownSizeValue);
+            return new StreamInputFile(streamSupplier, fileName, Optional.ofNullable(contentType), knownSizeValue);
         }
     }
 

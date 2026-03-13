@@ -29,13 +29,16 @@ class UnifiedIngestionPipelineUsageTest {
         PollingUpdateSource source = Mockito.mock(PollingUpdateSource.class);
         UpdatePipeline pipeline = Mockito.mock(UpdatePipeline.class);
         CountDownLatch polled = new CountDownLatch(1);
+        CountDownLatch processed = new CountDownLatch(1);
 
         when(source.poll(any())).thenAnswer(invocation -> {
             polled.countDown();
             return new PollingBatch(List.of(sampleUpdate("u-1")), 10L);
         });
-        when(pipeline.process(any(), eq(UpdatePipelineContext.POLLING)))
-                .thenReturn(CompletableFuture.completedFuture(UpdatePipelineResult.accepted()));
+        when(pipeline.process(any(), eq(UpdatePipelineContext.POLLING))).thenAnswer(invocation -> {
+            processed.countDown();
+            return CompletableFuture.completedFuture(UpdatePipelineResult.accepted());
+        });
 
         DefaultLongPollingRunner runner = new DefaultLongPollingRunner(
                 source,
@@ -45,6 +48,7 @@ class UnifiedIngestionPipelineUsageTest {
         runner.start();
 
         assertTrue(polled.await(1, TimeUnit.SECONDS));
+        assertTrue(processed.await(1, TimeUnit.SECONDS));
         runner.stop();
 
         verify(source, atLeastOnce()).poll(any());

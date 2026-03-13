@@ -50,7 +50,10 @@ class UpdateSinkTest {
     void syncAdapterRequiresUpdate() {
         UpdateSink sink = UpdateSink.sync(update -> {
         });
-        assertThrows(NullPointerException.class, () -> sink.handle(null));
+        UpdateHandlingResult result = sink.handle(null).toCompletableFuture().join();
+        assertFalse(result.isSuccess());
+        assertEquals(UpdateHandlingStatus.FAILURE, result.status());
+        assertTrue(result.error().orElseThrow() instanceof NullPointerException);
     }
 
     private static Update sampleUpdate() {

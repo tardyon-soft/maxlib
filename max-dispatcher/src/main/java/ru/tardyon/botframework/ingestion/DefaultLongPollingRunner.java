@@ -33,7 +33,7 @@ public final class DefaultLongPollingRunner implements LongPollingRunner {
     }
 
     public DefaultLongPollingRunner(PollingUpdateSource source, UpdateConsumer consumer, LongPollingRunnerConfig config) {
-        this(source, wrap(consumer), config, new InMemoryPollingMarkerState(config.request().marker()));
+        this(source, new DefaultUpdatePipeline(wrap(consumer)), config, new InMemoryPollingMarkerState(config.request().marker()));
     }
 
     public DefaultLongPollingRunner(PollingUpdateSource source, UpdateSink sink, LongPollingRunnerConfig config) {

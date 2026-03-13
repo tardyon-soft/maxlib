@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +33,7 @@ class ResumableUploadTransferGatewayTest {
 
         UploadTransferReceipt receipt = gateway.transfer(
                         new UploadPreparation(URI.create("https://upload.example.com/r-1"), UploadFlowType.RESUMABLE, "r-1"),
-                        InputFile.fromBytes("abcdefghij".getBytes(StandardCharsets.UTF_8), "data.bin")
+                        bytesInput("abcdefghij".getBytes(StandardCharsets.UTF_8), "data.bin")
                                 .withContentType("application/custom")
                 )
                 .toCompletableFuture()
@@ -77,7 +78,7 @@ class ResumableUploadTransferGatewayTest {
 
         UploadTransferReceipt receipt = gateway.transfer(
                         new UploadPreparation(URI.create("https://upload.example.com/r-2"), UploadFlowType.RESUMABLE, "r-2"),
-                        InputFile.fromBytes("abcdefghij".getBytes(StandardCharsets.UTF_8), "data.bin")
+                        bytesInput("abcdefghij".getBytes(StandardCharsets.UTF_8), "data.bin")
                 )
                 .toCompletableFuture()
                 .join();
@@ -97,7 +98,7 @@ class ResumableUploadTransferGatewayTest {
                 CompletionException.class,
                 () -> gateway.transfer(
                         new UploadPreparation(URI.create("https://upload.example.com/r-3"), UploadFlowType.RESUMABLE, "r-3"),
-                        InputFile.fromBytes("abcdefgh".getBytes(StandardCharsets.UTF_8), "data.bin")
+                        bytesInput("abcdefgh".getBytes(StandardCharsets.UTF_8), "data.bin")
                 ).toCompletableFuture().join()
         );
 
@@ -116,7 +117,7 @@ class ResumableUploadTransferGatewayTest {
                 CompletionException.class,
                 () -> gateway.transfer(
                         new UploadPreparation(URI.create("https://upload.example.com/r-4"), UploadFlowType.RESUMABLE, "r-4"),
-                        InputFile.fromBytes("abcdef".getBytes(StandardCharsets.UTF_8), "data.bin")
+                        bytesInput("abcdef".getBytes(StandardCharsets.UTF_8), "data.bin")
                 ).toCompletableFuture().join()
         );
 
@@ -143,12 +144,16 @@ class ResumableUploadTransferGatewayTest {
         );
 
         UploadResult result = service.upload(
-                InputFile.fromBytes("abcdefghij".getBytes(StandardCharsets.UTF_8), "clip.mp4")
+                bytesInput("abcdefghij".getBytes(StandardCharsets.UTF_8), "clip.mp4")
                         .withContentType("video/mp4")
         ).toCompletableFuture().join();
 
         assertEquals("ref-r-5", result.ref().value());
         assertEquals(10L, result.bytesTransferred());
         assertEquals(UploadFlowType.RESUMABLE, result.flowType());
+    }
+
+    private static InputFile bytesInput(byte[] bytes, String fileName) {
+        return new InputFile.BytesInputFile(bytes, fileName, Optional.empty());
     }
 }

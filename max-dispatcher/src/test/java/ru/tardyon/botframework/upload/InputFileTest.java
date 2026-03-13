@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -24,7 +25,12 @@ class InputFileTest {
         Path file = tempDir.resolve("invoice.txt");
         Files.writeString(file, "invoice", StandardCharsets.UTF_8);
 
-        InputFile input = InputFile.fromPath(file);
+        InputFile input = new InputFile.PathInputFile(
+                file.toAbsolutePath().normalize(),
+                "invoice.txt",
+                Optional.empty(),
+                7L
+        );
 
         assertEquals("invoice.txt", input.fileName());
         assertTrue(input.knownSize().isPresent());
@@ -36,7 +42,7 @@ class InputFileTest {
     @Test
     void createsFromBytesWithKnownSizeAndDefensiveCopy() throws Exception {
         byte[] bytes = "hello".getBytes(StandardCharsets.UTF_8);
-        InputFile input = InputFile.fromBytes(bytes, "hello.txt");
+        InputFile input = new InputFile.BytesInputFile(bytes, "hello.txt", Optional.empty());
         bytes[0] = 'X';
 
         assertEquals("hello.txt", input.fileName());
@@ -47,13 +53,16 @@ class InputFileTest {
 
     @Test
     void createsFromStreamWithUnknownAndKnownSize() throws Exception {
-        InputFile unknown = InputFile.fromStream(
-                () -> new ByteArrayInputStream("stream".getBytes(StandardCharsets.UTF_8)),
-                "stream.bin"
-        );
-        InputFile known = InputFile.fromStream(
+        InputFile unknown = new InputFile.StreamInputFile(
                 () -> new ByteArrayInputStream("stream".getBytes(StandardCharsets.UTF_8)),
                 "stream.bin",
+                Optional.empty(),
+                null
+        );
+        InputFile known = new InputFile.StreamInputFile(
+                () -> new ByteArrayInputStream("stream".getBytes(StandardCharsets.UTF_8)),
+                "stream.bin",
+                Optional.empty(),
                 6L
         );
 
@@ -65,7 +74,7 @@ class InputFileTest {
 
     @Test
     void supportsFileNameAndContentTypeOverrides() {
-        InputFile input = InputFile.fromBytes("x".getBytes(StandardCharsets.UTF_8), "a.txt")
+        InputFile input = new InputFile.BytesInputFile("x".getBytes(StandardCharsets.UTF_8), "a.txt", Optional.empty())
                 .withFileName("b.txt")
                 .withContentType("text/plain");
 
@@ -75,18 +84,26 @@ class InputFileTest {
 
     @Test
     void validatesFactoryArguments() {
-        assertThrows(IllegalArgumentException.class, () -> InputFile.fromBytes(new byte[]{1}, " "));
-        assertThrows(IllegalArgumentException.class, () -> InputFile.fromStream(() -> new ByteArrayInputStream(new byte[0]), " ", 1L));
-        assertThrows(IllegalArgumentException.class, () -> InputFile.fromStream(() -> new ByteArrayInputStream(new byte[0]), "file.bin", -1L));
+        assertThrows(IllegalArgumentException.class, () -> new InputFile.BytesInputFile(new byte[]{1}, " ", Optional.empty()));
+        assertThrows(IllegalArgumentException.class, () -> new InputFile.StreamInputFile(
+                () -> new ByteArrayInputStream(new byte[0]), " ", Optional.empty(), 1L
+        ));
+        assertThrows(IllegalArgumentException.class, () -> new InputFile.StreamInputFile(
+                () -> new ByteArrayInputStream(new byte[0]), "file.bin", Optional.empty(), -1L
+        ));
+        assertThrows(NullPointerException.class, () -> InputFile.fromBytes(new byte[]{1}, "a.bin"));
         assertThrows(IllegalArgumentException.class, () -> InputFile.fromPath(tempDir.resolve("missing.bin")));
-        assertThrows(IllegalArgumentException.class, () -> InputFile.fromBytes(new byte[]{1}, "a").withContentType(" "));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new InputFile.BytesInputFile(new byte[]{1}, "a", Optional.empty()).withContentType(" ")
+        );
     }
 
     @Test
     void propagatesStreamSupplierIOException() {
-        InputFile input = InputFile.fromStream(() -> {
+        InputFile input = new InputFile.StreamInputFile(() -> {
             throw new IOException("boom");
-        }, "f.bin");
+        }, "f.bin", Optional.empty(), null);
 
         IOException exception = assertThrows(IOException.class, input::openStream);
         assertEquals("boom", exception.getMessage());

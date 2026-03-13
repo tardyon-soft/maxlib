@@ -70,7 +70,7 @@ class DispatcherTestKitTest {
 
         UpdateHandlingResult result = kit.handle(TestUpdates.message("ok"));
 
-        assertTrue(result.success());
+        assertTrue(result.success().isSuccess());
         assertTrue(result.error().isEmpty());
     }
 
@@ -80,7 +80,7 @@ class DispatcherTestKitTest {
         Router router = new Router("fsm");
         AtomicReference<StateScope> scopeSeen = new AtomicReference<>();
         router.message((message, fsm) -> {
-            scopeSeen.set(fsm.scope().scope());
+            scopeSeen.set(fsm.fsm().scope().scope());
             return CompletableFuture.completedFuture(null);
         });
 
@@ -128,12 +128,12 @@ class DispatcherTestKitTest {
         Router router = new Router("stateful");
         AtomicReference<String> state = new AtomicReference<>();
         router.message((message, fsm) -> {
-            if (fsm.currentState().toCompletableFuture().join().isEmpty()) {
-                fsm.setState("form.email").toCompletableFuture().join();
+            if (fsm.fsm().currentState().toCompletableFuture().join().isEmpty()) {
+                fsm.fsm().setState("form.email").toCompletableFuture().join();
             } else {
-                fsm.setState("form.done").toCompletableFuture().join();
+                fsm.fsm().setState("form.done").toCompletableFuture().join();
             }
-            state.set(fsm.currentState().toCompletableFuture().join().orElse(null));
+            state.set(fsm.fsm().currentState().toCompletableFuture().join().orElse(null));
             return CompletableFuture.completedFuture(null);
         });
 
