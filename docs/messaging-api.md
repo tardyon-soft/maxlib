@@ -146,6 +146,13 @@ Messages.text("Выберите действие")
   - notification-only callback answer через `answerCallback`;
   - update current callback message через `editMessage` на основе `callback.message`.
 
+Состояние реализации Sprint 6.3.2:
+- добавлен high-level chat actions API: `ChatActionsFacade`.
+- поддержаны:
+  - typed dispatch `send(chatId, ChatAction)`;
+  - runtime-context dispatch `send(runtimeContext, ChatAction)`;
+  - convenience helpers (`typing`, `sendingPhoto`, ...).
+
 Ответственность:
 - маппинг high-level builders -> SDK requests;
 - вызовы `MaxBotClient` (`sendMessage`, `editMessage`, `deleteMessage`, `answerCallback`, ...);

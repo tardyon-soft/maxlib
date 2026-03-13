@@ -14,6 +14,8 @@ import ru.max.botframework.client.method.GetMessagesMethodRequest;
 import ru.max.botframework.client.method.GetSubscriptionsMethodRequest;
 import ru.max.botframework.client.method.GetUpdatesMethodRequest;
 import ru.max.botframework.client.method.SendMessageMethodRequest;
+import ru.max.botframework.client.method.SendChatActionMethodRequest;
+import ru.max.botframework.model.ChatAction;
 import ru.max.botframework.model.BotInfo;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.Message;
@@ -23,6 +25,7 @@ import ru.max.botframework.model.request.CreateSubscriptionRequest;
 import ru.max.botframework.model.request.DeleteSubscriptionRequest;
 import ru.max.botframework.model.request.EditMessageRequest;
 import ru.max.botframework.model.request.GetUpdatesRequest;
+import ru.max.botframework.model.request.SendChatActionRequest;
 import ru.max.botframework.model.request.SendMessageRequest;
 import ru.max.botframework.model.response.GetUpdatesResponse;
 import ru.max.botframework.model.Subscription;
@@ -88,6 +91,22 @@ public interface MaxBotClient {
 
     default CompletionStage<Boolean> answerCallbackAsync(AnswerCallbackRequest request) {
         return executeAsync(new AnswerCallbackMethodRequest(request)).thenApply(response -> response.success());
+    }
+
+    default boolean sendChatAction(ChatId chatId, SendChatActionRequest request) {
+        return execute(new SendChatActionMethodRequest(chatId, request)).success();
+    }
+
+    default boolean sendChatAction(ChatId chatId, ChatAction action) {
+        return sendChatAction(chatId, new SendChatActionRequest(action));
+    }
+
+    default CompletionStage<Boolean> sendChatActionAsync(ChatId chatId, SendChatActionRequest request) {
+        return executeAsync(new SendChatActionMethodRequest(chatId, request)).thenApply(response -> response.success());
+    }
+
+    default CompletionStage<Boolean> sendChatActionAsync(ChatId chatId, ChatAction action) {
+        return sendChatActionAsync(chatId, new SendChatActionRequest(action));
     }
 
     default GetUpdatesResponse getUpdates(GetUpdatesRequest request) {

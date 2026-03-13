@@ -23,6 +23,7 @@ import ru.max.botframework.client.http.MaxHttpClient;
 import ru.max.botframework.client.http.MaxHttpResponse;
 import ru.max.botframework.client.test.MockHttpClientTestContext;
 import ru.max.botframework.model.BotInfo;
+import ru.max.botframework.model.ChatAction;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.Message;
 import ru.max.botframework.model.MessageId;
@@ -245,6 +246,20 @@ class DefaultMaxBotClientTest {
         String body = recorded.getBody().readUtf8();
         assertThat(body).contains("\"callbackId\":\"cb-1\"");
         assertThat(body).contains("\"text\":\"OK\"");
+        assertThat(success).isTrue();
+    }
+
+    @Test
+    void shouldSendChatActionViaDomainMethod() {
+        http.enqueueJsonFixture("operation-success-response.json");
+
+        boolean success = client.sendChatAction(new ChatId("chat-1"), ChatAction.TYPING);
+
+        RecordedRequest recorded = http.takeRequest();
+        assertThat(recorded.getMethod()).isEqualTo("POST");
+        assertThat(recorded.getPath()).isEqualTo("/chats/chat-1/actions");
+        String body = recorded.getBody().readUtf8();
+        assertThat(body).contains("\"action\":\"typing\"");
         assertThat(success).isTrue();
     }
 

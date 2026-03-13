@@ -204,6 +204,7 @@ Sprint 6.1 foundation implemented:
   - max `210` buttons total;
   - max `2048` chars for `link` URL.
 - callback high-level API: `CallbackFacade`, `CallbackContext`, `CallbackAnswers` for callback notification/update flows.
+- chat actions high-level API: `ChatActionsFacade` with typed `ChatAction` dispatch and helpers (`typing`, `sendingPhoto`, ...).
 
 Пример:
 
@@ -257,6 +258,10 @@ router.callback(cb -> {
     ctx.updateCurrentMessage(Messages.text("Статус: оплачено"));
     return java.util.concurrent.CompletableFuture.completedFuture(null);
 });
+
+ChatActionsFacade actions = new ChatActionsFacade(botClient);
+actions.typing(new ChatId("chat-1"));
+actions.sendingPhoto(new ChatId("chat-1"));
 ```
 
 ## Shared Services Injection (Sprint 5.2.3)

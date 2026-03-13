@@ -10,6 +10,7 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import ru.max.botframework.model.CallbackId;
+import ru.max.botframework.model.ChatAction;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.FileId;
 import ru.max.botframework.model.MessageId;
@@ -104,6 +105,17 @@ class RequestModelSerializationTest {
 
         assertThat(json).contains("\"type\":\"inline_keyboard\"");
         assertThat(json).contains("\"inlineKeyboard\"");
+        assertThat(restored).isEqualTo(source);
+    }
+
+    @Test
+    void shouldSerializeAndDeserializeSendChatActionRequest() throws Exception {
+        SendChatActionRequest source = new SendChatActionRequest(ChatAction.SENDING_PHOTO);
+
+        String json = objectMapper.writeValueAsString(source);
+        SendChatActionRequest restored = objectMapper.readValue(json, SendChatActionRequest.class);
+
+        assertThat(json).contains("\"action\":\"sending_photo\"");
         assertThat(restored).isEqualTo(source);
     }
 }
