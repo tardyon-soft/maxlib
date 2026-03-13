@@ -27,6 +27,8 @@ Java framework для разработки ботов на платформе MA
   `StateKeyStrategy` и built-in `StateKeyStrategies` (`USER`, `CHAT`, `USER_IN_CHAT`).
 - реализован async storage contract `FSMStorage` (typed state/state-data operations + merge update),
   с явным разделением state и payload data.
+- реализован `MemoryStorage` как thread-safe baseline implementation `FSMStorage`
+  для unit/integration тестов и простых runtime сценариев.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -123,6 +125,26 @@ MaxHttpClient httpClient = new OkHttpMaxHttpClient(config.baseUri(), okHttp);
 MaxBotClient botClient = new DefaultMaxBotClient(config, httpClient, new JacksonJsonCodec());
 
 BotInfo me = botClient.getMe();
+```
+
+## FSM MemoryStorage baseline (Sprint 8)
+
+```java
+import ru.max.botframework.fsm.FSMStorage;
+import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.StateData;
+import ru.max.botframework.fsm.StateKey;
+import ru.max.botframework.model.ChatId;
+import ru.max.botframework.model.UserId;
+
+FSMStorage storage = new MemoryStorage();
+StateKey key = StateKey.userInChat(new UserId("u-1"), new ChatId("c-1"));
+
+storage.setState(key, "checkout.email").toCompletableFuture().join();
+storage.updateStateData(key, java.util.Map.of("email", "user@example.com")).toCompletableFuture().join();
+
+String state = storage.getState(key).toCompletableFuture().join().orElse("none");
+StateData data = storage.getStateData(key).toCompletableFuture().join();
 ```
 
 ## Client configuration

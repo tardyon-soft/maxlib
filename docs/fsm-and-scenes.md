@@ -93,6 +93,9 @@ public interface FSMStorage {
 - state и state-data хранятся раздельно; scene metadata будет отдельным контрактом (`SceneStorage`)
   и не смешивается с `FSMStorage`.
 
+Baseline implementation Sprint 8:
+- `MemoryStorage` (thread-safe in-memory `FSMStorage`) для разработки, тестов и простых runtime сценариев.
+
 ### State Scope / Strategy
 
 Назначение:

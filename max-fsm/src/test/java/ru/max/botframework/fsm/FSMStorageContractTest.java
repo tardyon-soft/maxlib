@@ -6,10 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.junit.jupiter.api.Test;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.UserId;
@@ -18,7 +14,7 @@ class FSMStorageContractTest {
 
     @Test
     void returnsEmptyStateAndDataByDefault() {
-        FSMStorage storage = new InMemoryFSMStorage();
+        FSMStorage storage = new MemoryStorage();
         StateKey key = StateKey.user(new UserId("user-1"));
 
         Optional<String> state = storage.getState(key).toCompletableFuture().join();
@@ -30,7 +26,7 @@ class FSMStorageContractTest {
 
     @Test
     void storesAndClearsStateWithoutAffectingData() {
-        FSMStorage storage = new InMemoryFSMStorage();
+        FSMStorage storage = new MemoryStorage();
         StateKey key = StateKey.userInChat(new UserId("user-1"), new ChatId("chat-1"));
 
         storage.setState(key, "checkout.email").toCompletableFuture().join();
@@ -46,7 +42,7 @@ class FSMStorageContractTest {
 
     @Test
     void replacesAndMergesStateData() {
-        FSMStorage storage = new InMemoryFSMStorage();
+        FSMStorage storage = new MemoryStorage();
         StateKey key = StateKey.chat(new ChatId("chat-1"));
 
         storage.setStateData(key, StateData.of(Map.of("step", 1))).toCompletableFuture().join();
@@ -63,7 +59,7 @@ class FSMStorageContractTest {
 
     @Test
     void separatesStateByDifferentKeys() {
-        FSMStorage storage = new InMemoryFSMStorage();
+        FSMStorage storage = new MemoryStorage();
         StateKey keyA = StateKey.userInChat(new UserId("user-a"), new ChatId("chat-1"));
         StateKey keyB = StateKey.userInChat(new UserId("user-b"), new ChatId("chat-1"));
 
@@ -76,7 +72,7 @@ class FSMStorageContractTest {
 
     @Test
     void clearsStateAndDataTogetherWithClearShortcut() {
-        FSMStorage storage = new InMemoryFSMStorage();
+        FSMStorage storage = new MemoryStorage();
         StateKey key = StateKey.user(new UserId("user-1"));
 
         storage.setState(key, "flow.step").toCompletableFuture().join();
@@ -90,7 +86,7 @@ class FSMStorageContractTest {
 
     @Test
     void buildsSnapshotFromSeparatedStateAndData() {
-        FSMStorage storage = new InMemoryFSMStorage();
+        FSMStorage storage = new MemoryStorage();
         StateKey key = StateKey.user(new UserId("user-1"));
         storage.setState(key, "checkout.confirm").toCompletableFuture().join();
         storage.setStateData(key, StateData.of(Map.of("orderId", "42"))).toCompletableFuture().join();
@@ -102,42 +98,4 @@ class FSMStorageContractTest {
         assertFalse(snapshot.data().values().isEmpty());
     }
 
-    private static final class InMemoryFSMStorage implements FSMStorage {
-        private final ConcurrentMap<StateKey, String> states = new ConcurrentHashMap<>();
-        private final ConcurrentMap<StateKey, StateData> data = new ConcurrentHashMap<>();
-
-        @Override
-        public CompletionStage<Optional<String>> getState(StateKey key) {
-            return CompletableFuture.completedFuture(Optional.ofNullable(states.get(key)));
-        }
-
-        @Override
-        public CompletionStage<Void> setState(StateKey key, String state) {
-            states.put(key, state);
-            return CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public CompletionStage<Void> clearState(StateKey key) {
-            states.remove(key);
-            return CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public CompletionStage<StateData> getStateData(StateKey key) {
-            return CompletableFuture.completedFuture(data.getOrDefault(key, StateData.empty()));
-        }
-
-        @Override
-        public CompletionStage<Void> setStateData(StateKey key, StateData stateData) {
-            data.put(key, stateData);
-            return CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public CompletionStage<Void> clearStateData(StateKey key) {
-            data.remove(key);
-            return CompletableFuture.completedFuture(null);
-        }
-    }
 }
