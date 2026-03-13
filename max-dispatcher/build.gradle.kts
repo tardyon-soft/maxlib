@@ -6,4 +6,5 @@ dependencies {
     api(project(":max-fsm"))
 
     testImplementation("org.mockito:mockito-core:5.16.0")
+    testImplementation(project(":max-testkit"))
 }

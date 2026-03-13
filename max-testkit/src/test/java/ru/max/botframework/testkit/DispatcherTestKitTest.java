@@ -54,8 +54,9 @@ class DispatcherTestKitTest {
 
         assertEquals(DispatchStatus.HANDLED, probe.result().status());
         assertEquals(1, probe.sideEffects().size());
-        assertEquals("/messages", probe.sideEffects().getFirst().path());
-        assertFalse(probe.sideEffects().getFirst().body().isEmpty());
+        assertTrue(probe.hasCall("/messages"));
+        assertEquals(1, probe.callsTo("/messages").size());
+        assertFalse(probe.callsTo("/messages").getFirst().body().isEmpty());
     }
 
     @Test
@@ -107,5 +108,44 @@ class DispatcherTestKitTest {
 
         assertSame(dispatcher, kit.dispatcherRef());
         assertSame(client, kit.botClient());
+    }
+
+    @Test
+    void withRouterShortcutCreatesHarness() {
+        Router router = new Router("shortcut");
+        router.message((message, context) -> CompletableFuture.completedFuture(null));
+
+        DispatcherTestKit kit = DispatcherTestKit.withRouter(router);
+        DispatchResult result = kit.feed(TestUpdates.message("hi"));
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+    }
+
+    @Test
+    void feedAllSupportsStatefulFlow() {
+        MemoryStorage storage = new MemoryStorage();
+        Router router = new Router("stateful");
+        AtomicReference<String> state = new AtomicReference<>();
+        router.message((message, fsm) -> {
+            if (fsm.currentState().toCompletableFuture().join().isEmpty()) {
+                fsm.setState("form.email").toCompletableFuture().join();
+            } else {
+                fsm.setState("form.done").toCompletableFuture().join();
+            }
+            state.set(fsm.currentState().toCompletableFuture().join().orElse(null));
+            return CompletableFuture.completedFuture(null);
+        });
+
+        DispatcherTestKit kit = DispatcherTestKit.builder()
+                .fsmStorage(storage)
+                .includeRouter(router)
+                .build();
+
+        var results = kit.feedAll(UpdateFixtures.statefulMessages("u-1", "c-1", "start", "next"));
+
+        assertEquals(2, results.size());
+        assertEquals(DispatchStatus.HANDLED, results.getFirst().status());
+        assertEquals(DispatchStatus.HANDLED, results.get(1).status());
+        assertEquals("form.done", state.get());
     }
 }

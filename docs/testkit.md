@@ -27,16 +27,20 @@
 Реализованный baseline surface:
 - `DispatcherTestKit`:
   - builder для runtime setup (`includeRouter`, `fsmStorage`, `stateScope`, scene/upload wiring);
-  - `feed(Update)` и `handle(Update)` поверх реального `Dispatcher`;
-  - `feedAndCapture(Update)` для side effects trace за один dispatch.
+  - `feed(Update)`, `feedAll(...)` и `handle(Update)` поверх реального `Dispatcher`;
+  - `feedAndCapture(Update)` для side effects trace за один dispatch;
+  - shortcut `DispatcherTestKit.withRouter(router)` для most-common тестов.
 - `RecordingMaxBotClient`:
   - записывает все executed `MaxRequest`;
   - даёт deterministic default responses для базовых runtime операций;
   - поддерживает explicit response overrides (`respondWith(...)`).
 - `CapturedApiCall`:
   - immutable snapshot запроса (`method/path/query/body/request`).
+- `UpdateFixtures`:
+  - builder fixtures для `message`/`callback` updates;
+  - `statefulMessages(...)` helper для последовательного stateful flow в одном scope.
 - `TestUpdates`:
-  - fixture factory для `message`/`callback` update.
+  - backward-compatible shortcuts поверх `UpdateFixtures`.
 
 ## Integration Boundaries
 
@@ -68,6 +72,18 @@ DispatcherTestKit.DispatchProbe probe = kit.feedAndCapture(TestUpdates.message("
 assertEquals(DispatchStatus.HANDLED, probe.result().status());
 assertEquals(1, probe.sideEffects().size());
 ```
+
+Stateful flow helper:
+
+```java
+var flow = UpdateFixtures.statefulMessages("user-1", "chat-1", "start", "email", "confirm");
+var results = kit.feedAll(flow);
+assertEquals(3, results.size());
+```
+
+In-repo usage example:
+- `max-dispatcher/src/test/java/ru/max/botframework/dispatcher/DispatcherTestKitUsageExampleTest.java`
+  показывает runtime handler test + side effects capture через `DispatcherTestKit`.
 
 ## Sprint 9 Boundaries
 

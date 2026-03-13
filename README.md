@@ -574,6 +574,15 @@ Sprint 9.3.2 max-testkit core:
 - `CapturedApiCall` snapshots for assertions (`method/path/query/body`);
 - `TestUpdates` fixture factory for `message` and `callback` updates.
 
+Sprint 9.3.3 testkit fixtures and helper DSL:
+- `UpdateFixtures` builder-style fixtures for message/callback updates;
+- `UpdateFixtures.statefulMessages(...)` helper for sequential stateful flows in one scope;
+- `DispatcherTestKit` helper methods for practical tests:
+  - `withRouter(router)`,
+  - `feedAll(...)`,
+  - `DispatchProbe.hasCall(...)` / `callsTo(...)`;
+- usage example added in framework tests (`DispatcherTestKitUsageExampleTest`).
+
 Testkit usage example:
 
 ```java
@@ -590,6 +599,14 @@ DispatcherTestKit kit = DispatcherTestKit.builder()
 DispatcherTestKit.DispatchProbe probe = kit.feedAndCapture(TestUpdates.message("ping"));
 assertEquals(DispatchStatus.HANDLED, probe.result().status());
 assertEquals(1, probe.sideEffects().size());
+```
+
+Stateful flow example:
+
+```java
+var flow = UpdateFixtures.statefulMessages("u-1", "c-1", "start", "email", "confirm");
+var results = kit.feedAll(flow);
+assertEquals(3, results.size());
 ```
 
 Spring router registration example:

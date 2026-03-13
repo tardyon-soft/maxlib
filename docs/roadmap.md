@@ -165,6 +165,10 @@ Sprint 9 contracts:
   - `DispatcherTestKit` harness для runtime dispatch;
   - `RecordingMaxBotClient` + `CapturedApiCall` для side effects assertions;
   - `TestUpdates` fixtures для message/callback test flows.
+- расширен testkit ergonomics:
+  - `UpdateFixtures` builder DSL и `statefulMessages(...)`;
+  - helper methods для feed-all/probe side effects;
+  - usage example добавлен в runtime tests.
 
 Основные результаты:
 - Spring Boot starter auto-configuration;

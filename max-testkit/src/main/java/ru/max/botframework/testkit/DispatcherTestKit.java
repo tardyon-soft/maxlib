@@ -33,6 +33,10 @@ public final class DispatcherTestKit {
         return new Builder();
     }
 
+    public static DispatcherTestKit withRouter(Router router) {
+        return builder().includeRouter(router).build();
+    }
+
     /**
      * Backward-compatible factory for direct dispatcher creation.
      */
@@ -66,6 +70,30 @@ public final class DispatcherTestKit {
     }
 
     /**
+     * Dispatches several updates in sequence.
+     */
+    public List<DispatchResult> feedAll(Update... updates) {
+        Objects.requireNonNull(updates, "updates");
+        ArrayList<DispatchResult> results = new ArrayList<>(updates.length);
+        for (Update update : updates) {
+            results.add(feed(update));
+        }
+        return List.copyOf(results);
+    }
+
+    /**
+     * Dispatches several updates in sequence using iterable source.
+     */
+    public List<DispatchResult> feedAll(Iterable<Update> updates) {
+        Objects.requireNonNull(updates, "updates");
+        ArrayList<DispatchResult> results = new ArrayList<>();
+        for (Update update : updates) {
+            results.add(feed(update));
+        }
+        return List.copyOf(results);
+    }
+
+    /**
      * Uses ingestion-facing contract for testing sink integration.
      */
     public UpdateHandlingResult handle(Update update) {
@@ -77,6 +105,16 @@ public final class DispatcherTestKit {
         public DispatchProbe {
             Objects.requireNonNull(result, "result");
             sideEffects = List.copyOf(Objects.requireNonNull(sideEffects, "sideEffects"));
+        }
+
+        public boolean hasCall(String path) {
+            Objects.requireNonNull(path, "path");
+            return sideEffects.stream().anyMatch(call -> path.equals(call.path()));
+        }
+
+        public List<CapturedApiCall> callsTo(String path) {
+            Objects.requireNonNull(path, "path");
+            return sideEffects.stream().filter(call -> path.equals(call.path())).toList();
         }
     }
 
