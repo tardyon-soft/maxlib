@@ -1,11 +1,17 @@
 package ru.max.botframework.dispatcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
+import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.StateKey;
+import ru.max.botframework.fsm.StateKeyStrategies;
+import ru.max.botframework.fsm.StateScope;
 import ru.max.botframework.model.Callback;
 import ru.max.botframework.model.CallbackId;
 import ru.max.botframework.model.Chat;
@@ -113,15 +119,62 @@ class BuiltInFiltersTest {
     }
 
     @Test
-    void stateFilterPlaceholderReturnsFailed() {
+    void stateFilterMatchesWhenCurrentStateEqualsExpected() {
+        Message event = message("mail@example.com", ChatType.PRIVATE, user("u-1"), List.of());
+        RuntimeContext context = runtimeContext(event);
+        context.fsm().setState("checkout.waiting_email").toCompletableFuture().join();
+
         FilterResult result = BuiltInFilters.state("checkout.waiting_email")
-                .test(message("mail@example.com", ChatType.PRIVATE, user("u-1"), List.of()))
+                .test(event, context)
                 .toCompletableFuture()
                 .join();
 
-        assertEquals(FilterStatus.FAILED, result.status());
-        Throwable error = result.errorOpt().orElseThrow();
-        assertTrue(error instanceof UnsupportedOperationException);
+        assertEquals(FilterStatus.MATCHED, result.status());
+        assertEquals("checkout.waiting_email", result.enrichment().get(BuiltInFilters.STATE_KEY));
+    }
+
+    @Test
+    void stateFilterReturnsNotMatchedWhenStateDiffers() {
+        Message event = message("mail@example.com", ChatType.PRIVATE, user("u-1"), List.of());
+        RuntimeContext context = runtimeContext(event);
+        context.fsm().setState("checkout.waiting_name").toCompletableFuture().join();
+
+        FilterResult result = BuiltInFilters.state("checkout.waiting_email")
+                .test(event, context)
+                .toCompletableFuture()
+                .join();
+
+        assertEquals(FilterStatus.NOT_MATCHED, result.status());
+        assertTrue(result.enrichment().isEmpty());
+    }
+
+    @Test
+    void stateFilterReturnsNotMatchedWhenStateIsMissing() {
+        Message event = message("mail@example.com", ChatType.PRIVATE, user("u-1"), List.of());
+        RuntimeContext context = runtimeContext(event);
+
+        FilterResult result = BuiltInFilters.state("checkout.waiting_email")
+                .test(event, context)
+                .toCompletableFuture()
+                .join();
+
+        assertEquals(FilterStatus.NOT_MATCHED, result.status());
+        assertFalse(result.isMatched());
+    }
+
+    @Test
+    void stateInFilterMatchesAnyConfiguredState() {
+        Message event = message("mail@example.com", ChatType.PRIVATE, user("u-1"), List.of());
+        RuntimeContext context = runtimeContext(event);
+        context.fsm().setState("checkout.confirm").toCompletableFuture().join();
+
+        FilterResult result = BuiltInFilters.stateIn(Set.of("checkout.email", "checkout.confirm"))
+                .test(event, context)
+                .toCompletableFuture()
+                .join();
+
+        assertEquals(FilterStatus.MATCHED, result.status());
+        assertEquals("checkout.confirm", result.enrichment().get(BuiltInFilters.STATE_KEY));
     }
 
     @Test
@@ -149,5 +202,21 @@ class BuiltInFiltersTest {
 
     private static User user(String id) {
         return new User(new UserId(id), "demo", "Demo", "User", "Demo User", false, "en");
+    }
+
+    private static RuntimeContext runtimeContext(Message message) {
+        RuntimeContext context = new RuntimeContext(new ru.max.botframework.model.Update(
+                new ru.max.botframework.model.UpdateId("u-state-1"),
+                ru.max.botframework.model.UpdateType.MESSAGE,
+                message,
+                null,
+                null,
+                Instant.parse("2026-03-12T00:00:00Z")
+        ));
+        MemoryStorage storage = new MemoryStorage();
+        StateKey key = StateKey.userInChat(message.from().id(), message.chat().id());
+        storage.clear(key).toCompletableFuture().join();
+        FSMRuntimeSupport.bootstrap(context, storage, StateKeyStrategies.forScope(StateScope.USER_IN_CHAT));
+        return context;
     }
 }

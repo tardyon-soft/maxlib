@@ -215,6 +215,33 @@ class DispatcherInvocationPipelineIntegrationTest {
         assertEquals(2, calls.get());
     }
 
+    @Test
+    void dispatchPipelineRoutesByStateFilter() {
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(new MemoryStorage())
+                .withStateScope(StateScope.USER_IN_CHAT);
+        Router router = new Router("fsm-filters");
+        AtomicInteger setupCalls = new AtomicInteger();
+        AtomicInteger gatedCalls = new AtomicInteger();
+
+        router.message(BuiltInFilters.textEquals("start"), (message, context) -> context.fsm()
+                .setState("checkout.email")
+                .thenRun(setupCalls::incrementAndGet));
+        router.message(BuiltInFilters.state("checkout.email"), message -> {
+            gatedCalls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult first = dispatcher.feedUpdate(messageUpdate("start")).toCompletableFuture().join();
+        DispatchResult second = dispatcher.feedUpdate(messageUpdate("mail@example.com")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, first.status());
+        assertEquals(DispatchStatus.HANDLED, second.status());
+        assertEquals(1, setupCalls.get());
+        assertEquals(1, gatedCalls.get());
+    }
+
     private interface PaymentService {
         String map(String suffix);
     }

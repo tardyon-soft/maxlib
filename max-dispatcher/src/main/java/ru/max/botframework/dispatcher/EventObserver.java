@@ -43,4 +43,17 @@ public interface EventObserver<TEvent> {
      * {@link #notify(Object)}.</p>
      */
     CompletionStage<HandlerExecutionResult> notify(TEvent event, HandlerExecutionStrategy<TEvent> strategy);
+
+    /**
+     * Runtime-aware notification path that allows filters to use request context.
+     *
+     * <p>Default implementation preserves compatibility for existing observers.</p>
+     */
+    default CompletionStage<HandlerExecutionResult> notify(
+            TEvent event,
+            RuntimeContext context,
+            HandlerExecutionStrategy<TEvent> strategy
+    ) {
+        return notify(event, strategy);
+    }
 }

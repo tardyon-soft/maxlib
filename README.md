@@ -49,7 +49,7 @@ Java framework для разработки ботов на платформе MA
 - dispatch pipeline теперь вызывает handler’ы через invocation engine (`HandlerInvoker`),
   включая reflective method handlers с parameter resolution из runtime sources;
 - реализован базовый observer layer в `max-dispatcher`: `EventObserver`, `EventHandler`, `DefaultEventObserver`, MVP observer types (`update/message/callback/error`);
-- реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not`, filter-aware handler registration в `Router` и built-in filters MVP (`Command`, `TextEquals`, `TextStartsWith`, `ChatType`, `FromUser`, `HasAttachment`, `StateFilter` placeholder);
+- реализован базовый filter contract в runtime: `Filter<TEvent>`, `FilterResult` (match/not-match/failed + enrichment), композиция `and/or/not`, filter-aware handler registration в `Router` и built-in filters MVP (`Command`, `TextEquals`, `TextStartsWith`, `ChatType`, `FromUser`, `HasAttachment`, `StateFilter`);
 - реализованы middleware contracts foundation: `OuterMiddleware`, `InnerMiddleware`, `MiddlewareNext`, `RuntimeContext`/`ContextKey` и chain executor с short-circuit support;
 - ingestion target contract в `max-dispatcher`: `UpdateConsumer` (async, preferred) + `UpdateSink` (compat alias) + `UpdateHandlingResult`;
 - polling source abstraction в `max-dispatcher`: `PollingUpdateSource` + `SdkPollingUpdateSource` (SDK-backed `getUpdates` pull);
@@ -174,6 +174,7 @@ FSMContext injection in runtime handlers:
 ```java
 import ru.max.botframework.dispatcher.Dispatcher;
 import ru.max.botframework.dispatcher.Router;
+import ru.max.botframework.dispatcher.BuiltInFilters;
 import ru.max.botframework.fsm.FSMContext;
 import ru.max.botframework.fsm.MemoryStorage;
 import ru.max.botframework.fsm.StateScope;
@@ -188,6 +189,9 @@ router.message((Message message, FSMContext fsm) ->
     fsm.setState("checkout.email")
         .thenCompose(v -> fsm.updateData(java.util.Map.of("lastInput", message.text())))
         .thenApply(v -> null)
+);
+router.message(BuiltInFilters.state("checkout.email"), (Message message, FSMContext fsm) ->
+    fsm.updateData(java.util.Map.of("email", message.text())).thenApply(v -> null)
 );
 dispatcher.includeRouter(router);
 ```

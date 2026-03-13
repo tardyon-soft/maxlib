@@ -52,16 +52,26 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
 
     @Override
     public CompletionStage<HandlerExecutionResult> notify(TEvent event, HandlerExecutionStrategy<TEvent> strategy) {
+        return notify(event, null, strategy);
+    }
+
+    @Override
+    public CompletionStage<HandlerExecutionResult> notify(
+            TEvent event,
+            RuntimeContext context,
+            HandlerExecutionStrategy<TEvent> strategy
+    ) {
         Objects.requireNonNull(strategy, "strategy");
         if (registrations.isEmpty()) {
             return CompletableFuture.completedFuture(HandlerExecutionResult.ignored());
         }
 
-        return notifyFromRegistration(event, 0, strategy);
+        return notifyFromRegistration(event, context, 0, strategy);
     }
 
     private CompletionStage<HandlerExecutionResult> notifyFromRegistration(
             TEvent event,
+            RuntimeContext context,
             int index,
             HandlerExecutionStrategy<TEvent> strategy
     ) {
@@ -71,7 +81,7 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
         Registration<TEvent> registration = registrations.get(index);
         CompletionStage<FilterResult> filterStage;
         try {
-            filterStage = Objects.requireNonNull(registration.filter().test(event), "filter result");
+            filterStage = Objects.requireNonNull(registration.filter().test(event, context), "filter result");
         } catch (Throwable throwable) {
             return CompletableFuture.completedFuture(HandlerExecutionResult.failed(FilterExecutionException.wrap(throwable)));
         }
@@ -91,7 +101,7 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
                         );
                     }
                     if (result.status() == FilterStatus.NOT_MATCHED) {
-                        return notifyFromRegistration(event, index + 1, strategy);
+                        return notifyFromRegistration(event, context, index + 1, strategy);
                     }
                     return invokeHandler(registration.handler(), event, result.enrichment(), strategy);
                 });

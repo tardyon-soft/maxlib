@@ -304,7 +304,7 @@ public final class Dispatcher implements UpdateConsumer {
     ) {
         CompletionStage<HandlerExecutionResult> stage;
         try {
-            stage = observer.notify(event, (handler, handlerEvent, enrichment) ->
+            stage = observer.notify(event, context, (handler, handlerEvent, enrichment) ->
                     executeHandlerWithInnerMiddleware(router, context, handler, handlerEvent, enrichment));
         } catch (Throwable throwable) {
             return handleFailure(router, update, throwable, RuntimeDispatchErrorType.OBSERVER_EXECUTION_FAILURE);

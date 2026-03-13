@@ -3,6 +3,7 @@ package ru.max.botframework.dispatcher;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import ru.max.botframework.model.Callback;
@@ -20,6 +21,7 @@ public final class BuiltInFilters {
     public static final String TEXT_SUFFIX_KEY = "textSuffix";
     public static final String USER_ID_KEY = "userId";
     public static final String CHAT_TYPE_KEY = "chatType";
+    public static final String STATE_KEY = "state";
 
     private BuiltInFilters() {
     }
@@ -109,15 +111,52 @@ public final class BuiltInFilters {
     }
 
     /**
-     * Placeholder filter for FSM state matching until FSM runtime is introduced.
+     * Matches when current FSM state equals expected value.
      */
     public static <TEvent> Filter<TEvent> state(String state) {
-        Objects.requireNonNull(state, "state");
-        return event -> CompletableFuture.completedFuture(
-                FilterResult.failed(new UnsupportedOperationException(
-                        "StateFilter requires FSM runtime, not available in Sprint 4"
-                ))
-        );
+        String expectedState = normalizeState(state);
+        return stateIn(Set.of(expectedState));
+    }
+
+    /**
+     * Matches when current FSM state is in expected set.
+     */
+    public static <TEvent> Filter<TEvent> stateIn(Set<String> states) {
+        Objects.requireNonNull(states, "states");
+        if (states.isEmpty()) {
+            throw new IllegalArgumentException("states must not be empty");
+        }
+        Set<String> normalized = states.stream().map(BuiltInFilters::normalizeState).collect(java.util.stream.Collectors.toUnmodifiableSet());
+
+        return new Filter<>() {
+            @Override
+            public java.util.concurrent.CompletionStage<FilterResult> test(TEvent event) {
+                return CompletableFuture.completedFuture(FilterResult.failed(
+                        new IllegalStateException("StateFilter requires runtime context with FSM support")
+                ));
+            }
+
+            @Override
+            public java.util.concurrent.CompletionStage<FilterResult> test(TEvent event, RuntimeContext context) {
+                if (context == null) {
+                    return CompletableFuture.completedFuture(FilterResult.failed(
+                            new IllegalStateException("StateFilter requires runtime context with FSM support")
+                    ));
+                }
+                return context.fsm().currentState()
+                        .thenApply(current -> {
+                            if (current.isEmpty()) {
+                                return FilterResult.notMatched();
+                            }
+                            String value = current.orElseThrow();
+                            if (!normalized.contains(value)) {
+                                return FilterResult.notMatched();
+                            }
+                            return FilterResult.matched(Map.of(STATE_KEY, value));
+                        })
+                        .exceptionally(throwable -> FilterResult.failed(unwrap(throwable)));
+            }
+        };
     }
 
     private static <TEvent> Filter<TEvent> fromUserInternal(UserId userId, Function<TEvent, User> extractor) {
@@ -148,6 +187,22 @@ public final class BuiltInFilters {
             throw new IllegalArgumentException("command must not be blank");
         }
         return normalized;
+    }
+
+    private static String normalizeState(String state) {
+        Objects.requireNonNull(state, "state");
+        String normalized = state.trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("state must not be blank");
+        }
+        return normalized;
+    }
+
+    private static Throwable unwrap(Throwable throwable) {
+        if (throwable instanceof java.util.concurrent.CompletionException completion && completion.getCause() != null) {
+            return completion.getCause();
+        }
+        return throwable;
     }
 
     private static FilterResult matchCommand(Message message, String expectedCommand) {
