@@ -106,6 +106,7 @@ class DispatcherTestKitTest {
                 .botClient(client)
                 .build();
 
+        assertSame(dispatcher, kit.runtime());
         assertSame(dispatcher, kit.dispatcherRef());
         assertSame(client, kit.botClient());
     }

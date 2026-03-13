@@ -90,3 +90,7 @@ In-repo usage example:
 - не строим тяжёлый e2e suite;
 - не строим universal mock server platform;
 - не делаем framework-specific magic, скрывающий поведение runtime.
+
+Статус обновлён (Sprint 9.4.3):
+- testkit API финализирован как stable baseline для runtime/handler tests;
+- naming и documentation выровнены с текущим публичным surface.

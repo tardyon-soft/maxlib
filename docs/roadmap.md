@@ -13,7 +13,8 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Sprint 6 (`Messages/Keyboards/Callbacks ergonomics`) завершён.
 - Sprint 7 (`Upload/Media`) завершён.
 - Sprint 8 (`FSM/Scenes/Storage`) завершён.
-- Текущий этап: Sprint 9 (`Starter/Testkit/Docs polishing`).
+- Sprint 9 (`Starter/Testkit/Docs polishing`) завершён.
+- Следующий этап: V2 hardening/expansion (SDK surface, persistent storages, observability adapters).
 
 ## Sprint 0 — Spec/API Contract Freeze
 
@@ -185,6 +186,12 @@ Sprint 9 contracts:
 - testkit для unit/integration сценариев;
 - examples и docs polishing;
 - финальная проверка consistency между кодом, contracts и README.
+
+Итог Sprint 9.4.3 (cleanup/finalization):
+- naming и package layout публичных starter/testkit APIs выровнены;
+- JavaDoc улучшен в example-visible APIs;
+- docs синхронизированы с фактическим post-sprint состоянием;
+- зафиксированы текущие ограничения и V2 направления.
 
 ## Notes
 

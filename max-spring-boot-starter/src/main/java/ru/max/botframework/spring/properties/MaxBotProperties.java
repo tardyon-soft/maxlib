@@ -72,6 +72,9 @@ public class MaxBotProperties {
         return storage;
     }
 
+    /**
+     * Polling-specific properties (`max.bot.polling.*`).
+     */
     public static final class Polling {
         private boolean enabled = true;
         @Positive
@@ -109,6 +112,9 @@ public class MaxBotProperties {
         }
     }
 
+    /**
+     * Webhook-specific properties (`max.bot.webhook.*`).
+     */
     public static final class Webhook {
         private boolean enabled;
 
@@ -152,6 +158,9 @@ public class MaxBotProperties {
         }
     }
 
+    /**
+     * Runtime storage and FSM scope properties (`max.bot.storage.*`).
+     */
     public static final class Storage {
         @NotNull
         private MaxBotStorageType type = MaxBotStorageType.MEMORY;

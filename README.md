@@ -142,6 +142,17 @@ Framework состоит из трёх основных уровней:
 - `max-spring-boot-starter`: Spring Boot properties/autoconfiguration, polling/webhook adapter wiring.
 - `max-testkit`: runtime testing helpers (`DispatcherTestKit`, `UpdateFixtures`, `RecordingMaxBotClient`).
 
+## Project Status
+
+Sprint 9 завершён: framework включает core runtime, Spring Boot starter, testkit и рабочие examples.
+
+Что стабилизировано после Sprint 9:
+
+- public starter properties/autoconfiguration surface;
+- polling/webhook Spring integration over framework-agnostic ingestion;
+- testkit harness + fixtures для handler/runtime testing;
+- docs и contracts синхронизированы с фактическим API.
+
 ## Polling vs Webhook
 
 - Polling: `LongPollingRunner` + `PollingUpdateSource`, lifecycle-managed (`start/stop/shutdown`).
@@ -253,6 +264,13 @@ DispatcherTestKit.DispatchProbe probe = kit.feedAndCapture(UpdateFixtures.messag
 - Upload resumable state пока runtime-local (без distributed persistent resume manager).
 - `GET /videos/{videoToken}` helper layer пока не вынесен в отдельный read-model abstraction.
 - Spring starter не включает отдельный enterprise observability/deployment toolkit.
+
+## Future Work (V2+)
+
+- расширение SDK surface по дополнительным MAX endpoints;
+- дополнительные persistent storages для FSM/scenes;
+- расширение testkit assertions/helpers без дублирования runtime;
+- optional observability integrations (logging/metrics/tracing adapters).
 
 ## Documentation
 

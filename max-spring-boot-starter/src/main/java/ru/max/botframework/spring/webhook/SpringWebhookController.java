@@ -1,5 +1,6 @@
 package ru.max.botframework.spring.webhook;
 
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,7 +20,7 @@ public final class SpringWebhookController {
     private final SpringWebhookAdapter adapter;
 
     public SpringWebhookController(SpringWebhookAdapter adapter) {
-        this.adapter = adapter;
+        this.adapter = Objects.requireNonNull(adapter, "adapter");
     }
 
     @PostMapping(

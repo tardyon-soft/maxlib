@@ -34,6 +34,10 @@
   - `SceneRegistry` -> `InMemorySceneRegistry`,
   - `SceneStorage` -> `MemorySceneStorage`.
 
+Статус обновлён (Sprint 9.4.3):
+- starter contract зафиксирован как stable baseline для V1;
+- naming/properties/autoconfiguration surface и docs выровнены после cleanup.
+
 ## Goal
 
 - дать быстрый bootstrapping framework в Spring Boot приложении;

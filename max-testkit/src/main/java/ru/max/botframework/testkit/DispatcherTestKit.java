@@ -44,6 +44,17 @@ public final class DispatcherTestKit {
         return new Dispatcher();
     }
 
+    /**
+     * Returns runtime dispatcher used by this harness.
+     */
+    public Dispatcher runtime() {
+        return dispatcher;
+    }
+
+    /**
+     * @deprecated use {@link #runtime()} for clearer naming.
+     */
+    @Deprecated(since = "0.1.0")
     public Dispatcher dispatcherRef() {
         return dispatcher;
     }
@@ -132,16 +143,25 @@ public final class DispatcherTestKit {
         private Builder() {
         }
 
+        /**
+         * Reuses existing dispatcher instance instead of creating a new one.
+         */
         public Builder dispatcher(Dispatcher dispatcher) {
             this.dispatcher = Objects.requireNonNull(dispatcher, "dispatcher");
             return this;
         }
 
+        /**
+         * Includes one router into runtime under test.
+         */
         public Builder includeRouter(Router router) {
             routers.add(Objects.requireNonNull(router, "router"));
             return this;
         }
 
+        /**
+         * Includes routers in iteration order.
+         */
         public Builder includeRouters(List<Router> routers) {
             Objects.requireNonNull(routers, "routers");
             for (Router router : routers) {
@@ -150,36 +170,57 @@ public final class DispatcherTestKit {
             return this;
         }
 
+        /**
+         * Sets recording MAX client used for side-effect assertions.
+         */
         public Builder botClient(RecordingMaxBotClient botClient) {
             this.botClient = Objects.requireNonNull(botClient, "botClient");
             return this;
         }
 
+        /**
+         * Enables/disables automatic wiring of recording client into dispatcher.
+         */
         public Builder wireBotClient(boolean wireBotClient) {
             this.wireBotClient = wireBotClient;
             return this;
         }
 
+        /**
+         * Configures FSM storage used by runtime.
+         */
         public Builder fsmStorage(FSMStorage fsmStorage) {
             this.fsmStorage = Objects.requireNonNull(fsmStorage, "fsmStorage");
             return this;
         }
 
+        /**
+         * Configures FSM state scope strategy used by runtime.
+         */
         public Builder stateScope(StateScope stateScope) {
             this.stateScope = Objects.requireNonNull(stateScope, "stateScope");
             return this;
         }
 
+        /**
+         * Configures scene registry used by runtime.
+         */
         public Builder sceneRegistry(SceneRegistry sceneRegistry) {
             this.sceneRegistry = Objects.requireNonNull(sceneRegistry, "sceneRegistry");
             return this;
         }
 
+        /**
+         * Configures scene metadata storage used by runtime.
+         */
         public Builder sceneStorage(SceneStorage sceneStorage) {
             this.sceneStorage = Objects.requireNonNull(sceneStorage, "sceneStorage");
             return this;
         }
 
+        /**
+         * Configures upload service used by runtime media APIs.
+         */
         public Builder uploadService(UploadService uploadService) {
             this.uploadService = Objects.requireNonNull(uploadService, "uploadService");
             return this;
