@@ -98,6 +98,14 @@ public final class MessageBuilder {
     }
 
     /**
+     * Appends high-level media attachment mapped from {@code UploadResult}.
+     */
+    public MessageBuilder attachment(MediaAttachment value) {
+        Objects.requireNonNull(value, "value");
+        return attachment(value.toNewMessageAttachment());
+    }
+
+    /**
      * Appends low-level attachment models as extension point for current Sprint 6 surface.
      */
     public MessageBuilder attachments(List<NewMessageAttachment> values) {

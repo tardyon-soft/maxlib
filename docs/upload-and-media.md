@@ -37,6 +37,13 @@
   - единый `UploadResult` теперь содержит `mediaKind` и immutable `attachmentPayload`;
   - `DefaultUploadResultMapper` нормализует результаты multipart/resumable в один contract.
 
+Состояние реализации Sprint 7.3.1:
+- добавлены high-level media attachment abstractions в `ru.max.botframework.message`:
+  - `ImageAttachment`, `FileAttachment`, `VideoAttachment`, `AudioAttachment`;
+  - общий контракт `MediaAttachment`;
+  - mapping в существующий low-level `NewMessageAttachment` (`AttachmentInput.uploadRef`).
+- `MessageBuilder` расширен overload-методом `attachment(MediaAttachment)`.
+
 ## Goal
 
 Дать разработчику ergonomic API для отправки медиа в стиле framework-level DX:

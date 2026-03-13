@@ -71,6 +71,10 @@ Java framework для разработки ботов на платформе MA
   - `UploadResult` carries `ref`, `flowType`, transferred bytes and `contentType`;
   - normalized `mediaKind` (`IMAGE/FILE/VIDEO/AUDIO/UNKNOWN`);
   - immutable `attachmentPayload` for media-specific metadata (for example dimensions/duration/preview refs).
+- high-level media attachment abstractions:
+  - `ImageAttachment`, `FileAttachment`, `VideoAttachment`, `AudioAttachment`;
+  - unified contract `MediaAttachment` mapped to low-level `NewMessageAttachment`;
+  - `MessageBuilder.attachment(MediaAttachment)` for seamless message composition.
 
 ## Modules
 
@@ -272,6 +276,25 @@ Sprint 7.2.3 implemented:
   - `UploadFinalizeResult` now supports `mediaKind` and `attachmentPayload`;
   - `DefaultUploadResultMapper` projects both flow types into unified `UploadResult`;
   - model intentionally hides raw transport response details and keeps only data needed by future media builders.
+
+Sprint 7.3.1 implemented:
+- high-level media attachments over upload result model:
+  - `ImageAttachment.from(uploadResult)`, `FileAttachment.from(uploadResult)`,
+    `VideoAttachment.from(uploadResult)`, `AudioAttachment.from(uploadResult)`;
+  - each abstraction maps to existing low-level attachment DTO (`NewMessageAttachment`) with
+    proper `MessageAttachmentType` and `AttachmentInput(uploadRef=...)`;
+  - `MessageBuilder` now accepts `attachment(MediaAttachment)` without breaking existing low-level APIs.
+
+Example:
+
+```java
+UploadResult uploadedImage = ...;
+UploadResult uploadedDoc = ...;
+
+MessageBuilder message = Messages.text("Материалы готовы")
+    .attachment(ImageAttachment.from(uploadedImage).caption("Превью"))
+    .attachment(FileAttachment.from(uploadedDoc).caption("Документ"));
+```
 
 Пример:
 
