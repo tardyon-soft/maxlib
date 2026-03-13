@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import ru.max.botframework.fsm.FSMContext;
+import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.StateScope;
 import ru.max.botframework.model.Chat;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.ChatType;
@@ -23,6 +26,28 @@ import ru.max.botframework.model.User;
 import ru.max.botframework.model.UserId;
 
 class DispatcherInvocationPipelineIntegrationTest {
+
+    @Test
+    void reflectiveInvocationInjectsFsmContext() throws Exception {
+        MemoryStorage storage = new MemoryStorage();
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(storage)
+                .withStateScope(StateScope.USER_IN_CHAT);
+        Router router = new Router("fsm");
+        FsmProbe probe = new FsmProbe();
+        Method method = FsmProbe.class.getDeclaredMethod("onMessage", Message.class, FSMContext.class);
+
+        router.message(BuiltInFilters.textStartsWith("pay:"), probe, method);
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("pay:100")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals("checkout.email", probe.lastState);
+        assertEquals("pay:100", probe.lastText);
+        assertEquals("u-invoke-1", probe.lastScopeUserId);
+        assertEquals("c-invoke-1", probe.lastScopeChatId);
+    }
 
     @Test
     void reflectiveInvocationResolvesMultipleParameters() throws Exception {
@@ -158,6 +183,38 @@ class DispatcherInvocationPipelineIntegrationTest {
         assertEquals(List.of("outer-pre", "inner-pre", "inner-post", "outer-post"), order);
     }
 
+    @Test
+    void runtimeContextFsmShortcutWorksInDispatchPipeline() {
+        MemoryStorage storage = new MemoryStorage();
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(storage)
+                .withStateScope(StateScope.USER_IN_CHAT);
+        Router router = new Router("fsm-runtime");
+        AtomicInteger calls = new AtomicInteger();
+
+        router.message(BuiltInFilters.textStartsWith("pay:"), (message, context) -> {
+            calls.incrementAndGet();
+            if (message.text().equals("pay:1")) {
+                return context.fsm()
+                        .setState("flow.started")
+                        .thenCompose(ignored -> context.fsm().updateData(java.util.Map.of("last", message.text())))
+                        .thenApply(ignored -> (Void) null);
+            }
+            return context.fsm().snapshot().thenAccept(snapshot -> {
+                assertEquals("flow.started", snapshot.state().orElseThrow());
+                assertEquals("pay:1", snapshot.data().get("last", String.class).orElseThrow());
+            });
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult first = dispatcher.feedUpdate(messageUpdate("pay:1")).toCompletableFuture().join();
+        DispatchResult second = dispatcher.feedUpdate(messageUpdate("pay:2")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, first.status());
+        assertEquals(DispatchStatus.HANDLED, second.status());
+        assertEquals(2, calls.get());
+    }
+
     private interface PaymentService {
         String map(String suffix);
     }
@@ -231,6 +288,24 @@ class DispatcherInvocationPipelineIntegrationTest {
         @SuppressWarnings("unused")
         public CompletableFuture<Void> onMessage(Message message, PaymentService service) {
             return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private static final class FsmProbe {
+        private String lastText;
+        private String lastState;
+        private String lastScopeUserId;
+        private String lastScopeChatId;
+
+        public CompletableFuture<Void> onMessage(Message message, FSMContext fsm) {
+            this.lastText = message.text();
+            this.lastScopeUserId = fsm.scope().userId().value();
+            this.lastScopeChatId = fsm.scope().chatId().value();
+            return fsm.setState("checkout.email")
+                    .thenCompose(ignored -> fsm.updateData(java.util.Map.of("input", message.text())))
+                    .thenCompose(updated -> fsm.currentState())
+                    .thenAccept(state -> this.lastState = state.orElse("none"))
+                    .toCompletableFuture();
         }
     }
 

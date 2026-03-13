@@ -9,6 +9,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import ru.max.botframework.client.MaxBotClient;
+import ru.max.botframework.fsm.FSMStorage;
+import ru.max.botframework.fsm.StateKeyStrategies;
+import ru.max.botframework.fsm.StateKeyStrategy;
+import ru.max.botframework.fsm.StateScope;
 import ru.max.botframework.ingestion.UpdateConsumer;
 import ru.max.botframework.ingestion.UpdateHandlingResult;
 import ru.max.botframework.ingestion.UpdateSink;
@@ -27,6 +31,8 @@ public final class Dispatcher implements UpdateConsumer {
     private final Map<RuntimeDataKey<?>, Object> applicationData = new java.util.concurrent.ConcurrentHashMap<>();
     private final UpdateEventResolver eventResolver;
     private final HandlerInvoker handlerInvoker;
+    private volatile FSMStorage fsmStorage;
+    private volatile StateKeyStrategy stateKeyStrategy = StateKeyStrategies.userInChat();
 
     public Dispatcher() {
         this(new DefaultUpdateEventResolver(), DefaultHandlerInvoker.withDefaults());
@@ -151,6 +157,29 @@ public final class Dispatcher implements UpdateConsumer {
      */
     public Dispatcher withUploadService(UploadService uploadService) {
         return registerService(UploadService.class, Objects.requireNonNull(uploadService, "uploadService"));
+    }
+
+    /**
+     * Configures FSM storage used for runtime {@code FSMContext} resolution.
+     */
+    public Dispatcher withFsmStorage(FSMStorage storage) {
+        this.fsmStorage = Objects.requireNonNull(storage, "storage");
+        return this;
+    }
+
+    /**
+     * Configures state key resolution strategy for runtime {@code FSMContext}.
+     */
+    public Dispatcher withStateKeyStrategy(StateKeyStrategy strategy) {
+        this.stateKeyStrategy = Objects.requireNonNull(strategy, "strategy");
+        return this;
+    }
+
+    /**
+     * Convenience state scope configuration that maps to built-in key strategy.
+     */
+    public Dispatcher withStateScope(StateScope scope) {
+        return withStateKeyStrategy(StateKeyStrategies.forScope(Objects.requireNonNull(scope, "scope")));
     }
 
     /**
@@ -396,6 +425,7 @@ public final class Dispatcher implements UpdateConsumer {
             putApplicationData(context, entry.getKey(), entry.getValue());
         }
         RuntimeMessagingSupport.bootstrap(context);
+        FSMRuntimeSupport.bootstrap(context, fsmStorage, stateKeyStrategy);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

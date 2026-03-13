@@ -7,6 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.StateKeyStrategies;
+import ru.max.botframework.fsm.StateScope;
 import ru.max.botframework.model.Chat;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.ChatType;
@@ -125,6 +128,22 @@ class RuntimeContextTest {
         assertThrows(IllegalStateException.class, context::callbacks);
         assertThrows(IllegalStateException.class, context::actions);
         assertThrows(IllegalStateException.class, context::media);
+    }
+
+    @Test
+    void runtimeFsmHelperRequiresFsmBootstrap() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+
+        assertThrows(IllegalStateException.class, context::fsm);
+    }
+
+    @Test
+    void runtimeFsmHelperReturnsContextWhenConfigured() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        FSMRuntimeSupport.bootstrap(context, new MemoryStorage(), StateKeyStrategies.forScope(StateScope.USER_IN_CHAT));
+
+        assertEquals("u-ctx-user", context.fsm().scope().userId().value());
+        assertEquals("c-ctx-1", context.fsm().scope().chatId().value());
     }
 
     private static Update sampleUpdate() {

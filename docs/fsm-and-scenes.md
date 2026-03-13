@@ -288,6 +288,10 @@ sceneManager.exit();
   - `Dispatcher`/`Router` runtime pipeline;
   - filter contracts (`StateFilter` как часть filter layer);
   - handler DI/invocation (`FSMContext`, `SceneManager` resolvers).
+- Runtime wiring for `FSMContext`:
+  - `Dispatcher.withFsmStorage(FSMStorage)` задаёт storage backend;
+  - `Dispatcher.withStateScope(StateScope)` или `withStateKeyStrategy(...)` задаёт key strategy;
+  - `FSMContext` резолвится в handler parameters через existing Sprint 5 resolver pipeline.
 - Storage abstraction не должен смешиваться с messaging layer.
 - FSM/scenes runtime errors идут в существующий runtime error boundary.
 

@@ -169,6 +169,29 @@ fsm.setState("checkout.email").toCompletableFuture().join();
 fsm.updateData(java.util.Map.of("email", "user@example.com")).toCompletableFuture().join();
 ```
 
+FSMContext injection in runtime handlers:
+
+```java
+import ru.max.botframework.dispatcher.Dispatcher;
+import ru.max.botframework.dispatcher.Router;
+import ru.max.botframework.fsm.FSMContext;
+import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.StateScope;
+import ru.max.botframework.model.Message;
+
+Dispatcher dispatcher = new Dispatcher()
+    .withFsmStorage(new MemoryStorage())
+    .withStateScope(StateScope.USER_IN_CHAT);
+
+Router router = new Router("fsm");
+router.message((Message message, FSMContext fsm) ->
+    fsm.setState("checkout.email")
+        .thenCompose(v -> fsm.updateData(java.util.Map.of("lastInput", message.text())))
+        .thenApply(v -> null)
+);
+dispatcher.includeRouter(router);
+```
+
 ## Client configuration
 
 `MaxApiClientConfig` поддерживает builder-style конфигурацию:

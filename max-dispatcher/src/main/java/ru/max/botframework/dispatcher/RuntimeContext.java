@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import ru.max.botframework.action.ChatActionsFacade;
 import ru.max.botframework.callback.CallbackFacade;
+import ru.max.botframework.fsm.FSMContext;
 import ru.max.botframework.message.MessageBuilder;
 import ru.max.botframework.message.MediaMessagingFacade;
 import ru.max.botframework.message.MessagingFacade;
@@ -176,6 +177,16 @@ public final class RuntimeContext {
                 .orElseThrow(() -> new IllegalStateException(
                         "MediaMessagingFacade is unavailable. Register MaxBotClient via Dispatcher.withBotClient(...) "
                                 + "and UploadService via Dispatcher.withUploadService(...)"
+                ));
+    }
+
+    /**
+     * Returns runtime FSM context if FSM storage is configured on dispatcher.
+     */
+    public FSMContext fsm() {
+        return FSMRuntimeSupport.resolve(this)
+                .orElseThrow(() -> new IllegalStateException(
+                        "FSMContext is unavailable. Configure Dispatcher.withFsmStorage(...) and state scope strategy."
                 ));
     }
 

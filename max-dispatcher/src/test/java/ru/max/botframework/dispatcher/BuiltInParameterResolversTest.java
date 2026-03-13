@@ -9,6 +9,10 @@ import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import ru.max.botframework.fsm.FSMContext;
+import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.StateKeyStrategies;
+import ru.max.botframework.fsm.StateScope;
 import ru.max.botframework.model.Callback;
 import ru.max.botframework.model.CallbackId;
 import ru.max.botframework.model.Chat;
@@ -124,6 +128,35 @@ class BuiltInParameterResolversTest {
     }
 
     @Test
+    void fsmContextResolverReturnsResolvedContextWhenConfigured() throws Exception {
+        HandlerParameterDescriptor parameter = descriptor("expectsFsmContext", FSMContext.class);
+        Update update = updateWithMessage("hello");
+        RuntimeContext context = new RuntimeContext(update);
+        FSMRuntimeSupport.bootstrap(context, new MemoryStorage(), StateKeyStrategies.forScope(StateScope.USER_IN_CHAT));
+
+        HandlerParameterResolution result = new FSMContextParameterResolver()
+                .resolve(parameter, new HandlerInvocationContext(update.message(), context));
+
+        assertTrue(result.supported());
+        FSMContext fsm = (FSMContext) result.value();
+        assertEquals(StateScope.USER_IN_CHAT, fsm.scope().scope());
+        assertEquals("u-1", fsm.scope().userId().value());
+        assertEquals("c-1", fsm.scope().chatId().value());
+    }
+
+    @Test
+    void fsmContextResolverReturnsUnsupportedWhenStorageIsNotConfigured() throws Exception {
+        HandlerParameterDescriptor parameter = descriptor("expectsFsmContext", FSMContext.class);
+        Update update = updateWithMessage("hello");
+        RuntimeContext context = new RuntimeContext(update);
+
+        HandlerParameterResolution result = new FSMContextParameterResolver()
+                .resolve(parameter, new HandlerInvocationContext(update.message(), context));
+
+        assertFalse(result.supported());
+    }
+
+    @Test
     void callbackResolverReturnsUnsupportedWhenNotApplicable() throws Exception {
         HandlerParameterDescriptor parameter = descriptor("expectsCallback", Callback.class);
         Update messageUpdate = updateWithMessage("hello");
@@ -156,6 +189,9 @@ class BuiltInParameterResolversTest {
         }
 
         public void expectsContext(RuntimeContext context) {
+        }
+
+        public void expectsFsmContext(FSMContext context) {
         }
     }
 
