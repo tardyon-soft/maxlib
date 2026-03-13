@@ -175,6 +175,7 @@ FSMContext injection in runtime handlers:
 import ru.max.botframework.dispatcher.Dispatcher;
 import ru.max.botframework.dispatcher.Router;
 import ru.max.botframework.dispatcher.BuiltInFilters;
+import ru.max.botframework.dispatcher.RuntimeContext;
 import ru.max.botframework.fsm.FSMContext;
 import ru.max.botframework.fsm.MemoryStorage;
 import ru.max.botframework.fsm.StateScope;
@@ -192,6 +193,13 @@ router.message((Message message, FSMContext fsm) ->
 );
 router.message(BuiltInFilters.state("checkout.email"), (Message message, FSMContext fsm) ->
     fsm.updateData(java.util.Map.of("email", message.text())).thenApply(v -> null)
+);
+router.message(
+    BuiltInFilters.state("checkout.email").and(BuiltInFilters.textStartsWith("email:")),
+    (Message message, RuntimeContext ctx) -> {
+        String suffix = ctx.enrichmentValue(BuiltInFilters.TEXT_SUFFIX_KEY, String.class).orElse("");
+        return ctx.fsm().updateData(java.util.Map.of("email", suffix)).thenApply(v -> null);
+    }
 );
 dispatcher.includeRouter(router);
 ```

@@ -292,6 +292,10 @@ sceneManager.exit();
   - `Dispatcher.withFsmStorage(FSMStorage)` задаёт storage backend;
   - `Dispatcher.withStateScope(StateScope)` или `withStateKeyStrategy(...)` задаёт key strategy;
   - `FSMContext` резолвится в handler parameters через existing Sprint 5 resolver pipeline.
+- `StateFilter` работает как обычный `Filter` в существующей filter architecture:
+  - участвует в first-match semantics без специальных веток роутинга;
+  - композиция `StateFilter.and(...)`/`or(...)` работает на общих правилах filter composition;
+  - совместим с outer/inner middleware pipeline.
 - Storage abstraction не должен смешиваться с messaging layer.
 - FSM/scenes runtime errors идут в существующий runtime error boundary.
 

@@ -242,6 +242,92 @@ class DispatcherInvocationPipelineIntegrationTest {
         assertEquals(1, gatedCalls.get());
     }
 
+    @Test
+    void stateFilterPreservesFirstMatchSemantics() {
+        MemoryStorage storage = new MemoryStorage();
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(storage)
+                .withStateScope(StateScope.USER_IN_CHAT);
+        Router router = new Router("fsm-first-match");
+        AtomicInteger first = new AtomicInteger();
+        AtomicInteger second = new AtomicInteger();
+        Update update = messageUpdate("next");
+
+        storage.setState(ru.max.botframework.fsm.StateKeyStrategies.userInChat().resolve(update), "checkout.email")
+                .toCompletableFuture()
+                .join();
+
+        router.message(BuiltInFilters.state("checkout.email"), message -> {
+            first.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        router.message(BuiltInFilters.state("checkout.email"), message -> {
+            second.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(update).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, first.get());
+        assertEquals(0, second.get());
+    }
+
+    @Test
+    void stateFilterWorksWithOuterMiddleware() {
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(new MemoryStorage())
+                .withStateScope(StateScope.USER_IN_CHAT);
+        Router router = new Router("fsm-middleware");
+        AtomicInteger calls = new AtomicInteger();
+
+        dispatcher.outerMiddleware((context, next) -> context.fsm()
+                .setState("middleware.state")
+                .thenCompose(ignored -> next.proceed()));
+        router.message(BuiltInFilters.state("middleware.state"), message -> {
+            calls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("any")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, calls.get());
+    }
+
+    @Test
+    void stateFilterComposesWithOtherFilters() {
+        MemoryStorage storage = new MemoryStorage();
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(storage)
+                .withStateScope(StateScope.USER_IN_CHAT);
+        Router router = new Router("fsm-composition");
+        AtomicInteger calls = new AtomicInteger();
+        Update update = messageUpdate("email:user@example.com");
+
+        storage.setState(ru.max.botframework.fsm.StateKeyStrategies.userInChat().resolve(update), "checkout.email")
+                .toCompletableFuture()
+                .join();
+
+        router.message(
+                BuiltInFilters.state("checkout.email").and(BuiltInFilters.textStartsWith("email:")),
+                (message, context) -> {
+                    calls.incrementAndGet();
+                    assertEquals("user@example.com", context.enrichmentValue(BuiltInFilters.TEXT_SUFFIX_KEY, String.class).orElseThrow());
+                    assertEquals("checkout.email", context.enrichmentValue(BuiltInFilters.STATE_KEY, String.class).orElseThrow());
+                    return CompletableFuture.completedFuture(null);
+                }
+        );
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(update).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(1, calls.get());
+    }
+
     private interface PaymentService {
         String map(String suffix);
     }
