@@ -34,15 +34,22 @@
 - `max.bot.base-url` (`String`, optional, default `https://api.max.ru`);
 - `max.bot.mode` (`POLLING` | `WEBHOOK`, default `POLLING`);
 - `max.bot.polling.enabled` (`boolean`);
-- `max.bot.polling.limit` (`int`);
-- `max.bot.polling.timeout` (`Duration`);
+- `max.bot.polling.limit` (`int`, default `100`);
+- `max.bot.polling.timeout` (`Duration`, default `30s`);
 - `max.bot.polling.types` (`List<UpdateType>`, optional);
 - `max.bot.webhook.enabled` (`boolean`);
-- `max.bot.webhook.path` (`String`);
+- `max.bot.webhook.path` (`String`, default `/webhook/max`);
 - `max.bot.webhook.secret` (`String`, optional but recommended);
 - `max.bot.webhook.max-in-flight` (`int`, optional).
+- `max.bot.storage.type` (`MEMORY`, default `MEMORY`);
+- `max.bot.storage.state-scope` (`USER` | `CHAT` | `USER_IN_CHAT`, default `USER_IN_CHAT`).
 
 Примечание: итоговые имена полей могут эволюционировать, но scope и семантика должны остаться.
+
+Validation baseline:
+- `token` обязателен;
+- `base-url` и `webhook.path` не должны быть пустыми;
+- `polling.limit` и `webhook.max-in-flight` (если заданы) должны быть `> 0`.
 
 ## Autoconfiguration Contract
 

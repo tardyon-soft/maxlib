@@ -1,21 +1,40 @@
 package ru.max.botframework.spring.properties;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
+import ru.max.botframework.fsm.StateScope;
 import ru.max.botframework.model.UpdateType;
 
 /**
  * Spring Boot configuration properties for MAX bot runtime starter.
  */
 @ConfigurationProperties(prefix = "max.bot")
+@Validated
 public class MaxBotProperties {
+    @NotBlank
     private String token;
+
+    @NotBlank
     private String baseUrl = "https://api.max.ru";
+
+    @NotNull
     private MaxBotMode mode = MaxBotMode.POLLING;
+
+    @Valid
     private final Polling polling = new Polling();
+
+    @Valid
     private final Webhook webhook = new Webhook();
+
+    @Valid
+    private final Storage storage = new Storage();
 
     public String getToken() {
         return token;
@@ -49,10 +68,16 @@ public class MaxBotProperties {
         return webhook;
     }
 
+    public Storage getStorage() {
+        return storage;
+    }
+
     public static final class Polling {
         private boolean enabled = true;
-        private Integer limit;
-        private Duration timeout;
+        @Positive
+        private Integer limit = 100;
+        @NotNull
+        private Duration timeout = Duration.ofSeconds(30);
         private final List<UpdateType> types = new ArrayList<>();
 
         public boolean isEnabled() {
@@ -86,8 +111,12 @@ public class MaxBotProperties {
 
     public static final class Webhook {
         private boolean enabled;
+
+        @NotBlank
         private String path = "/webhook/max";
         private String secret;
+
+        @Positive
         private Integer maxInFlight;
 
         public boolean isEnabled() {
@@ -120,6 +149,30 @@ public class MaxBotProperties {
 
         public void setMaxInFlight(Integer maxInFlight) {
             this.maxInFlight = maxInFlight;
+        }
+    }
+
+    public static final class Storage {
+        @NotNull
+        private MaxBotStorageType type = MaxBotStorageType.MEMORY;
+
+        @NotNull
+        private StateScope stateScope = StateScope.USER_IN_CHAT;
+
+        public MaxBotStorageType getType() {
+            return type;
+        }
+
+        public void setType(MaxBotStorageType type) {
+            this.type = type;
+        }
+
+        public StateScope getStateScope() {
+            return stateScope;
+        }
+
+        public void setStateScope(StateScope stateScope) {
+            this.stateScope = stateScope;
         }
     }
 }

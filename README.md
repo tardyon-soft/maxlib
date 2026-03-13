@@ -50,6 +50,42 @@ Java framework для разработки ботов на платформе MA
 - контракт starter зафиксирован: `docs/spring-starter.md`;
 - контракт testkit зафиксирован: `docs/testkit.md`.
 
+Spring starter configuration baseline (`application.yml`):
+
+```yaml
+max:
+  bot:
+    token: ${MAX_BOT_TOKEN}
+    base-url: https://api.max.ru
+    mode: POLLING
+    polling:
+      enabled: true
+      limit: 100
+      timeout: 30s
+      types: [MESSAGE, CALLBACK]
+    webhook:
+      enabled: false
+      path: /webhook/max
+      secret: ${MAX_WEBHOOK_SECRET:}
+      max-in-flight: 16
+    storage:
+      type: MEMORY
+      state-scope: USER_IN_CHAT
+```
+
+Alternative `application.properties`:
+
+```properties
+max.bot.token=${MAX_BOT_TOKEN}
+max.bot.mode=POLLING
+max.bot.polling.enabled=true
+max.bot.polling.limit=100
+max.bot.polling.timeout=30s
+max.bot.webhook.path=/webhook/max
+max.bot.storage.type=MEMORY
+max.bot.storage.state-scope=USER_IN_CHAT
+```
+
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
 - `max-client-core` foundation слой (transport, auth, serialization, errors, retry/rate-limit hooks, pagination);
