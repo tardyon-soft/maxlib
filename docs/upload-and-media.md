@@ -62,6 +62,14 @@
 - image/file flows остаются uploadRef-oriented.
 - read-model helper для `GET /videos/{videoToken}` не добавлялся в текущем scope.
 
+Состояние реализации Sprint 7.3.4:
+- media layer интегрирован в runtime ergonomics:
+  - `Dispatcher.withUploadService(...)`;
+  - `RuntimeContext.media()`;
+  - runtime shortcuts: `replyImage/replyFile/sendVideo/sendAudio`.
+- `MediaMessagingFacade` добавлен в built-in parameter resolution для reflective handlers.
+- composition через `MessageBuilder + MediaAttachment` подтверждена integration-пайплайном dispatcher runtime.
+
 ## Goal
 
 Дать разработчику ergonomic API для отправки медиа в стиле framework-level DX:

@@ -124,6 +124,7 @@ class RuntimeContextTest {
         assertThrows(IllegalStateException.class, context::messaging);
         assertThrows(IllegalStateException.class, context::callbacks);
         assertThrows(IllegalStateException.class, context::actions);
+        assertThrows(IllegalStateException.class, context::media);
     }
 
     private static Update sampleUpdate() {

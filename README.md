@@ -306,6 +306,28 @@ Sprint 7.3.3 implemented:
 - `GET /videos/{videoToken}` helper layer is intentionally not added at this stage to keep Sprint 7 scope focused
   on send-path orchestration and attachment mapping.
 
+Sprint 7.3.4 implemented:
+- media layer integrated into runtime-facing APIs:
+  - `Dispatcher.withUploadService(...)` registers upload service for runtime media ergonomics;
+  - `RuntimeContext.media()` exposes `MediaMessagingFacade` when both bot client and upload service are configured;
+  - convenience runtime shortcuts:
+    - `context.replyImage(...)`, `context.replyFile(...)`;
+    - `context.sendVideo(...)`, `context.sendAudio(...)`.
+- parameter resolution integration:
+  - reflective handlers can now resolve `MediaMessagingFacade` parameter directly.
+- builder/media composition remains first-class:
+  - `Messages.text(...).attachment(MediaAttachment.image(uploaded))` works naturally in runtime handlers.
+
+Handler example:
+
+```java
+router.message((message, context) -> {
+    context.replyImage(InputFile.fromPath(Path.of("./preview.jpg")));
+    context.sendVideo(InputFile.fromPath(Path.of("./clip.mp4")));
+    return CompletableFuture.completedFuture(null);
+});
+```
+
 Example:
 
 ```java

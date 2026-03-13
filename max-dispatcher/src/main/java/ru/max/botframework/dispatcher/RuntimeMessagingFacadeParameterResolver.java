@@ -3,6 +3,7 @@ package ru.max.botframework.dispatcher;
 import java.util.Objects;
 import ru.max.botframework.action.ChatActionsFacade;
 import ru.max.botframework.callback.CallbackFacade;
+import ru.max.botframework.message.MediaMessagingFacade;
 import ru.max.botframework.message.MessagingFacade;
 
 /**
@@ -26,6 +27,11 @@ public final class RuntimeMessagingFacadeParameterResolver implements HandlerPar
         }
         if (parameter.type() == ChatActionsFacade.class) {
             return context.runtimeContext().dataValue(RuntimeMessagingSupport.CHAT_ACTIONS_FACADE_KEY)
+                    .<HandlerParameterResolution>map(HandlerParameterResolution::resolved)
+                    .orElseGet(HandlerParameterResolution::unsupported);
+        }
+        if (parameter.type() == MediaMessagingFacade.class) {
+            return context.runtimeContext().dataValue(RuntimeMessagingSupport.MEDIA_MESSAGING_FACADE_KEY)
                     .<HandlerParameterResolution>map(HandlerParameterResolution::resolved)
                     .orElseGet(HandlerParameterResolution::unsupported);
         }

@@ -49,6 +49,14 @@ public final class MediaMessagingFacade {
         return send(target, inputFile, UploadMediaKind.FILE, caption);
     }
 
+    public Message sendFile(ChatId chatId, InputFile inputFile) {
+        return sendFile(MessageTarget.chat(Objects.requireNonNull(chatId, "chatId")), inputFile);
+    }
+
+    public Message sendFile(UserId userId, InputFile inputFile) {
+        return sendFile(MessageTarget.user(Objects.requireNonNull(userId, "userId")), inputFile);
+    }
+
     public Message sendVideo(MessageTarget target, InputFile inputFile) {
         return sendVideo(target, inputFile, null);
     }
@@ -57,12 +65,28 @@ public final class MediaMessagingFacade {
         return send(target, inputFile, UploadMediaKind.VIDEO, caption);
     }
 
+    public Message sendVideo(ChatId chatId, InputFile inputFile) {
+        return sendVideo(MessageTarget.chat(Objects.requireNonNull(chatId, "chatId")), inputFile);
+    }
+
+    public Message sendVideo(UserId userId, InputFile inputFile) {
+        return sendVideo(MessageTarget.user(Objects.requireNonNull(userId, "userId")), inputFile);
+    }
+
     public Message sendAudio(MessageTarget target, InputFile inputFile) {
         return sendAudio(target, inputFile, null);
     }
 
     public Message sendAudio(MessageTarget target, InputFile inputFile, String caption) {
         return send(target, inputFile, UploadMediaKind.AUDIO, caption);
+    }
+
+    public Message sendAudio(ChatId chatId, InputFile inputFile) {
+        return sendAudio(MessageTarget.chat(Objects.requireNonNull(chatId, "chatId")), inputFile);
+    }
+
+    public Message sendAudio(UserId userId, InputFile inputFile) {
+        return sendAudio(MessageTarget.user(Objects.requireNonNull(userId, "userId")), inputFile);
     }
 
     public Message replyImage(Message sourceMessage, InputFile inputFile) {

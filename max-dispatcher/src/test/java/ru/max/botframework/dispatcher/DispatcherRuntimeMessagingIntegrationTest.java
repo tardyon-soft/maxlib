@@ -16,6 +16,8 @@ import org.mockito.Mockito;
 import ru.max.botframework.action.ChatActionsFacade;
 import ru.max.botframework.callback.CallbackFacade;
 import ru.max.botframework.client.MaxBotClient;
+import ru.max.botframework.message.MediaMessagingFacade;
+import ru.max.botframework.message.MediaAttachment;
 import ru.max.botframework.message.MessagingFacade;
 import ru.max.botframework.message.Messages;
 import ru.max.botframework.model.Callback;
@@ -33,6 +35,13 @@ import ru.max.botframework.model.User;
 import ru.max.botframework.model.UserId;
 import ru.max.botframework.model.request.AnswerCallbackRequest;
 import ru.max.botframework.model.request.SendMessageRequest;
+import ru.max.botframework.upload.InputFile;
+import ru.max.botframework.upload.UploadFlowType;
+import ru.max.botframework.upload.UploadMediaKind;
+import ru.max.botframework.upload.UploadPayloadKeys;
+import ru.max.botframework.upload.UploadRef;
+import ru.max.botframework.upload.UploadResult;
+import ru.max.botframework.upload.UploadService;
 
 class DispatcherRuntimeMessagingIntegrationTest {
 
@@ -168,6 +177,145 @@ class DispatcherRuntimeMessagingIntegrationTest {
         verify(client).sendChatAction(new ChatId("chat-1"), ChatAction.TYPING);
     }
 
+    @Test
+    void handlerCanReplyImageAndFileViaRuntimeContextMediaFacade() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        UploadService uploadService = Mockito.mock(UploadService.class);
+
+        when(uploadService.upload(any(InputFile.class), any())).thenReturn(
+                CompletableFuture.completedFuture(uploadResult("ref-image", UploadMediaKind.IMAGE)),
+                CompletableFuture.completedFuture(uploadResult("ref-file", UploadMediaKind.FILE))
+        );
+        when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-out", "media"));
+
+        Dispatcher dispatcher = new Dispatcher()
+                .withBotClient(client)
+                .withUploadService(uploadService);
+        Router router = new Router("media-reply");
+        router.message((message, context) -> {
+            context.replyImage(InputFile.fromBytes(new byte[]{1}, "img.jpg"));
+            context.replyFile(InputFile.fromBytes(new byte[]{2}, "doc.pdf"));
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("m-media-in", "ping")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        ArgumentCaptor<SendMessageRequest> requestCaptor = ArgumentCaptor.forClass(SendMessageRequest.class);
+        verify(client, org.mockito.Mockito.times(2)).sendMessage(requestCaptor.capture());
+        List<SendMessageRequest> requests = requestCaptor.getAllValues();
+        assertEquals("m-media-in", requests.getFirst().replyToMessageId().value());
+        assertEquals("ref-image", requests.getFirst().body().attachments().getFirst().input().uploadRef());
+        assertEquals("m-media-in", requests.get(1).replyToMessageId().value());
+        assertEquals("ref-file", requests.get(1).body().attachments().getFirst().input().uploadRef());
+    }
+
+    @Test
+    void handlerCanSendVideoAndAudioViaRuntimeContextMediaFacade() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        UploadService uploadService = Mockito.mock(UploadService.class);
+
+        when(uploadService.upload(any(InputFile.class), any())).thenReturn(
+                CompletableFuture.completedFuture(uploadResult(
+                        "ref-video",
+                        UploadMediaKind.VIDEO,
+                        java.util.Map.of(UploadPayloadKeys.VIDEO_TOKEN, "video-token-1")
+                )),
+                CompletableFuture.completedFuture(uploadResult(
+                        "ref-audio",
+                        UploadMediaKind.AUDIO,
+                        java.util.Map.of(UploadPayloadKeys.AUDIO_TOKEN, "audio-token-1")
+                ))
+        );
+        when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-out", "media"));
+
+        Dispatcher dispatcher = new Dispatcher()
+                .withBotClient(client)
+                .withUploadService(uploadService);
+        Router router = new Router("media-send");
+        router.message((message, context) -> {
+            context.sendVideo(InputFile.fromBytes(new byte[]{3}, "clip.mp4"));
+            context.sendAudio(InputFile.fromBytes(new byte[]{4}, "voice.mp3"));
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("m-media-send", "ping")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        ArgumentCaptor<SendMessageRequest> requestCaptor = ArgumentCaptor.forClass(SendMessageRequest.class);
+        verify(client, org.mockito.Mockito.times(2)).sendMessage(requestCaptor.capture());
+        List<SendMessageRequest> requests = requestCaptor.getAllValues();
+        assertEquals("video-token-1", requests.getFirst().body().attachments().getFirst().input().uploadRef());
+        assertEquals("audio-token-1", requests.get(1).body().attachments().getFirst().input().uploadRef());
+        assertEquals("chat-1", requests.getFirst().chatId().value());
+        assertEquals("chat-1", requests.get(1).chatId().value());
+    }
+
+    @Test
+    void reflectiveHandlerCanResolveMediaMessagingFacadeAndComposeBuilderWithAttachment() throws Exception {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        UploadService uploadService = Mockito.mock(UploadService.class);
+        when(uploadService.upload(any(InputFile.class), any())).thenReturn(
+                CompletableFuture.completedFuture(uploadResult("ref-media-param", UploadMediaKind.IMAGE))
+        );
+        when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-out", "ok"));
+
+        Dispatcher dispatcher = new Dispatcher()
+                .withBotClient(client)
+                .withUploadService(uploadService);
+        Router router = new Router("media-reflective");
+        MediaReflectiveProbe probe = new MediaReflectiveProbe();
+        Method method = MediaReflectiveProbe.class.getDeclaredMethod(
+                "onMessage",
+                Message.class,
+                MediaMessagingFacade.class
+        );
+        router.message(probe, method);
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("m-media-ref", "hello")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertTrue(probe.invoked);
+        verify(client).sendMessage(any(SendMessageRequest.class));
+    }
+
+    @Test
+    void reflectiveHandlerCanComposeBuilderWithMediaAttachmentFromUploadedResult() throws Exception {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        UploadService uploadService = Mockito.mock(UploadService.class);
+        when(uploadService.upload(any(InputFile.class), any())).thenReturn(
+                CompletableFuture.completedFuture(uploadResult("ref-composed", UploadMediaKind.IMAGE))
+        );
+        when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-out", "ok"));
+
+        Dispatcher dispatcher = new Dispatcher()
+                .withBotClient(client)
+                .withUploadService(uploadService);
+        Router router = new Router("media-compose");
+        BuilderComposeProbe probe = new BuilderComposeProbe();
+        Method method = BuilderComposeProbe.class.getDeclaredMethod(
+                "onMessage",
+                Message.class,
+                MessagingFacade.class,
+                UploadService.class
+        );
+        router.message(probe, method);
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("m-media-compose", "hello")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertTrue(probe.invoked);
+        ArgumentCaptor<SendMessageRequest> requestCaptor = ArgumentCaptor.forClass(SendMessageRequest.class);
+        verify(client).sendMessage(requestCaptor.capture());
+        SendMessageRequest request = requestCaptor.getValue();
+        assertEquals("with-media", request.body().text());
+        assertEquals("ref-composed", request.body().attachments().getFirst().input().uploadRef());
+    }
+
     private static Update messageUpdate(String messageId, String text) {
         return new Update(
                 new UpdateId("upd-" + messageId),
@@ -213,6 +361,14 @@ class DispatcherRuntimeMessagingIntegrationTest {
         return new User(new UserId("user-1"), "demo", "Demo", "User", "Demo User", false, "en");
     }
 
+    private static UploadResult uploadResult(String ref, UploadMediaKind kind) {
+        return uploadResult(ref, kind, java.util.Map.of());
+    }
+
+    private static UploadResult uploadResult(String ref, UploadMediaKind kind, java.util.Map<String, String> payload) {
+        return new UploadResult(new UploadRef(ref), UploadFlowType.MULTIPART, 10L, null, kind, payload);
+    }
+
     private static final class ReflectiveProbe {
         private boolean invoked;
 
@@ -242,6 +398,34 @@ class DispatcherRuntimeMessagingIntegrationTest {
         public CompletableFuture<Void> onMessage(Message message, ChatActionsFacade actions) {
             invoked = true;
             actions.typing(message.chat().id());
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private static final class MediaReflectiveProbe {
+        private boolean invoked;
+
+        @SuppressWarnings("unused")
+        public CompletableFuture<Void> onMessage(Message message, MediaMessagingFacade media) {
+            invoked = true;
+            media.sendImage(message.chat().id(), InputFile.fromBytes(new byte[]{9}, "p.jpg"));
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private static final class BuilderComposeProbe {
+        private boolean invoked;
+
+        @SuppressWarnings("unused")
+        public CompletableFuture<Void> onMessage(Message message, MessagingFacade messaging, UploadService uploadService) {
+            invoked = true;
+            UploadResult uploaded = uploadService.upload(InputFile.fromBytes(new byte[]{8}, "img.jpg"))
+                    .toCompletableFuture()
+                    .join();
+            messaging.send(
+                    message.chat().id(),
+                    Messages.text("with-media").attachment(MediaAttachment.image(uploaded))
+            );
             return CompletableFuture.completedFuture(null);
         }
     }

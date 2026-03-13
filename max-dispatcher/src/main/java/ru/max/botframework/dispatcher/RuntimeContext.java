@@ -7,11 +7,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import ru.max.botframework.action.ChatActionsFacade;
 import ru.max.botframework.callback.CallbackFacade;
 import ru.max.botframework.message.MessageBuilder;
+import ru.max.botframework.message.MediaMessagingFacade;
 import ru.max.botframework.message.MessagingFacade;
 import ru.max.botframework.model.Callback;
 import ru.max.botframework.model.ChatAction;
+import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.Message;
 import ru.max.botframework.model.Update;
+import ru.max.botframework.upload.InputFile;
 
 /**
  * Request-scoped runtime context used by middleware and future DI/resolution layers.
@@ -166,6 +169,17 @@ public final class RuntimeContext {
     }
 
     /**
+     * Returns runtime media facade if bot client and upload service are configured on dispatcher.
+     */
+    public MediaMessagingFacade media() {
+        return dataValue(RuntimeMessagingSupport.MEDIA_MESSAGING_FACADE_KEY)
+                .orElseThrow(() -> new IllegalStateException(
+                        "MediaMessagingFacade is unavailable. Register MaxBotClient via Dispatcher.withBotClient(...) "
+                                + "and UploadService via Dispatcher.withUploadService(...)"
+                ));
+    }
+
+    /**
      * Replies to current message (message update or callback source message).
      */
     public Message reply(MessageBuilder builder) {
@@ -189,6 +203,34 @@ public final class RuntimeContext {
         return actions().send(this, action);
     }
 
+    /**
+     * Replies to current message context with uploaded image.
+     */
+    public Message replyImage(InputFile inputFile) {
+        return media().replyImage(currentMessage(), Objects.requireNonNull(inputFile, "inputFile"));
+    }
+
+    /**
+     * Replies to current message context with uploaded file.
+     */
+    public Message replyFile(InputFile inputFile) {
+        return media().replyFile(currentMessage(), Objects.requireNonNull(inputFile, "inputFile"));
+    }
+
+    /**
+     * Sends uploaded video to current chat context.
+     */
+    public Message sendVideo(InputFile inputFile) {
+        return media().sendVideo(currentChatId(), Objects.requireNonNull(inputFile, "inputFile"));
+    }
+
+    /**
+     * Sends uploaded audio to current chat context.
+     */
+    public Message sendAudio(InputFile inputFile) {
+        return media().sendAudio(currentChatId(), Objects.requireNonNull(inputFile, "inputFile"));
+    }
+
     private Message currentMessage() {
         if (update.message() != null) {
             return update.message();
@@ -204,6 +246,10 @@ public final class RuntimeContext {
             return update.callback();
         }
         throw new IllegalStateException("current update does not contain callback context");
+    }
+
+    private ChatId currentChatId() {
+        return currentMessage().chat().id();
     }
 
     private void putEnrichmentValue(String key, Object value, RuntimeDataScope scope, String source) {

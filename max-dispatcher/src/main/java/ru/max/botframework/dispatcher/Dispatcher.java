@@ -13,6 +13,7 @@ import ru.max.botframework.ingestion.UpdateConsumer;
 import ru.max.botframework.ingestion.UpdateHandlingResult;
 import ru.max.botframework.ingestion.UpdateSink;
 import ru.max.botframework.model.Update;
+import ru.max.botframework.upload.UploadService;
 
 /**
  * Root runtime orchestrator that owns root routing graph and dispatch entrypoint.
@@ -143,6 +144,13 @@ public final class Dispatcher implements UpdateConsumer {
      */
     public Dispatcher withBotClient(MaxBotClient client) {
         return registerService(MaxBotClient.class, Objects.requireNonNull(client, "client"));
+    }
+
+    /**
+     * Registers upload service used by runtime media APIs in handlers/context.
+     */
+    public Dispatcher withUploadService(UploadService uploadService) {
+        return registerService(UploadService.class, Objects.requireNonNull(uploadService, "uploadService"));
     }
 
     /**
