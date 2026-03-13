@@ -341,6 +341,42 @@ sceneManager.exit();
 - Storage abstraction не должен смешиваться с messaging layer.
 - FSM/scenes runtime errors идут в существующий runtime error boundary.
 
+## Error behavior (Sprint 8.4.1)
+
+Ниже зафиксирована целевая семантика ошибок для FSM/scenes слоя.
+
+- `missing state`:
+  - `FSMContext.currentState()` возвращает `Optional.empty()`;
+  - `StateFilter` трактует это как normal no-match (`FilterStatus.NOT_MATCHED`);
+  - это не runtime error и не идёт в `error` observer само по себе.
+- `unknown scene`:
+  - `SceneManager.enter("...")` кидает `SceneNotFoundException`;
+  - если вызов происходит внутри handler pipeline, ошибка классифицируется как runtime dispatch error (`HANDLER_FAILURE`) и прокидывается в `error` observer.
+- `invalid scene`:
+  - пустой/blank `sceneId` -> `IllegalArgumentException`;
+  - scene id существует, но target не соответствует ожидаемому типу wizard -> `WizardFlowException`.
+- `invalid step progression`:
+  - `WizardManager.next()/back()` без активного wizard -> `WizardFlowException`;
+  - это runtime error в handler execution path.
+- `storage failure`:
+  - failures на storage boundary (`SceneStorage`/`FSMStorage`) оборачиваются в `FsmStorageException` с operation label;
+  - ошибка не скрывается и поднимается вверх по runtime pipeline.
+- `scene manager misuse`:
+  - вызов runtime shortcuts (`RuntimeContext.scenes()/wizard()`) без configured scene runtime -> `IllegalStateException`;
+  - это configuration/programming error (обычно ловится на этапе wiring).
+
+### Runtime vs configuration/programming errors
+
+- Runtime dispatch errors (должны доходить до `error` observer при выполнении handler-а):
+  - `SceneNotFoundException`,
+  - `WizardFlowException`,
+  - `FsmStorageException`,
+  - и любые исключения из scene hooks (`onEnter/onExit`).
+- Configuration/programming errors:
+  - отсутствующий runtime wiring (`RuntimeContext.scenes()/wizard()` без bootstrap),
+  - некорректные аргументы API (`IllegalArgumentException` для пустых id),
+  - некорректная registry конфигурация (duplicate scene registration).
+
 ## Notes
 
 - State/data model intentionally conservative для предсказуемого API.

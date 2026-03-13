@@ -18,8 +18,10 @@ import ru.max.botframework.fsm.MemoryStorage;
 import ru.max.botframework.fsm.SceneManager;
 import ru.max.botframework.fsm.SceneSession;
 import ru.max.botframework.fsm.SceneStateBinding;
+import ru.max.botframework.fsm.SceneNotFoundException;
 import ru.max.botframework.fsm.StateScope;
 import ru.max.botframework.fsm.Wizard;
+import ru.max.botframework.fsm.WizardFlowException;
 import ru.max.botframework.fsm.WizardManager;
 import ru.max.botframework.fsm.WizardStep;
 import ru.max.botframework.model.Chat;
@@ -316,6 +318,61 @@ class DispatcherInvocationPipelineIntegrationTest {
 
         assertEquals(DispatchStatus.HANDLED, result.status());
         assertTrue(probe.afterExit.isEmpty());
+    }
+
+    @Test
+    void sceneRuntimeErrorsFlowIntoErrorObserverAsRuntimeFailures() {
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(new MemoryStorage())
+                .withStateScope(StateScope.USER_IN_CHAT)
+                .withSceneRegistry(new InMemorySceneRegistry().register(Wizard.named("checkout").step("email").build()))
+                .withSceneStorage(new MemorySceneStorage());
+        Router router = new Router("scenes-errors");
+        AtomicInteger errorCalls = new AtomicInteger();
+
+        router.message(BuiltInFilters.textEquals("scene-missing"), (message, context) ->
+                context.scenes().enter("unknown-scene"));
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertEquals(RuntimeDispatchErrorType.HANDLER_FAILURE, error.type());
+            assertTrue(error.error() instanceof SceneNotFoundException);
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("scene-missing")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertTrue(result.errorOpt().orElseThrow() instanceof SceneNotFoundException);
+        assertEquals(1, errorCalls.get());
+    }
+
+    @Test
+    void invalidWizardProgressionFlowsIntoErrorObserverAsRuntimeFailure() {
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(new MemoryStorage())
+                .withStateScope(StateScope.USER_IN_CHAT)
+                .withSceneRegistry(new InMemorySceneRegistry().register(Wizard.named("checkout").step("email").build()))
+                .withSceneStorage(new MemorySceneStorage());
+        Router router = new Router("wizard-errors");
+        AtomicInteger errorCalls = new AtomicInteger();
+
+        router.message(BuiltInFilters.textEquals("wizard-next-without-enter"), (message, context) -> context.wizard().next());
+        router.error(error -> {
+            errorCalls.incrementAndGet();
+            assertEquals(RuntimeDispatchErrorType.HANDLER_FAILURE, error.type());
+            assertTrue(error.error() instanceof WizardFlowException);
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("wizard-next-without-enter"))
+                .toCompletableFuture()
+                .join();
+
+        assertEquals(DispatchStatus.FAILED, result.status());
+        assertTrue(result.errorOpt().orElseThrow() instanceof WizardFlowException);
+        assertEquals(1, errorCalls.get());
     }
 
     @Test

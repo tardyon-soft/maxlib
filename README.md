@@ -341,7 +341,9 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - DI/invocation есть, но resolution сейчас by-type (без annotation qualifiers);
 - FSM/scenes реализованы и интегрированы в runtime (`FSMContext`, `StateFilter`,
   `Scene/SceneRegistry/SceneManager`, `Wizard/WizardManager`, context + DI access),
-  но advanced scene filtering helpers и более богатые scene DX-утилиты ещё в roadmap;
+  включая зафиксированное error behavior (`SceneNotFoundException`, `WizardFlowException`,
+  `FsmStorageException`) с runtime propagation в `error` observer;
+  advanced scene filtering helpers и более богатые scene DX-утилиты ещё в roadmap;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media layer реализован, но остаются ограничения:
   - нет helper слоя для `GET /videos/{videoToken}`;

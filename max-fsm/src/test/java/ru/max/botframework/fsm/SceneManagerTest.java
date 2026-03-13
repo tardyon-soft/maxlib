@@ -1,6 +1,7 @@
 package ru.max.botframework.fsm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Clock;
@@ -8,6 +9,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import ru.max.botframework.model.ChatId;
@@ -125,6 +128,67 @@ class SceneManagerTest {
         assertEquals("confirm", manager.currentScene().toCompletableFuture().join().orElseThrow().sceneId());
         assertEquals("scene:confirm", fsm.currentState().toCompletableFuture().join().orElseThrow());
         assertEquals("confirm", fsm.data().toCompletableFuture().join().get("step", String.class).orElseThrow());
+    }
+
+    @Test
+    void enterFailsForUnknownScene() {
+        MemoryStorage fsmStorage = new MemoryStorage();
+        FSMContext fsm = FSMContext.of(fsmStorage, StateKey.user(new UserId("u-42")));
+        SceneManager manager = new DefaultSceneManager(new InMemorySceneRegistry(), new MemorySceneStorage(), fsm);
+
+        SceneNotFoundException thrown = assertThrows(
+                SceneNotFoundException.class,
+                () -> manager.enter("missing").toCompletableFuture().join()
+        );
+        assertEquals("Scene 'missing' is not registered", thrown.getMessage());
+    }
+
+    @Test
+    void enterRejectsBlankSceneId() {
+        MemoryStorage fsmStorage = new MemoryStorage();
+        FSMContext fsm = FSMContext.of(fsmStorage, StateKey.user(new UserId("u-43")));
+        SceneManager manager = new DefaultSceneManager(new InMemorySceneRegistry(), new MemorySceneStorage(), fsm);
+
+        IllegalArgumentException thrown = assertThrows(
+                IllegalArgumentException.class,
+                () -> manager.enter("  ").toCompletableFuture().join()
+        );
+        assertEquals("sceneId must not be blank", thrown.getMessage());
+    }
+
+    @Test
+    void sceneStorageFailuresAreWrappedIntoFsmStorageException() {
+        MemoryStorage fsmStorage = new MemoryStorage();
+        FSMContext fsm = FSMContext.of(fsmStorage, StateKey.user(new UserId("u-99")));
+        SceneStorage failingStorage = new SceneStorage() {
+            @Override
+            public CompletionStage<java.util.Optional<SceneSession>> get(StateKey key) {
+                return CompletableFuture.failedFuture(new IllegalStateException("storage unavailable"));
+            }
+
+            @Override
+            public CompletionStage<Void> set(StateKey key, SceneSession session) {
+                return CompletableFuture.failedFuture(new IllegalStateException("storage unavailable"));
+            }
+
+            @Override
+            public CompletionStage<Void> clear(StateKey key) {
+                return CompletableFuture.failedFuture(new IllegalStateException("storage unavailable"));
+            }
+        };
+        SceneManager manager = new DefaultSceneManager(
+                new InMemorySceneRegistry().register(new ProbeScene("checkout")),
+                failingStorage,
+                fsm
+        );
+
+        CompletionException thrown = assertThrows(
+                CompletionException.class,
+                () -> manager.enter("checkout").toCompletableFuture().join()
+        );
+        assertTrue(thrown.getCause() instanceof FsmStorageException);
+        assertTrue(thrown.getCause().getMessage().contains("sceneStorage.set"));
+        assertTrue(thrown.getCause().getCause() instanceof IllegalStateException);
     }
 
     private static final class ProbeScene implements Scene {

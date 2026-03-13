@@ -3,6 +3,8 @@ package ru.max.botframework.fsm;
 import java.time.Clock;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -36,7 +38,7 @@ public final class DefaultSceneManager implements SceneManager {
 
     @Override
     public CompletionStage<Optional<SceneSession>> currentScene() {
-        return sceneStorage.get(fsm.scope());
+        return wrapStorageFailure(sceneStorage.get(fsm.scope()), "sceneStorage.get");
     }
 
     @Override
@@ -46,8 +48,11 @@ public final class DefaultSceneManager implements SceneManager {
         SceneSession session = new SceneSession(normalized, clock.instant());
         SceneContext context = new DefaultSceneContext(fsm, session);
 
-        return sceneStorage.set(fsm.scope(), session)
-                .thenCompose(ignored -> fsm.setState(stateBinding.stateFor(normalized)))
+        return wrapStorageFailure(sceneStorage.set(fsm.scope(), session), "sceneStorage.set")
+                .thenCompose(ignored -> wrapStorageFailure(
+                        fsm.setState(stateBinding.stateFor(normalized)),
+                        "fsm.setState"
+                ))
                 .thenCompose(ignored -> scene.onEnter(context));
     }
 
@@ -65,9 +70,26 @@ public final class DefaultSceneManager implements SceneManager {
                     .orElseGet(() -> java.util.concurrent.CompletableFuture.completedFuture(null));
 
             return lifecycle
-                    .thenCompose(ignored -> sceneStorage.clear(fsm.scope()))
-                    .thenCompose(ignored -> fsm.clearState());
+                    .thenCompose(ignored -> wrapStorageFailure(sceneStorage.clear(fsm.scope()), "sceneStorage.clear"))
+                    .thenCompose(ignored -> wrapStorageFailure(fsm.clearState(), "fsm.clearState"));
         });
+    }
+
+    private static <T> CompletionStage<T> wrapStorageFailure(CompletionStage<T> stage, String operation) {
+        return stage.handle((value, throwable) -> {
+            if (throwable == null) {
+                return CompletableFuture.completedFuture(value);
+            }
+            Throwable cause = unwrap(throwable);
+            return CompletableFuture.<T>failedFuture(new FsmStorageException(operation, cause));
+        }).thenCompose(next -> next);
+    }
+
+    private static Throwable unwrap(Throwable throwable) {
+        if (throwable instanceof CompletionException completion && completion.getCause() != null) {
+            return completion.getCause();
+        }
+        return throwable;
     }
 
     private static String normalizeSceneId(String sceneId) {

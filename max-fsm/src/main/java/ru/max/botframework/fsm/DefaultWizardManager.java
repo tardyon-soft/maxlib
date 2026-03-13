@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -28,7 +29,7 @@ public final class DefaultWizardManager implements WizardManager {
     @Override
     public CompletionStage<Void> enter(String wizardId) {
         Wizard wizard = requireWizard(wizardId);
-        WizardStep first = wizard.firstStep().orElseThrow(() -> new IllegalStateException("wizard has no steps"));
+        WizardStep first = wizard.firstStep().orElseThrow(() -> WizardFlowException.noSteps(wizard.id()));
 
         return scenes.enter(wizard.id())
                 .thenCompose(ignored -> persistStep(0, first));
@@ -41,7 +42,8 @@ public final class DefaultWizardManager implements WizardManager {
                 return CompletableFuture.completedFuture(Optional.empty());
             }
             Wizard wizard = wizardOpt.orElseThrow();
-            return fsm.data().thenApply(data -> readStepIndex(data).flatMap(wizard::stepAt));
+            return wrapStorageFailure(fsm.data(), "fsm.data")
+                    .thenApply(data -> readStepIndex(data).flatMap(wizard::stepAt));
         });
     }
 
@@ -62,8 +64,8 @@ public final class DefaultWizardManager implements WizardManager {
 
     private CompletionStage<Void> move(int delta) {
         return currentWizard().thenCompose(wizardOpt -> {
-            Wizard wizard = wizardOpt.orElseThrow(() -> new IllegalStateException("wizard is not active"));
-            return fsm.data().thenCompose(data -> {
+            Wizard wizard = wizardOpt.orElseThrow(WizardFlowException::notActive);
+            return wrapStorageFailure(fsm.data(), "fsm.data").thenCompose(data -> {
                 int current = readStepIndex(data).orElse(0);
                 int target = Math.max(0, Math.min(wizard.steps().size() - 1, current + delta));
                 if (target == current) {
@@ -90,29 +92,46 @@ public final class DefaultWizardManager implements WizardManager {
         if (scene instanceof Wizard wizard) {
             return wizard;
         }
-        throw new IllegalStateException("scene '%s' is not a wizard".formatted(scene.id()));
+        throw WizardFlowException.sceneIsNotWizard(scene.id());
     }
 
     private CompletionStage<Void> persistStep(int index, WizardStep step) {
-        return fsm.updateData(Map.of(
+        return wrapStorageFailure(fsm.updateData(Map.of(
                 STEP_INDEX_KEY, index,
                 STEP_ID_KEY, step.id()
-        )).thenApply(ignored -> null);
+        )), "fsm.updateData").thenApply(ignored -> null);
     }
 
     private CompletionStage<Void> clearWizardMetadata() {
-        return fsm.data().thenCompose(data -> {
+        return wrapStorageFailure(fsm.data(), "fsm.data").thenCompose(data -> {
             if (data.values().isEmpty()) {
                 return CompletableFuture.completedFuture(null);
             }
             LinkedHashMap<String, Object> kept = new LinkedHashMap<>(data.values());
             kept.remove(STEP_INDEX_KEY);
             kept.remove(STEP_ID_KEY);
-            return fsm.setData(StateData.of(kept));
+            return wrapStorageFailure(fsm.setData(StateData.of(kept)), "fsm.setData");
         });
     }
 
     private static Optional<Integer> readStepIndex(StateData data) {
         return data.get(STEP_INDEX_KEY, Integer.class);
+    }
+
+    private static <T> CompletionStage<T> wrapStorageFailure(CompletionStage<T> stage, String operation) {
+        return stage.handle((value, throwable) -> {
+            if (throwable == null) {
+                return CompletableFuture.completedFuture(value);
+            }
+            Throwable cause = unwrap(throwable);
+            return CompletableFuture.<T>failedFuture(new FsmStorageException(operation, cause));
+        }).thenCompose(next -> next);
+    }
+
+    private static Throwable unwrap(Throwable throwable) {
+        if (throwable instanceof CompletionException completion && completion.getCause() != null) {
+            return completion.getCause();
+        }
+        return throwable;
     }
 }
