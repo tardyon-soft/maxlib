@@ -175,6 +175,10 @@ Sprint 9 contracts:
   - filters + middleware + DI;
   - messaging/keyboards/callbacks;
   - FSM/scenes и upload/media runtime usage.
+- проведён docs/README hardening для public entrypoint:
+  - README перестроен в quick-start/architecture/modules/limitations формате;
+  - `api-contract.md` синхронизирован с фактическими public interfaces;
+  - документация очищена от устаревших и противоречивых обещаний.
 
 Основные результаты:
 - Spring Boot starter auto-configuration;
