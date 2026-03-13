@@ -11,8 +11,8 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Sprint 4 (`Filters/Middleware/context enrichment`) завершён.
 - Sprint 5 (`DI / handler parameter resolution`) завершён.
 - Sprint 6 (`Messages/Keyboards/Callbacks ergonomics`) завершён.
-- Следующий этап: Sprint 7 (`Upload/Media`).
-- Sprint 7.1: contract freeze для upload/media API (`docs/upload-and-media.md`).
+- Sprint 7 (`Upload/Media`) завершён.
+- Следующий этап: Sprint 8 (`FSM/Scenes/Storage`).
 
 ## Sprint 0 — Spec/API Contract Freeze
 
@@ -106,10 +106,14 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Реализовать upload/media abstractions с сокрытием MAX multi-step upload flow.
 
 Основные результаты:
-- `UploadInput` forms (`path`, `bytes`, `stream`, `resource`, `existing ref`);
-- high-level media builders;
-- hidden `prepare/transfer/finalize/send` orchestration;
-- upload/media error model и тесты.
+- `InputFile` forms (`fromPath`, `fromBytes`, `fromStream`) с metadata API;
+- hidden `prepare/transfer/finalize` orchestration (`UploadService`) + multipart/resumable transfer paths;
+- unified `UploadResult` с `UploadMediaKind` и attachment payload normalization;
+- high-level media attachments (`ImageAttachment`, `FileAttachment`, `VideoAttachment`, `AudioAttachment`);
+- high-level media send/reply facade (`MediaMessagingFacade`);
+- token-aware video/audio behavior внутри media mapping;
+- runtime integration (`Dispatcher.withUploadService`, `RuntimeContext.media/replyImage/replyFile/sendVideo/sendAudio`);
+- Sprint 7 regression safety net (unit + integration-style coverage) и usage examples.
 
 ## Sprint 8 — FSM/Scenes
 

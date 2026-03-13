@@ -6,6 +6,9 @@ import java.util.Optional;
 
 /**
  * Final upload result used by media mapping layer.
+ *
+ * <p>This model intentionally keeps only attachment-oriented data.
+ * Raw HTTP/chunk transfer details are not exposed through public API.</p>
  */
 public record UploadResult(
         UploadRef ref,

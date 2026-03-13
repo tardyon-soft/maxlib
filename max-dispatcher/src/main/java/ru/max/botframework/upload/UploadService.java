@@ -5,6 +5,10 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Upload orchestration contract.
+ *
+ * <p>Public layer boundary for upload/media pipeline:
+ * callers provide {@link InputFile} and receive normalized {@link UploadResult},
+ * while transport details stay behind preparation/transfer/finalize gateways.</p>
  */
 public interface UploadService {
 

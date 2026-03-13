@@ -25,7 +25,6 @@ import ru.max.botframework.model.request.SendMessageRequest;
 import ru.max.botframework.upload.InputFile;
 import ru.max.botframework.upload.UploadFlowType;
 import ru.max.botframework.upload.UploadMediaKind;
-import ru.max.botframework.upload.UploadPayloadKeys;
 import ru.max.botframework.upload.UploadRef;
 import ru.max.botframework.upload.UploadRequest;
 import ru.max.botframework.upload.UploadResult;
@@ -72,7 +71,7 @@ class MediaMessagingFacadeTest {
                         UploadMediaKind.VIDEO,
                         "video/mp4",
                         456L,
-                        Map.of(UploadPayloadKeys.VIDEO_TOKEN, "video-token-1")
+                        Map.of("videoToken", "video-token-1")
                 ))
         );
         when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-reply", ""));
@@ -106,7 +105,7 @@ class MediaMessagingFacadeTest {
                         UploadMediaKind.AUDIO,
                         "audio/mpeg",
                         11L,
-                        Map.of(UploadPayloadKeys.AUDIO_TOKEN, "audio-token-1")
+                        Map.of("audioToken", "audio-token-1")
                 )));
         when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-out", ""));
 

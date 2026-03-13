@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import ru.max.botframework.model.MessageAttachmentType;
 import ru.max.botframework.upload.UploadFlowType;
 import ru.max.botframework.upload.UploadMediaKind;
-import ru.max.botframework.upload.UploadPayloadKeys;
 import ru.max.botframework.upload.UploadRef;
 import ru.max.botframework.upload.UploadResult;
 
@@ -65,7 +64,7 @@ class MediaAttachmentTest {
                 1000L,
                 "video/mp4",
                 UploadMediaKind.VIDEO,
-                Map.of(UploadPayloadKeys.VIDEO_TOKEN, "video-token-1", "duration", "12")
+                Map.of("videoToken", "video-token-1", "duration", "12")
         );
         UploadResult audio = new UploadResult(
                 new UploadRef("ref-audio"),
@@ -73,7 +72,7 @@ class MediaAttachmentTest {
                 500L,
                 "audio/mpeg",
                 UploadMediaKind.AUDIO,
-                Map.of(UploadPayloadKeys.AUDIO_TOKEN, "audio-token-1")
+                Map.of("audioToken", "audio-token-1")
         );
 
         var videoAttachment = VideoAttachment.from(video).toNewMessageAttachment();

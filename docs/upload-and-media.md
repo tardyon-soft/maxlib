@@ -111,7 +111,6 @@ Out of scope:
 - `InputFile.fromPath(Path path)`;
 - `InputFile.fromBytes(byte[] bytes, String fileName)`;
 - `InputFile.fromStream(StreamSupplier stream, String fileName)`;
-- `InputFile.fromExistingRef(UploadRef ref)` для повторного использования уже загруженного файла.
 
 Границы:
 - не содержит HTTP/transport деталей;
@@ -135,7 +134,7 @@ Out of scope:
 Текущая реализация Sprint 7.1.3:
 - `DefaultUploadService` orchestrates `prepare -> transfer -> finalize -> map`;
 - `UploadService.of(...)` даёт базовую wiring-точку с default mapper;
-- конкретные transport реализации gateways добавляются отдельно в следующих задачах Sprint 7.
+- transport реализации gateways и media façade интеграция добавлены в Sprint 7.2-7.3.
 
 ### Multipart Upload Flow
 
@@ -178,10 +177,10 @@ Contract-level этапы:
 ### Media Attachment Abstractions
 
 High-level typed media attachments:
-- `MediaAttachment.image(InputFile input)`;
-- `MediaAttachment.file(InputFile input)`;
-- `MediaAttachment.video(InputFile input)`;
-- `MediaAttachment.audio(InputFile input)`.
+- `MediaAttachment.image(UploadResult uploaded)`;
+- `MediaAttachment.file(UploadResult uploaded)`;
+- `MediaAttachment.video(UploadResult uploaded)`;
+- `MediaAttachment.audio(UploadResult uploaded)`.
 
 Optional common options:
 - `caption`;
@@ -197,10 +196,10 @@ Optional common options:
 
 Назначение: ergonomic API поверх уже существующих `MessagingFacade` + `UploadService`.
 
-Примерный contract:
-- `media.send(MessageTarget, MediaMessageBuilder)`;
-- `media.reply(Message, MediaMessageBuilder)`;
-- mapping в существующие message endpoints через ранее введённые DTO/request builders.
+Текущий contract (`MediaMessagingFacade`):
+- `sendImage/sendFile/sendVideo/sendAudio`;
+- `replyImage/replyFile/replyVideo/replyAudio`;
+- mapping в существующие message endpoints через `MessageBuilder + NewMessageAttachment`.
 
 Границы:
 - не дублирует низкоуровневые SDK clients;
@@ -219,27 +218,15 @@ InputFile streamFile = InputFile.fromStream(() -> inputStream, "voice.ogg");
 ### 2) Send image/file/video/audio
 
 ```java
-media.send(
-    MessageTarget.chat(chatId),
-    MediaMessages.image(InputFile.fromPath(Path.of("./photo.jpg")))
-        .caption("Фото")
-);
-
-media.send(
-    MessageTarget.chat(chatId),
-    MediaMessages.file(InputFile.fromBytes(bytes, "doc.pdf"))
-        .caption("Документ")
-);
+media.sendImage(MessageTarget.chat(chatId), InputFile.fromPath(Path.of("./photo.jpg")));
+media.sendFile(MessageTarget.chat(chatId), InputFile.fromBytes(bytes, "doc.pdf"), "Документ");
 ```
 
 ### 3) Reply with media
 
 ```java
-media.reply(
-    sourceMessage,
-    MediaMessages.video(InputFile.fromPath(Path.of("./clip.mp4")))
-        .caption("Видео-ответ")
-);
+media.replyVideo(sourceMessage, InputFile.fromPath(Path.of("./clip.mp4")), "Видео-ответ");
+media.replyAudio(sourceMessage, InputFile.fromBytes(audioBytes, "voice.mp3"), "Аудио-ответ");
 ```
 
 ## Error Boundaries

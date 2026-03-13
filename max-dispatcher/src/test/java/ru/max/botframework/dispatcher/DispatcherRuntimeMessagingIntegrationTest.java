@@ -38,7 +38,6 @@ import ru.max.botframework.model.request.SendMessageRequest;
 import ru.max.botframework.upload.InputFile;
 import ru.max.botframework.upload.UploadFlowType;
 import ru.max.botframework.upload.UploadMediaKind;
-import ru.max.botframework.upload.UploadPayloadKeys;
 import ru.max.botframework.upload.UploadRef;
 import ru.max.botframework.upload.UploadResult;
 import ru.max.botframework.upload.UploadService;
@@ -220,12 +219,12 @@ class DispatcherRuntimeMessagingIntegrationTest {
                 CompletableFuture.completedFuture(uploadResult(
                         "ref-video",
                         UploadMediaKind.VIDEO,
-                        java.util.Map.of(UploadPayloadKeys.VIDEO_TOKEN, "video-token-1")
+                        java.util.Map.of("videoToken", "video-token-1")
                 )),
                 CompletableFuture.completedFuture(uploadResult(
                         "ref-audio",
                         UploadMediaKind.AUDIO,
-                        java.util.Map.of(UploadPayloadKeys.AUDIO_TOKEN, "audio-token-1")
+                        java.util.Map.of("audioToken", "audio-token-1")
                 ))
         );
         when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-out", "media"));

@@ -15,6 +15,9 @@ import ru.max.botframework.upload.UploadService;
 
 /**
  * High-level media send/reply facade over {@link UploadService} and existing {@link MessagingFacade}.
+ *
+ * <p>Facade hides upload orchestration details and keeps runtime API close to
+ * message-level business operations.</p>
  */
 public final class MediaMessagingFacade {
     private final UploadService uploadService;

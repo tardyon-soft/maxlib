@@ -6,7 +6,7 @@ Java framework для разработки ботов на платформе MA
 
 ## Sprint status
 
-Текущий этап: `Sprint 7 — upload / media pipeline`.
+Текущий этап: `Sprint 8 — FSM / scenes / storage`.
 
 Завершённые этапы:
 - Sprint 1 (`client/DTO/errors`);
@@ -15,12 +15,13 @@ Java framework для разработки ботов на платформе MA
 - Sprint 4 (`filters/middleware/context enrichment`).
 - Sprint 5 (`DI / parameter resolution / invocation`).
 - Sprint 6 (`messages / keyboards / callbacks ergonomics`).
+- Sprint 7 (`upload / media pipeline`).
 
-Текущая цель Sprint 7:
-- upload/media abstractions поверх существующего SDK/runtime;
-- скрытие многошагового MAX upload flow за high-level API;
-- интеграция media pipeline в messaging ergonomics без ломающих изменений runtime.
-- контракт Sprint 7 зафиксирован в `docs/upload-and-media.md`.
+Текущая цель Sprint 8:
+- `FSMContext` и storage abstraction;
+- state scopes + `StateFilter`;
+- scenes/wizard minimal runtime APIs;
+- интеграция state layer в текущий dispatcher/runtime pipeline.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -184,7 +185,10 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - DI/invocation есть, но resolution сейчас by-type (без annotation qualifiers);
 - FSM/scenes runtime ещё не реализованы;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
-- upload/media pipeline реализован частично (multipart + resumable transfer paths), high-level media send API ещё не готов;
+- upload/media layer реализован, но остаются ограничения:
+  - нет helper слоя для `GET /videos/{videoToken}`;
+  - нет auto-transcoding/media-processing subsystem;
+  - нет persistent/distributed resume storage для resumable uploads;
 - webhook source runtime loop пока не реализован (есть receiver + pipeline foundation);
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
 
@@ -232,10 +236,10 @@ Sprint 6 завершён:
   - unit: message/keyboard/buttons/validation, callback answer builders/facade, chat actions facade/helpers;
   - integration-style: runtime handler -> `reply`, `answerCallback`, `chatAction`, plus reflective facade resolution.
 
-Следующий этап (Sprint 7):
-- upload/media abstractions и hidden multi-step flow orchestration;
-- media builders и интеграция в существующий Message API;
-- upload/media error model и regression tests.
+Следующий этап (Sprint 8):
+- FSMContext + storage abstraction;
+- state scopes и `StateFilter`;
+- Scene/SceneManager и minimal wizard API.
 
 Sprint 7.1.2 implemented:
 - unified `InputFile` API:
