@@ -107,9 +107,13 @@ Starter предоставляет thin adapter для Spring Web:
 - пользователь объявляет один или несколько `Router` bean-ов;
 - starter включает их в `Dispatcher` в deterministic порядке;
 - root `Dispatcher` bean остаётся единым entrypoint runtime.
+- deterministic порядок задаётся через Spring ordering (`@Order` / `Ordered`);
+- composition нескольких feature-router-ов делается обычным `dispatcher.includeRouter(...)`
+  на стороне starter и/или через `router.includeRouter(child)` внутри router bean.
 
 Допустимый минимум для Sprint 9:
 - explicit bean registration без тяжёлого classpath scanning framework.
+- без отдельного annotation ecosystem для handler discovery.
 
 ## Desired DX
 
@@ -119,13 +123,25 @@ Starter предоставляет thin adapter для Spring Web:
 @Configuration
 class BotConfig {
     @Bean
+    @org.springframework.core.annotation.Order(10)
     Router mainRouter() {
         Router router = new Router("main");
         router.message(message -> java.util.concurrent.CompletableFuture.completedFuture(null));
         return router;
     }
+
+    @Bean
+    @org.springframework.core.annotation.Order(20)
+    Router adminRouter() {
+        Router router = new Router("admin");
+        router.callback(callback -> java.util.concurrent.CompletableFuture.completedFuture(null));
+        return router;
+    }
 }
 ```
+
+В этом примере starter автоматически агрегирует оба router bean-а в `Dispatcher`
+в порядке `mainRouter -> adminRouter`.
 
 Polling mode:
 - достаточно `max.bot.mode=POLLING` и `Router` bean-ов.

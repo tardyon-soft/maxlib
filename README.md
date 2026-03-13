@@ -553,6 +553,34 @@ Sprint 9.2.3 polling mode baseline:
 - in polling mode runner starts on application startup and stops gracefully on shutdown;
 - polling path uses configured `Dispatcher`/`Router` graph without duplicating core polling logic.
 
+Sprint 9.2.4 router registration story:
+- starter uses explicit `Router` bean registration and deterministic aggregation into `Dispatcher`;
+- multiple routers are composed in Spring order (`@Order` / `Ordered`) and keep core first-match semantics;
+- router tree composition remains available through core `router.includeRouter(...)` without Spring-specific runtime coupling.
+
+Spring router registration example:
+
+```java
+@Configuration
+class BotRouters {
+    @Bean
+    @Order(10)
+    Router mainRouter() {
+        Router router = new Router("main");
+        router.message((message, context) -> CompletableFuture.completedFuture(null));
+        return router;
+    }
+
+    @Bean
+    @Order(20)
+    Router adminRouter() {
+        Router router = new Router("admin");
+        router.callback((callback, context) -> CompletableFuture.completedFuture(null));
+        return router;
+    }
+}
+```
+
 Polling configuration example:
 
 ```yaml

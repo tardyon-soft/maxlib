@@ -153,6 +153,10 @@ Sprint 9 contracts:
 - реализован polling bootstrap для Spring:
   - lifecycle-managed `LongPollingRunner` start/stop;
   - dispatcher handler invocation through polling ingestion path.
+- реализована router/handler registration story для starter:
+  - explicit `Router` bean aggregation into `Dispatcher`;
+  - deterministic registration order via `@Order` / `Ordered`;
+  - router tree composition preserved through core `router.includeRouter(...)`.
 
 Основные результаты:
 - Spring Boot starter auto-configuration;
