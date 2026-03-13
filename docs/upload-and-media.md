@@ -53,6 +53,15 @@
   - `UploadService`;
   - `MessagingFacade`.
 
+Состояние реализации Sprint 7.3.3:
+- добавлен token-aware behavior для video/audio:
+  - `UploadResult.mediaTokenOptional()` извлекает token из normalized payload;
+  - поддерживаемые payload keys: `videoToken`, `audioToken`, fallback `token`;
+  - `VideoAttachment`/`AudioAttachment` используют token как attachment reference
+    (fallback на `uploadRef`, если token отсутствует).
+- image/file flows остаются uploadRef-oriented.
+- read-model helper для `GET /videos/{videoToken}` не добавлялся в текущем scope.
+
 ## Goal
 
 Дать разработчику ergonomic API для отправки медиа в стиле framework-level DX:

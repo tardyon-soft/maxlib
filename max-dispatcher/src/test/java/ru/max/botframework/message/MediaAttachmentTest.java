@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import ru.max.botframework.model.MessageAttachmentType;
 import ru.max.botframework.upload.UploadFlowType;
 import ru.max.botframework.upload.UploadMediaKind;
+import ru.max.botframework.upload.UploadPayloadKeys;
 import ru.max.botframework.upload.UploadRef;
 import ru.max.botframework.upload.UploadResult;
 
@@ -64,7 +65,7 @@ class MediaAttachmentTest {
                 1000L,
                 "video/mp4",
                 UploadMediaKind.VIDEO,
-                Map.of("duration", "12")
+                Map.of(UploadPayloadKeys.VIDEO_TOKEN, "video-token-1", "duration", "12")
         );
         UploadResult audio = new UploadResult(
                 new UploadRef("ref-audio"),
@@ -72,11 +73,16 @@ class MediaAttachmentTest {
                 500L,
                 "audio/mpeg",
                 UploadMediaKind.AUDIO,
-                Map.of()
+                Map.of(UploadPayloadKeys.AUDIO_TOKEN, "audio-token-1")
         );
 
-        assertEquals(MessageAttachmentType.VIDEO, VideoAttachment.from(video).toNewMessageAttachment().type());
-        assertEquals(MessageAttachmentType.AUDIO, AudioAttachment.from(audio).toNewMessageAttachment().type());
+        var videoAttachment = VideoAttachment.from(video).toNewMessageAttachment();
+        var audioAttachment = AudioAttachment.from(audio).toNewMessageAttachment();
+
+        assertEquals(MessageAttachmentType.VIDEO, videoAttachment.type());
+        assertEquals("video-token-1", videoAttachment.input().uploadRef());
+        assertEquals(MessageAttachmentType.AUDIO, audioAttachment.type());
+        assertEquals("audio-token-1", audioAttachment.input().uploadRef());
     }
 
     @Test

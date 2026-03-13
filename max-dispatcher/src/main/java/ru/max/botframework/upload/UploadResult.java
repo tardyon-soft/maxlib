@@ -46,4 +46,31 @@ public record UploadResult(
         Objects.requireNonNull(key, "key");
         return Optional.ofNullable(attachmentPayload.get(key));
     }
+
+    /**
+     * Returns media token for token-aware media kinds (video/audio), if available.
+     */
+    public Optional<String> mediaTokenOptional() {
+        return switch (mediaKind) {
+            case VIDEO -> firstNonBlank(
+                    attachmentPayload.get(UploadPayloadKeys.VIDEO_TOKEN),
+                    attachmentPayload.get(UploadPayloadKeys.TOKEN)
+            );
+            case AUDIO -> firstNonBlank(
+                    attachmentPayload.get(UploadPayloadKeys.AUDIO_TOKEN),
+                    attachmentPayload.get(UploadPayloadKeys.TOKEN)
+            );
+            default -> Optional.empty();
+        };
+    }
+
+    private static Optional<String> firstNonBlank(String primary, String fallback) {
+        if (primary != null && !primary.isBlank()) {
+            return Optional.of(primary);
+        }
+        if (fallback != null && !fallback.isBlank()) {
+            return Optional.of(fallback);
+        }
+        return Optional.empty();
+    }
 }

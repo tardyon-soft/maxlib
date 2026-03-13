@@ -297,6 +297,15 @@ Sprint 7.3.2 implemented:
     - `sendImage/sendFile/sendVideo/sendAudio`;
     - `replyImage/replyFile/replyVideo/replyAudio`.
 
+Sprint 7.3.3 implemented:
+- token-aware media flow for `video/audio`:
+  - `UploadResult` now exposes `mediaTokenOptional()` for token-aware media kinds;
+  - known payload keys are centralized in `UploadPayloadKeys` (`videoToken`, `audioToken`, `token`);
+  - `VideoAttachment`/`AudioAttachment` map token to outgoing attachment reference with fallback to `uploadRef`;
+  - `ImageAttachment`/`FileAttachment` continue using regular `uploadRef` flow.
+- `GET /videos/{videoToken}` helper layer is intentionally not added at this stage to keep Sprint 7 scope focused
+  on send-path orchestration and attachment mapping.
+
 Example:
 
 ```java

@@ -42,7 +42,11 @@ class UploadResultMapperTest {
                         4096L,
                         "video/mp4",
                         UploadMediaKind.VIDEO,
-                        Map.of("durationSeconds", "12", "previewRef", "preview-1")
+                        Map.of(
+                                "durationSeconds", "12",
+                                "previewRef", "preview-1",
+                                UploadPayloadKeys.VIDEO_TOKEN, "video-token-77"
+                        )
                 )
         );
 
@@ -51,6 +55,7 @@ class UploadResultMapperTest {
         assertEquals(UploadMediaKind.VIDEO, result.mediaKind());
         assertEquals("12", result.attachmentPayloadValue("durationSeconds").orElseThrow());
         assertEquals("preview-1", result.attachmentPayloadValue("previewRef").orElseThrow());
+        assertEquals("video-token-77", result.mediaTokenOptional().orElseThrow());
     }
 
     @Test

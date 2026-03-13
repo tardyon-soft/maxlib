@@ -35,9 +35,10 @@ public record AudioAttachment(UploadResult uploadResult, String caption) impleme
 
     @Override
     public NewMessageAttachment toNewMessageAttachment() {
+        String tokenAwareRef = uploadResult.mediaTokenOptional().orElse(uploadResult.ref().value());
         return NewMessageAttachment.media(
                 MessageAttachmentType.AUDIO,
-                new AttachmentInput(null, uploadResult.ref().value(), null),
+                new AttachmentInput(null, tokenAwareRef, null),
                 caption,
                 uploadResult.contentTypeOptional().orElse(null),
                 uploadResult.bytesTransferred()

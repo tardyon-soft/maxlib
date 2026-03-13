@@ -25,6 +25,7 @@ import ru.max.botframework.model.request.SendMessageRequest;
 import ru.max.botframework.upload.InputFile;
 import ru.max.botframework.upload.UploadFlowType;
 import ru.max.botframework.upload.UploadMediaKind;
+import ru.max.botframework.upload.UploadPayloadKeys;
 import ru.max.botframework.upload.UploadRef;
 import ru.max.botframework.upload.UploadRequest;
 import ru.max.botframework.upload.UploadResult;
@@ -66,7 +67,13 @@ class MediaMessagingFacadeTest {
         UploadService uploadService = Mockito.mock(UploadService.class);
 
         when(uploadService.upload(any(InputFile.class), any(UploadRequest.class))).thenReturn(
-                CompletableFuture.completedFuture(uploadResult("ref-video", UploadMediaKind.VIDEO, "video/mp4", 456L))
+                CompletableFuture.completedFuture(uploadResult(
+                        "ref-video",
+                        UploadMediaKind.VIDEO,
+                        "video/mp4",
+                        456L,
+                        Map.of(UploadPayloadKeys.VIDEO_TOKEN, "video-token-1")
+                ))
         );
         when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-reply", ""));
 
@@ -83,7 +90,7 @@ class MediaMessagingFacadeTest {
         assertEquals(source.chat().id().value(), request.chatId().value());
         assertEquals(source.messageId().value(), request.replyToMessageId().value());
         assertEquals(MessageAttachmentType.VIDEO, request.body().attachments().getFirst().type());
-        assertEquals("ref-video", request.body().attachments().getFirst().input().uploadRef());
+        assertEquals("video-token-1", request.body().attachments().getFirst().input().uploadRef());
         assertEquals("clip", request.body().attachments().getFirst().caption());
     }
 
@@ -94,7 +101,13 @@ class MediaMessagingFacadeTest {
 
         when(uploadService.upload(any(InputFile.class), any(UploadRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(uploadResult("ref-file", UploadMediaKind.FILE, "application/pdf", 10L)))
-                .thenReturn(CompletableFuture.completedFuture(uploadResult("ref-audio", UploadMediaKind.AUDIO, "audio/mpeg", 11L)));
+                .thenReturn(CompletableFuture.completedFuture(uploadResult(
+                        "ref-audio",
+                        UploadMediaKind.AUDIO,
+                        "audio/mpeg",
+                        11L,
+                        Map.of(UploadPayloadKeys.AUDIO_TOKEN, "audio-token-1")
+                )));
         when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-out", ""));
 
         MessagingFacade messagingFacade = new MessagingFacade(client);
@@ -110,17 +123,27 @@ class MediaMessagingFacadeTest {
         assertEquals(MessageAttachmentType.FILE, requests.getFirst().body().attachments().getFirst().type());
         assertEquals("ref-file", requests.getFirst().body().attachments().getFirst().input().uploadRef());
         assertEquals(MessageAttachmentType.AUDIO, requests.get(1).body().attachments().getFirst().type());
-        assertEquals("ref-audio", requests.get(1).body().attachments().getFirst().input().uploadRef());
+        assertEquals("audio-token-1", requests.get(1).body().attachments().getFirst().input().uploadRef());
     }
 
     private static UploadResult uploadResult(String ref, UploadMediaKind kind, String contentType, long size) {
+        return uploadResult(ref, kind, contentType, size, Map.of());
+    }
+
+    private static UploadResult uploadResult(
+            String ref,
+            UploadMediaKind kind,
+            String contentType,
+            long size,
+            Map<String, String> payload
+    ) {
         return new UploadResult(
                 new UploadRef(ref),
                 UploadFlowType.MULTIPART,
                 size,
                 contentType,
                 kind,
-                Map.of()
+                payload
         );
     }
 
