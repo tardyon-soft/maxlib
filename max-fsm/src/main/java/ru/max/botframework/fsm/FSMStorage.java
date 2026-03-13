@@ -7,19 +7,40 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Async storage contract for FSM state and state payload.
+ *
+ * <p>The contract keeps state id and payload data as separate channels.
+ * Implementations are intentionally minimal and do not imply transactions.</p>
  */
 public interface FSMStorage {
 
+    /**
+     * Returns current state id or empty when state is not set.
+     */
     CompletionStage<Optional<String>> getState(StateKey key);
 
+    /**
+     * Replaces current state id for key.
+     */
     CompletionStage<Void> setState(StateKey key, String state);
 
+    /**
+     * Clears current state id while preserving payload data.
+     */
     CompletionStage<Void> clearState(StateKey key);
 
+    /**
+     * Returns current payload data. Implementations should return {@link StateData#empty()} when absent.
+     */
     CompletionStage<StateData> getStateData(StateKey key);
 
+    /**
+     * Replaces payload data for key.
+     */
     CompletionStage<Void> setStateData(StateKey key, StateData data);
 
+    /**
+     * Clears payload data while preserving state id.
+     */
     CompletionStage<Void> clearStateData(StateKey key);
 
     default CompletionStage<StateData> updateStateData(StateKey key, Map<String, Object> patch) {

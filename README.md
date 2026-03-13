@@ -6,7 +6,7 @@ Java framework для разработки ботов на платформе MA
 
 ## Sprint status
 
-Текущий этап: `Sprint 8 — FSM / scenes / storage`.
+Текущий этап: `Sprint 9 — Spring Boot starter / testkit / docs polishing`.
 
 Завершённые этапы:
 - Sprint 1 (`client/DTO/errors`);
@@ -15,13 +15,15 @@ Java framework для разработки ботов на платформе MA
 - Sprint 4 (`filters/middleware/context enrichment`).
 - Sprint 5 (`DI / parameter resolution / invocation`).
 - Sprint 6 (`messages / keyboards / callbacks ergonomics`).
-- Sprint 7 (`upload / media pipeline`).
+- Sprint 7 (`upload / media pipeline`);
+- Sprint 8 (`FSM / scenes / storage`).
 
-Текущая цель Sprint 8:
+Итоги Sprint 8:
 - `FSMContext` и storage abstraction;
 - state scopes + `StateFilter`;
-- scenes/wizard minimal runtime APIs;
-- интеграция state layer в текущий dispatcher/runtime pipeline.
+- scenes/wizard runtime APIs;
+- интеграция state layer в dispatcher/runtime pipeline;
+- error behavior и regression coverage для FSM/scenes.
 - контракт Sprint 8 зафиксирован в `docs/fsm-and-scenes.md`.
 - реализован core state model: `StateScope`, `StateKey`, `StateData`, `StateSnapshot`,
   `StateKeyStrategy` и built-in `StateKeyStrategies` (`USER`, `CHAT`, `USER_IN_CHAT`).
@@ -40,6 +42,11 @@ Java framework для разработки ботов на платформе MA
 - scene/wizard интегрированы в runtime ergonomics:
   `RuntimeContext.scenes()` / `RuntimeContext.wizard()` и DI резолвинг
   `SceneManager` / `WizardManager` параметров handler-ов.
+
+Цель Sprint 9:
+- Spring Boot starter integration;
+- testkit для unit/integration сценариев;
+- docs/README consistency polishing по фактическому API.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -470,7 +477,7 @@ Sprint 6 завершён:
   - unit: message/keyboard/buttons/validation, callback answer builders/facade, chat actions facade/helpers;
   - integration-style: runtime handler -> `reply`, `answerCallback`, `chatAction`, plus reflective facade resolution.
 
-Sprint 8 progress:
+Sprint 8 завершён:
 - FSM/scenes runtime уже интегрирован (`FSMContext`, `StateFilter`, `SceneManager`, `WizardManager`);
 - error behavior зафиксирован и покрыт тестами (`SceneNotFoundException`, `WizardFlowException`, `FsmStorageException`);
 - Sprint 8 test coverage:
@@ -478,6 +485,11 @@ Sprint 8 progress:
     `FSMContext`, `StateFilter`, `SceneRegistry`/`SceneManager`, wizard flow, error scenarios;
   - integration-style: handler + `FSMContext`, routing через `StateFilter`,
     runtime scene lifecycle (`enter -> next -> exit`) через dispatcher pipeline.
+
+Sprint 9 focus:
+- Spring Boot starter auto-configuration layer;
+- testkit для runtime/unit integration сценариев;
+- docs consistency and examples polishing.
 
 Sprint 7.1.2 implemented:
 - unified `InputFile` API:

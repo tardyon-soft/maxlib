@@ -12,7 +12,8 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Sprint 5 (`DI / handler parameter resolution`) завершён.
 - Sprint 6 (`Messages/Keyboards/Callbacks ergonomics`) завершён.
 - Sprint 7 (`Upload/Media`) завершён.
-- Следующий этап: Sprint 8 (`FSM/Scenes/Storage`).
+- Sprint 8 (`FSM/Scenes/Storage`) завершён.
+- Текущий этап: Sprint 9 (`Starter/Testkit/Docs polishing`).
 
 ## Sprint 0 — Spec/API Contract Freeze
 

@@ -8,9 +8,18 @@ import java.util.concurrent.CompletionStage;
  */
 public interface SceneStorage {
 
+    /**
+     * Reads scene session bound to state key.
+     */
     CompletionStage<Optional<SceneSession>> get(StateKey key);
 
+    /**
+     * Stores scene session for state key.
+     */
     CompletionStage<Void> set(StateKey key, SceneSession session);
 
+    /**
+     * Clears scene session for state key.
+     */
     CompletionStage<Void> clear(StateKey key);
 }
