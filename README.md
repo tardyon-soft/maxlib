@@ -208,6 +208,9 @@ Sprint 6.1 foundation implemented:
 - runtime integration: `Dispatcher.withBotClient(...)` injects messaging/callback/action APIs into handlers via
   `RuntimeContext` (`reply`, `answerCallback`, `chatAction`) and parameter resolution (`MessagingFacade`,
   `CallbackFacade`, `ChatActionsFacade`).
+- Sprint 6 test coverage:
+  - unit: message/keyboard/buttons/validation, callback answer builders/facade, chat actions facade/helpers;
+  - integration-style: runtime handler -> `reply`, `answerCallback`, `chatAction`, plus reflective facade resolution.
 
 Пример:
 

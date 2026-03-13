@@ -117,6 +117,15 @@ class RuntimeContextTest {
         );
     }
 
+    @Test
+    void runtimeMessagingHelpersRequireBotClientBootstrap() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+
+        assertThrows(IllegalStateException.class, context::messaging);
+        assertThrows(IllegalStateException.class, context::callbacks);
+        assertThrows(IllegalStateException.class, context::actions);
+    }
+
     private static Update sampleUpdate() {
         return new Update(
                 new UpdateId("u-ctx-1"),

@@ -53,6 +53,23 @@ class ChatActionsFacadeTest {
     }
 
     @Test
+    void mediaHelpersMapToTypedActions() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        when(client.sendChatAction(new ChatId("chat-1"), ChatAction.SENDING_VIDEO)).thenReturn(true);
+        when(client.sendChatAction(new ChatId("chat-1"), ChatAction.SENDING_AUDIO)).thenReturn(true);
+        when(client.sendChatAction(new ChatId("chat-1"), ChatAction.SENDING_FILE)).thenReturn(true);
+        ChatActionsFacade facade = new ChatActionsFacade(client);
+
+        assertTrue(facade.sendingVideo(new ChatId("chat-1")));
+        assertTrue(facade.sendingAudio(new ChatId("chat-1")));
+        assertTrue(facade.sendingFile(new ChatId("chat-1")));
+
+        verify(client).sendChatAction(new ChatId("chat-1"), ChatAction.SENDING_VIDEO);
+        verify(client).sendChatAction(new ChatId("chat-1"), ChatAction.SENDING_AUDIO);
+        verify(client).sendChatAction(new ChatId("chat-1"), ChatAction.SENDING_FILE);
+    }
+
+    @Test
     void resolvesTargetFromRuntimeContextMessageUpdate() {
         MaxBotClient client = Mockito.mock(MaxBotClient.class);
         when(client.sendChatAction(new ChatId("chat-ctx"), ChatAction.SENDING_PHOTO)).thenReturn(true);
@@ -117,6 +134,41 @@ class ChatActionsFacadeTest {
         );
 
         assertEquals("chat action target cannot be resolved from update", exception.getMessage());
+    }
+
+    @Test
+    void dispatchesActionFromCallbackPayload() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        when(client.sendChatAction(new ChatId("chat-cb"), ChatAction.TYPING)).thenReturn(true);
+        ChatActionsFacade facade = new ChatActionsFacade(client);
+
+        boolean result = facade.send(
+                new Callback(
+                        new CallbackId("cb-2"),
+                        "button:1",
+                        sampleUser(),
+                        sampleMessage("chat-cb", "m-cb"),
+                        Instant.parse("2026-03-12T00:00:01Z")
+                ),
+                ChatAction.TYPING
+        );
+
+        assertTrue(result);
+        verify(client).sendChatAction(new ChatId("chat-cb"), ChatAction.TYPING);
+    }
+
+    @Test
+    void failsWhenCallbackWithoutMessageUsedAsTarget() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        ChatActionsFacade facade = new ChatActionsFacade(client);
+        Callback callback = new Callback(new CallbackId("cb-empty"), "button:1", sampleUser(), null, Instant.now());
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> facade.send(callback, ChatAction.TYPING)
+        );
+
+        assertEquals("callback message is required to resolve chat action target", exception.getMessage());
     }
 
     private static Message sampleMessage(String chatId, String messageId) {

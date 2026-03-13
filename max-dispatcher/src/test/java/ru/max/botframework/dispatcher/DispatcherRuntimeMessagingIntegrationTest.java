@@ -13,6 +13,8 @@ import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import ru.max.botframework.action.ChatActionsFacade;
+import ru.max.botframework.callback.CallbackFacade;
 import ru.max.botframework.client.MaxBotClient;
 import ru.max.botframework.message.MessagingFacade;
 import ru.max.botframework.message.Messages;
@@ -120,6 +122,52 @@ class DispatcherRuntimeMessagingIntegrationTest {
         verify(client).sendMessage(any(SendMessageRequest.class));
     }
 
+    @Test
+    void reflectiveCallbackHandlerCanResolveCallbackFacadeParameter() throws Exception {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        when(client.answerCallback(any(AnswerCallbackRequest.class))).thenReturn(true);
+
+        Dispatcher dispatcher = new Dispatcher().withBotClient(client);
+        Router router = new Router("cb-reflective");
+        CallbackReflectiveProbe probe = new CallbackReflectiveProbe();
+        Method method = CallbackReflectiveProbe.class.getDeclaredMethod(
+                "onCallback",
+                Callback.class,
+                CallbackFacade.class
+        );
+        router.callback(probe, method);
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(callbackUpdate("cb-ref", "m-ref")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertTrue(probe.invoked);
+        verify(client).answerCallback(any(AnswerCallbackRequest.class));
+    }
+
+    @Test
+    void reflectiveMessageHandlerCanResolveChatActionsFacadeParameter() throws Exception {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        when(client.sendChatAction(new ChatId("chat-1"), ChatAction.TYPING)).thenReturn(true);
+
+        Dispatcher dispatcher = new Dispatcher().withBotClient(client);
+        Router router = new Router("actions-reflective");
+        ActionReflectiveProbe probe = new ActionReflectiveProbe();
+        Method method = ActionReflectiveProbe.class.getDeclaredMethod(
+                "onMessage",
+                Message.class,
+                ChatActionsFacade.class
+        );
+        router.message(probe, method);
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("m-action-ref", "hello")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertTrue(probe.invoked);
+        verify(client).sendChatAction(new ChatId("chat-1"), ChatAction.TYPING);
+    }
+
     private static Update messageUpdate(String messageId, String text) {
         return new Update(
                 new UpdateId("upd-" + messageId),
@@ -172,6 +220,28 @@ class DispatcherRuntimeMessagingIntegrationTest {
         public CompletableFuture<Void> onMessage(Message message, MessagingFacade messaging) {
             invoked = true;
             messaging.reply(message, Messages.text("from-reflective"));
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private static final class CallbackReflectiveProbe {
+        private boolean invoked;
+
+        @SuppressWarnings("unused")
+        public CompletableFuture<Void> onCallback(Callback callback, CallbackFacade callbacks) {
+            invoked = true;
+            callbacks.notify(callback, "accepted");
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private static final class ActionReflectiveProbe {
+        private boolean invoked;
+
+        @SuppressWarnings("unused")
+        public CompletableFuture<Void> onMessage(Message message, ChatActionsFacade actions) {
+            invoked = true;
+            actions.typing(message.chat().id());
             return CompletableFuture.completedFuture(null);
         }
     }

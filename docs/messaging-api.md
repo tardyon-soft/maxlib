@@ -161,6 +161,13 @@ Messages.text("Выберите действие")
 - facade objects также доступны через parameter resolution:
   - `MessagingFacade`, `CallbackFacade`, `ChatActionsFacade`.
 
+Состояние реализации Sprint 6.4.1:
+- добавлен regression safety net для high-level messaging API:
+  - unit coverage: message builder, keyboard builder, buttons, keyboard validation,
+    callback answer API, chat actions API;
+  - integration-style coverage: runtime handler `reply`/`answerCallback`/`chatAction`,
+    reflective facade injection и mapping в low-level SDK calls.
+
 Ответственность:
 - маппинг high-level builders -> SDK requests;
 - вызовы `MaxBotClient` (`sendMessage`, `editMessage`, `deleteMessage`, `answerCallback`, ...);
