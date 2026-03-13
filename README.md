@@ -29,6 +29,8 @@ Java framework для разработки ботов на платформе MA
   с явным разделением state и payload data.
 - реализован `MemoryStorage` как thread-safe baseline implementation `FSMStorage`
   для unit/integration тестов и простых runtime сценариев.
+- реализован runtime-facing `FSMContext` (`StorageBackedFSMContext`) для
+  state/data операций в handler-ориентированном API.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -145,6 +147,26 @@ storage.updateStateData(key, java.util.Map.of("email", "user@example.com")).toCo
 
 String state = storage.getState(key).toCompletableFuture().join().orElse("none");
 StateData data = storage.getStateData(key).toCompletableFuture().join();
+```
+
+## FSMContext usage (Sprint 8)
+
+```java
+import ru.max.botframework.fsm.FSMContext;
+import ru.max.botframework.fsm.FSMStorage;
+import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.StateKey;
+import ru.max.botframework.model.ChatId;
+import ru.max.botframework.model.UserId;
+
+FSMStorage storage = new MemoryStorage();
+FSMContext fsm = FSMContext.of(
+    storage,
+    StateKey.userInChat(new UserId("u-1"), new ChatId("c-1"))
+);
+
+fsm.setState("checkout.email").toCompletableFuture().join();
+fsm.updateData(java.util.Map.of("email", "user@example.com")).toCompletableFuture().join();
 ```
 
 ## Client configuration

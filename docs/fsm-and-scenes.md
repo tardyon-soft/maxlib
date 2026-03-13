@@ -40,11 +40,12 @@
 public interface FSMContext {
     StateKey scope();
 
-    Optional<String> currentState();
+    CompletionStage<Optional<String>> currentState();
     CompletionStage<Void> setState(String state);
     CompletionStage<Void> clearState();
 
-    CompletionStage<Map<String, Object>> data();
+    CompletionStage<StateData> data();
+    CompletionStage<Void> setData(StateData data);
     CompletionStage<Void> updateData(Map<String, Object> patch);
     CompletionStage<Void> clearData();
 }
@@ -54,6 +55,7 @@ public interface FSMContext {
 - не знает про transport (polling/webhook);
 - не делает routing самостоятельно;
 - не управляет scene lifecycle напрямую (это `SceneManager`).
+- базовая реализация `StorageBackedFSMContext` делегирует все операции в `FSMStorage`.
 
 ### State Representation
 
