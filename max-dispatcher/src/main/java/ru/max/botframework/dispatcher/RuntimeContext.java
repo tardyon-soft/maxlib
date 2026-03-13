@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import ru.max.botframework.action.ChatActionsFacade;
 import ru.max.botframework.callback.CallbackFacade;
 import ru.max.botframework.fsm.FSMContext;
+import ru.max.botframework.fsm.SceneManager;
+import ru.max.botframework.fsm.WizardManager;
 import ru.max.botframework.message.MessageBuilder;
 import ru.max.botframework.message.MediaMessagingFacade;
 import ru.max.botframework.message.MessagingFacade;
@@ -187,6 +189,26 @@ public final class RuntimeContext {
         return FSMRuntimeSupport.resolve(this)
                 .orElseThrow(() -> new IllegalStateException(
                         "FSMContext is unavailable. Configure Dispatcher.withFsmStorage(...) and state scope strategy."
+                ));
+    }
+
+    /**
+     * Returns runtime scene manager if scene runtime is configured on dispatcher.
+     */
+    public SceneManager scenes() {
+        return SceneRuntimeSupport.resolveSceneManager(this)
+                .orElseThrow(() -> new IllegalStateException(
+                        "SceneManager is unavailable. Configure scene registry/storage on dispatcher and enable FSM."
+                ));
+    }
+
+    /**
+     * Returns runtime wizard manager if scene runtime is configured on dispatcher.
+     */
+    public WizardManager wizard() {
+        return SceneRuntimeSupport.resolveWizardManager(this)
+                .orElseThrow(() -> new IllegalStateException(
+                        "WizardManager is unavailable. Configure scene registry/storage on dispatcher and enable FSM."
                 ));
     }
 

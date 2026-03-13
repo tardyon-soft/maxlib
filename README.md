@@ -37,6 +37,9 @@ Java framework для разработки ботов на платформе MA
 - реализован baseline wizard layer:
   `Wizard`, `WizardStep`, `WizardManager` (`DefaultWizardManager`) с step progression
   (`enter/next/back/exit`) поверх существующих Scene/FSM abstractions.
+- scene/wizard интегрированы в runtime ergonomics:
+  `RuntimeContext.scenes()` / `RuntimeContext.wizard()` и DI резолвинг
+  `SceneManager` / `WizardManager` параметров handler-ов.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -258,6 +261,21 @@ wizard.enter("checkout").toCompletableFuture().join();
 wizard.next().toCompletableFuture().join();
 ```
 
+## Scene and wizard in handlers (Sprint 8.3.3)
+
+```java
+Router router = new Router("scene-runtime");
+
+router.message(BuiltInFilters.textEquals("/scene-enter"), (Message message, SceneManager scenes) ->
+    scenes.enter("checkout").thenApply(ignored -> null));
+
+router.message(BuiltInFilters.textEquals("/scene-next"), (Message message, RuntimeContext context) ->
+    context.wizard().next().thenApply(ignored -> null));
+
+router.message(BuiltInFilters.textEquals("/scene-exit"), (Message message, WizardManager wizard) ->
+    wizard.exit().thenApply(ignored -> null));
+```
+
 ## Client configuration
 
 `MaxApiClientConfig` поддерживает builder-style конфигурацию:
@@ -321,8 +339,9 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - rich filter DSL ещё не реализован (доступен только базовый filter contract);
 - middleware встроены в dispatcher pipeline (`outer -> filters -> inner -> handler`), но без advanced inheritance/scoping;
 - DI/invocation есть, но resolution сейчас by-type (без annotation qualifiers);
-- FSM/scenes реализованы на baseline-уровне (`FSMContext`, `StateFilter`, `Scene/SceneRegistry/SceneManager`),
-  но wizard flow и scene-aware dispatcher wiring будут расширены в следующих шагах;
+- FSM/scenes реализованы и интегрированы в runtime (`FSMContext`, `StateFilter`,
+  `Scene/SceneRegistry/SceneManager`, `Wizard/WizardManager`, context + DI access),
+  но advanced scene filtering helpers и более богатые scene DX-утилиты ещё в roadmap;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media layer реализован, но остаются ограничения:
   - нет helper слоя для `GET /videos/{videoToken}`;

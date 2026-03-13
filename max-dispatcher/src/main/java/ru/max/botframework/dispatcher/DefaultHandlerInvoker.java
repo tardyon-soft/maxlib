@@ -30,6 +30,8 @@ public final class DefaultHandlerInvoker implements HandlerInvoker {
         return new DefaultHandlerInvoker(new ResolverRegistry()
                 .register(new RuntimeContextParameterResolver())
                 .register(new FSMContextParameterResolver())
+                .register(new SceneManagerParameterResolver())
+                .register(new WizardManagerParameterResolver())
                 .register(new RuntimeMessagingFacadeParameterResolver())
                 .register(new UpdateParameterResolver())
                 .register(new MessageParameterResolver())

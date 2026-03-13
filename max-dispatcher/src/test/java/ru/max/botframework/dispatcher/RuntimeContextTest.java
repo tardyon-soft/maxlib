@@ -7,9 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import ru.max.botframework.fsm.InMemorySceneRegistry;
+import ru.max.botframework.fsm.MemorySceneStorage;
 import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.SceneStateBinding;
 import ru.max.botframework.fsm.StateKeyStrategies;
 import ru.max.botframework.fsm.StateScope;
+import ru.max.botframework.fsm.Wizard;
 import ru.max.botframework.model.Chat;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.ChatType;
@@ -144,6 +148,30 @@ class RuntimeContextTest {
 
         assertEquals("u-ctx-user", context.fsm().scope().userId().value());
         assertEquals("c-ctx-1", context.fsm().scope().chatId().value());
+    }
+
+    @Test
+    void runtimeSceneHelpersRequireSceneBootstrap() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        FSMRuntimeSupport.bootstrap(context, new MemoryStorage(), StateKeyStrategies.forScope(StateScope.USER_IN_CHAT));
+
+        assertThrows(IllegalStateException.class, context::scenes);
+        assertThrows(IllegalStateException.class, context::wizard);
+    }
+
+    @Test
+    void runtimeSceneHelpersReturnManagersWhenConfigured() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        FSMRuntimeSupport.bootstrap(context, new MemoryStorage(), StateKeyStrategies.forScope(StateScope.USER_IN_CHAT));
+        SceneRuntimeSupport.bootstrap(
+                context,
+                new InMemorySceneRegistry().register(Wizard.named("checkout").step("email").build()),
+                new MemorySceneStorage(),
+                SceneStateBinding.prefixed("scene:")
+        );
+
+        assertTrue(context.scenes().currentScene().toCompletableFuture().join().isEmpty());
+        assertTrue(context.wizard().currentStep().toCompletableFuture().join().isEmpty());
     }
 
     private static Update sampleUpdate() {

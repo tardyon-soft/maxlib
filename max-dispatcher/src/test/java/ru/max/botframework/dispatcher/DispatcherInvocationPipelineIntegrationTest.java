@@ -12,8 +12,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import ru.max.botframework.fsm.FSMContext;
+import ru.max.botframework.fsm.InMemorySceneRegistry;
+import ru.max.botframework.fsm.MemorySceneStorage;
 import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.SceneManager;
+import ru.max.botframework.fsm.SceneSession;
+import ru.max.botframework.fsm.SceneStateBinding;
 import ru.max.botframework.fsm.StateScope;
+import ru.max.botframework.fsm.Wizard;
+import ru.max.botframework.fsm.WizardManager;
+import ru.max.botframework.fsm.WizardStep;
 import ru.max.botframework.model.Chat;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.ChatType;
@@ -243,6 +251,74 @@ class DispatcherInvocationPipelineIntegrationTest {
     }
 
     @Test
+    void handlerCanEnterSceneViaSceneManagerResolution() throws Exception {
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(new MemoryStorage())
+                .withStateScope(StateScope.USER_IN_CHAT)
+                .withSceneRegistry(new InMemorySceneRegistry().register(Wizard.named("checkout").step("email").build()))
+                .withSceneStorage(new MemorySceneStorage())
+                .withSceneStateBinding(SceneStateBinding.prefixed("scene:"));
+        Router router = new Router("scenes-enter");
+        SceneEnterProbe probe = new SceneEnterProbe();
+        Method method = SceneEnterProbe.class.getDeclaredMethod("onMessage", Message.class, SceneManager.class);
+        router.message(BuiltInFilters.textEquals("enter"), probe, method);
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("enter")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals("checkout", probe.currentSceneId);
+    }
+
+    @Test
+    void handlerCanAdvanceWizardStepViaWizardManager() {
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(new MemoryStorage())
+                .withStateScope(StateScope.USER_IN_CHAT)
+                .withSceneRegistry(new InMemorySceneRegistry()
+                        .register(Wizard.named("checkout").step("email").step("confirm").build()))
+                .withSceneStorage(new MemorySceneStorage());
+        Router router = new Router("scenes-next");
+        AtomicInteger calls = new AtomicInteger();
+
+        router.message(BuiltInFilters.textEquals("wizard-start"), (message, context) ->
+                context.wizard().enter("checkout"));
+        router.message(BuiltInFilters.textEquals("wizard-next"), (message, context) -> {
+            calls.incrementAndGet();
+            return context.wizard().next()
+                    .thenCompose(ignored -> context.wizard().currentStep())
+                    .thenAccept(step -> assertEquals("confirm", step.orElseThrow().id()));
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult start = dispatcher.feedUpdate(messageUpdate("wizard-start")).toCompletableFuture().join();
+        DispatchResult next = dispatcher.feedUpdate(messageUpdate("wizard-next")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, start.status());
+        assertEquals(DispatchStatus.HANDLED, next.status());
+        assertEquals(1, calls.get());
+    }
+
+    @Test
+    void handlerCanExitSceneViaWizardManagerResolution() throws Exception {
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(new MemoryStorage())
+                .withStateScope(StateScope.USER_IN_CHAT)
+                .withSceneRegistry(new InMemorySceneRegistry().register(Wizard.named("checkout").step("email").build()))
+                .withSceneStorage(new MemorySceneStorage());
+        Router router = new Router("scenes-exit");
+        SceneExitProbe probe = new SceneExitProbe();
+        Method method = SceneExitProbe.class.getDeclaredMethod("onMessage", Message.class, WizardManager.class);
+        router.message(BuiltInFilters.textEquals("exit"), probe, method);
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(messageUpdate("exit")).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertTrue(probe.afterExit.isEmpty());
+    }
+
+    @Test
     void stateFilterPreservesFirstMatchSemantics() {
         MemoryStorage storage = new MemoryStorage();
         Dispatcher dispatcher = new Dispatcher()
@@ -418,6 +494,29 @@ class DispatcherInvocationPipelineIntegrationTest {
                     .thenCompose(ignored -> fsm.updateData(java.util.Map.of("input", message.text())))
                     .thenCompose(updated -> fsm.currentState())
                     .thenAccept(state -> this.lastState = state.orElse("none"))
+                    .toCompletableFuture();
+        }
+    }
+
+    private static final class SceneEnterProbe {
+        private String currentSceneId;
+
+        public CompletableFuture<Void> onMessage(Message message, SceneManager scenes) {
+            return scenes.enter("checkout")
+                    .thenCompose(ignored -> scenes.currentScene())
+                    .thenAccept(scene -> this.currentSceneId = scene.map(SceneSession::sceneId).orElse("none"))
+                    .toCompletableFuture();
+        }
+    }
+
+    private static final class SceneExitProbe {
+        private java.util.Optional<WizardStep> afterExit = java.util.Optional.empty();
+
+        public CompletableFuture<Void> onMessage(Message message, WizardManager wizard) {
+            return wizard.enter("checkout")
+                    .thenCompose(ignored -> wizard.exit())
+                    .thenCompose(ignored -> wizard.currentStep())
+                    .thenAccept(step -> this.afterExit = step)
                     .toCompletableFuture();
         }
     }

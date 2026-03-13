@@ -10,6 +10,10 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import ru.max.botframework.client.MaxBotClient;
 import ru.max.botframework.fsm.FSMStorage;
+import ru.max.botframework.fsm.MemorySceneStorage;
+import ru.max.botframework.fsm.SceneRegistry;
+import ru.max.botframework.fsm.SceneStateBinding;
+import ru.max.botframework.fsm.SceneStorage;
 import ru.max.botframework.fsm.StateKeyStrategies;
 import ru.max.botframework.fsm.StateKeyStrategy;
 import ru.max.botframework.fsm.StateScope;
@@ -33,6 +37,9 @@ public final class Dispatcher implements UpdateConsumer {
     private final HandlerInvoker handlerInvoker;
     private volatile FSMStorage fsmStorage;
     private volatile StateKeyStrategy stateKeyStrategy = StateKeyStrategies.userInChat();
+    private volatile SceneRegistry sceneRegistry;
+    private volatile SceneStorage sceneStorage;
+    private volatile SceneStateBinding sceneStateBinding = SceneStateBinding.prefixed("scene:");
 
     public Dispatcher() {
         this(new DefaultUpdateEventResolver(), DefaultHandlerInvoker.withDefaults());
@@ -180,6 +187,33 @@ public final class Dispatcher implements UpdateConsumer {
      */
     public Dispatcher withStateScope(StateScope scope) {
         return withStateKeyStrategy(StateKeyStrategies.forScope(Objects.requireNonNull(scope, "scope")));
+    }
+
+    /**
+     * Configures scene registry for runtime scene/wizard ergonomics.
+     */
+    public Dispatcher withSceneRegistry(SceneRegistry registry) {
+        this.sceneRegistry = Objects.requireNonNull(registry, "registry");
+        if (this.sceneStorage == null) {
+            this.sceneStorage = new MemorySceneStorage();
+        }
+        return this;
+    }
+
+    /**
+     * Configures scene metadata storage.
+     */
+    public Dispatcher withSceneStorage(SceneStorage storage) {
+        this.sceneStorage = Objects.requireNonNull(storage, "storage");
+        return this;
+    }
+
+    /**
+     * Configures scene id -> FSM state binding strategy.
+     */
+    public Dispatcher withSceneStateBinding(SceneStateBinding binding) {
+        this.sceneStateBinding = Objects.requireNonNull(binding, "binding");
+        return this;
     }
 
     /**
@@ -426,6 +460,7 @@ public final class Dispatcher implements UpdateConsumer {
         }
         RuntimeMessagingSupport.bootstrap(context);
         FSMRuntimeSupport.bootstrap(context, fsmStorage, stateKeyStrategy);
+        SceneRuntimeSupport.bootstrap(context, sceneRegistry, sceneStorage, sceneStateBinding);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

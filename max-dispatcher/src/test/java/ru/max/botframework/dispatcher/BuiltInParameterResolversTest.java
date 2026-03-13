@@ -10,7 +10,13 @@ import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import ru.max.botframework.fsm.FSMContext;
+import ru.max.botframework.fsm.InMemorySceneRegistry;
+import ru.max.botframework.fsm.MemorySceneStorage;
 import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.SceneManager;
+import ru.max.botframework.fsm.SceneStateBinding;
+import ru.max.botframework.fsm.Wizard;
+import ru.max.botframework.fsm.WizardManager;
 import ru.max.botframework.fsm.StateKeyStrategies;
 import ru.max.botframework.fsm.StateScope;
 import ru.max.botframework.model.Callback;
@@ -157,6 +163,46 @@ class BuiltInParameterResolversTest {
     }
 
     @Test
+    void sceneManagerResolverReturnsResolvedManagerWhenConfigured() throws Exception {
+        HandlerParameterDescriptor parameter = descriptor("expectsSceneManager", SceneManager.class);
+        Update update = updateWithMessage("hello");
+        RuntimeContext context = new RuntimeContext(update);
+        FSMRuntimeSupport.bootstrap(context, new MemoryStorage(), StateKeyStrategies.forScope(StateScope.USER_IN_CHAT));
+        SceneRuntimeSupport.bootstrap(
+                context,
+                new InMemorySceneRegistry().register(Wizard.named("checkout").step("email").build()),
+                new MemorySceneStorage(),
+                SceneStateBinding.prefixed("scene:")
+        );
+
+        HandlerParameterResolution result = new SceneManagerParameterResolver()
+                .resolve(parameter, new HandlerInvocationContext(update.message(), context));
+
+        assertTrue(result.supported());
+        assertTrue(result.value() instanceof SceneManager);
+    }
+
+    @Test
+    void wizardManagerResolverReturnsResolvedManagerWhenConfigured() throws Exception {
+        HandlerParameterDescriptor parameter = descriptor("expectsWizardManager", WizardManager.class);
+        Update update = updateWithMessage("hello");
+        RuntimeContext context = new RuntimeContext(update);
+        FSMRuntimeSupport.bootstrap(context, new MemoryStorage(), StateKeyStrategies.forScope(StateScope.USER_IN_CHAT));
+        SceneRuntimeSupport.bootstrap(
+                context,
+                new InMemorySceneRegistry().register(Wizard.named("checkout").step("email").build()),
+                new MemorySceneStorage(),
+                SceneStateBinding.prefixed("scene:")
+        );
+
+        HandlerParameterResolution result = new WizardManagerParameterResolver()
+                .resolve(parameter, new HandlerInvocationContext(update.message(), context));
+
+        assertTrue(result.supported());
+        assertTrue(result.value() instanceof WizardManager);
+    }
+
+    @Test
     void callbackResolverReturnsUnsupportedWhenNotApplicable() throws Exception {
         HandlerParameterDescriptor parameter = descriptor("expectsCallback", Callback.class);
         Update messageUpdate = updateWithMessage("hello");
@@ -192,6 +238,12 @@ class BuiltInParameterResolversTest {
         }
 
         public void expectsFsmContext(FSMContext context) {
+        }
+
+        public void expectsSceneManager(SceneManager manager) {
+        }
+
+        public void expectsWizardManager(WizardManager manager) {
         }
     }
 
