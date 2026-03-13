@@ -62,6 +62,11 @@ Java framework для разработки ботов на платформе MA
   - reusable raw HTTP boundary: `MultipartUploadHttpClient` + `JdkMultipartUploadHttpClient`;
   - typed transfer models: `MultipartUploadRequest`, `MultipartUploadResponse`;
   - dedicated transfer-stage error boundary: `UploadTransferException`.
+- Sprint 7 resumable transfer implementation:
+  - `ResumableUploadTransferGateway` for `UploadFlowType.RESUMABLE`;
+  - chunk-level boundary: `ResumableChunkUploadClient` with typed request/response models;
+  - configurable runtime strategy: `ResumableUploadOptions` (`chunkSizeBytes`, `maxRetriesPerChunk`);
+  - in-operation resumable state: monotonically increasing chunk offset with regression guard.
 
 ## Modules
 
@@ -167,7 +172,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - DI/invocation есть, но resolution сейчас by-type (без annotation qualifiers);
 - FSM/scenes runtime ещё не реализованы;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
-- upload/media pipeline реализован частично (multipart path), resumable flow и high-level media send API ещё не готовы;
+- upload/media pipeline реализован частично (multipart + resumable transfer paths), high-level media send API ещё не готов;
 - webhook source runtime loop пока не реализован (есть receiver + pipeline foundation);
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
 
@@ -249,6 +254,14 @@ Sprint 7.2.1 implemented:
   - `filename`, `contentType` (`application/octet-stream` by default) and file bytes
     propagated to low-level multipart request model (`MultipartUploadRequest`);
   - upload request failures and non-2xx responses mapped to `UploadTransferException`.
+
+Sprint 7.2.2 implemented:
+- resumable upload flow over existing orchestration:
+  - existing `UploadPreparationGateway` still defines flow via `UploadFlowType.RESUMABLE`;
+  - transfer stage chunks `InputFile` into sequential chunk uploads via `ResumableUploadTransferGateway`;
+  - retry semantics are per-chunk and configurable (`ResumableUploadOptions.maxRetriesPerChunk`);
+  - resumable state is local to operation (current committed offset), without global persistent resume storage;
+  - failures in chunk transfer / non-retryable responses / offset regression are mapped to `UploadTransferException`.
 
 Пример:
 

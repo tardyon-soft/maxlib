@@ -18,6 +18,19 @@
 - добавлены модели orchestration result chain:
   `UploadPrepareCommand`, `UploadPreparation`, `UploadTransferReceipt`, `UploadFinalizeResult`, `UploadResult`, `UploadRef`.
 
+Состояние реализации Sprint 7.2.1:
+- реализован multipart transfer path:
+  - `MultipartUploadTransferGateway`;
+  - `MultipartUploadHttpClient` + `JdkMultipartUploadHttpClient`;
+  - `MultipartUploadRequest` / `MultipartUploadResponse`.
+
+Состояние реализации Sprint 7.2.2:
+- реализован resumable transfer path:
+  - `ResumableUploadTransferGateway`;
+  - `ResumableChunkUploadClient`;
+  - `ResumableChunkUploadRequest` / `ResumableChunkUploadResponse`;
+  - `ResumableUploadOptions` (`chunkSizeBytes`, `maxRetriesPerChunk`).
+
 ## Goal
 
 Дать разработчику ergonomic API для отправки медиа в стиле framework-level DX:
@@ -99,6 +112,9 @@ Contract-level этапы:
 Важно:
 - это strategy-level abstraction;
 - если resumable недоступен для конкретного endpoint, `UploadService` использует multipart flow.
+- текущая реализация хранит resumable state только в рамках одной runtime операции
+  (current committed offset) и не использует distributed/persistent resume storage.
+- retry semantics ограничены chunk-step уровнем и управляются `ResumableUploadOptions`.
 
 ### Upload Result Model
 
