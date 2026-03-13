@@ -10,6 +10,9 @@ import java.util.Objects;
 public final class KeyboardBuilder {
     private final List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
+    /**
+     * Appends one row of buttons.
+     */
     public KeyboardBuilder row(InlineKeyboardButton... buttons) {
         Objects.requireNonNull(buttons, "buttons");
         if (buttons.length == 0) {
@@ -23,6 +26,9 @@ public final class KeyboardBuilder {
         return this;
     }
 
+    /**
+     * Appends one row of buttons.
+     */
     public KeyboardBuilder row(List<InlineKeyboardButton> buttons) {
         Objects.requireNonNull(buttons, "buttons");
         if (buttons.isEmpty()) {
@@ -36,6 +42,9 @@ public final class KeyboardBuilder {
         return this;
     }
 
+    /**
+     * Finalizes immutable keyboard object with platform constraints validation.
+     */
     public InlineKeyboard build() {
         return new InlineKeyboard(rows);
     }

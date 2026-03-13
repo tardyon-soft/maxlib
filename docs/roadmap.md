@@ -10,8 +10,8 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Sprint 3 (`Dispatcher/Router runtime foundation`) завершён.
 - Sprint 4 (`Filters/Middleware/context enrichment`) завершён.
 - Sprint 5 (`DI / handler parameter resolution`) завершён.
-- Следующий этап: Sprint 6 (`Messages/Keyboards/Callbacks ergonomics`).
-- Sprint 6.1: contract freeze для high-level messaging API (`docs/messaging-api.md`).
+- Sprint 6 (`Messages/Keyboards/Callbacks ergonomics`) завершён.
+- Следующий этап: Sprint 7 (`Upload/Media`).
 
 ## Sprint 0 — Spec/API Contract Freeze
 
@@ -92,10 +92,12 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Реализовать high-level API для message/callback операций.
 
 Основные результаты:
-- builder-style send/edit/delete/reply;
-- keyboard builders + buttons;
-- callback handler API + answer abstraction;
-- platform-aware validation для message/callback payload.
+- builder-style send/edit/delete/reply over existing SDK (`MessagingFacade`);
+- keyboard builders + typed buttons + platform-aware keyboard validation;
+- callback answer abstraction (`CallbackFacade`, `CallbackContext`, `CallbackAnswers`);
+- chat actions abstraction (`ChatActionsFacade`);
+- runtime integration (`Dispatcher.withBotClient(...)`, `RuntimeContext.reply/answerCallback/chatAction`);
+- Sprint 6 examples + unit/integration-style regression safety net.
 
 ## Sprint 7 — Upload/Media
 

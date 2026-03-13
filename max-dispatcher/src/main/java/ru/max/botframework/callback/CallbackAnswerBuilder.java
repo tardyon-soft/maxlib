@@ -26,6 +26,9 @@ public final class CallbackAnswerBuilder {
         return empty().text(text);
     }
 
+    /**
+     * Sets callback answer text.
+     */
     public CallbackAnswerBuilder text(String value) {
         Objects.requireNonNull(value, "value");
         if (value.isBlank()) {
@@ -34,10 +37,16 @@ public final class CallbackAnswerBuilder {
         return new CallbackAnswerBuilder(value, notify, cacheSeconds);
     }
 
+    /**
+     * Sets notification flag for callback answer.
+     */
     public CallbackAnswerBuilder notify(boolean value) {
         return new CallbackAnswerBuilder(text, value, cacheSeconds);
     }
 
+    /**
+     * Sets client-side cache seconds for callback answer.
+     */
     public CallbackAnswerBuilder cacheSeconds(int value) {
         if (value < 0) {
             throw new IllegalArgumentException("cacheSeconds must be non-negative");
@@ -45,6 +54,9 @@ public final class CallbackAnswerBuilder {
         return new CallbackAnswerBuilder(text, notify, value);
     }
 
+    /**
+     * Maps builder to low-level callback answer request DTO.
+     */
     AnswerCallbackRequest toRequest(CallbackId callbackId) {
         return new AnswerCallbackRequest(
                 Objects.requireNonNull(callbackId, "callbackId"),

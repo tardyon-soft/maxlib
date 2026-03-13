@@ -15,20 +15,32 @@ public final class CallbackFacade {
         this.client = Objects.requireNonNull(client, "client");
     }
 
+    /**
+     * Creates callback-scoped helper for handler ergonomics.
+     */
     public CallbackContext context(Callback callback) {
         return new CallbackContext(this, callback);
     }
 
+    /**
+     * Sends lightweight notification callback answer.
+     */
     public boolean notify(Callback callback, String text) {
         return answer(callback, CallbackAnswers.text(text));
     }
 
+    /**
+     * Sends callback answer built with {@link CallbackAnswerBuilder}.
+     */
     public boolean answer(Callback callback, CallbackAnswerBuilder answer) {
         Objects.requireNonNull(callback, "callback");
         Objects.requireNonNull(answer, "answer");
         return client.answerCallback(answer.toRequest(callback.callbackId()));
     }
 
+    /**
+     * Edits message associated with callback event.
+     */
     public boolean updateCurrentMessage(Callback callback, MessageBuilder message) {
         Objects.requireNonNull(callback, "callback");
         Objects.requireNonNull(message, "message");

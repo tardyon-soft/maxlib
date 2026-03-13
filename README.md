@@ -6,7 +6,7 @@ Java framework для разработки ботов на платформе MA
 
 ## Sprint status
 
-Текущий этап: `Sprint 6 — messages / keyboards / callbacks ergonomics`.
+Текущий этап: `Sprint 7 — upload / media pipeline`.
 
 Завершённые этапы:
 - Sprint 1 (`client/DTO/errors`);
@@ -14,11 +14,12 @@ Java framework для разработки ботов на платформе MA
 - Sprint 3 (`dispatcher/router/runtime foundation`);
 - Sprint 4 (`filters/middleware/context enrichment`).
 - Sprint 5 (`DI / parameter resolution / invocation`).
+- Sprint 6 (`messages / keyboards / callbacks ergonomics`).
 
-Текущая цель Sprint 6:
-- builder-style message/callback ergonomics поверх уже готового runtime;
-- high-level API для send/edit/delete/reply и keyboard/callback flows без потери type-safety.
-- контракт Sprint 6.1 зафиксирован в `docs/messaging-api.md`.
+Текущая цель Sprint 7:
+- upload/media abstractions поверх существующего SDK/runtime;
+- скрытие многошагового MAX upload flow за high-level API;
+- интеграция media pipeline в messaging ergonomics без ломающих изменений runtime.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -182,15 +183,7 @@ Sprint 5 завершён:
   `PARAMETER_RESOLUTION_FAILURE` и `INVOCATION_FAILURE` + typed resolution exceptions;
 - добавлены usage examples и regression safety net для resolver/invoker/full pipeline.
 
-Следующий этап (Sprint 6):
-- messages/keyboards/callbacks ergonomics;
-- high-level builders и callback-oriented DX поверх текущего runtime foundation.
-
-Sprint 6.1 contracts:
-- `docs/messaging-api.md` (MessageTarget, MessageBuilder, Messages factory, KeyboardBuilder, Buttons, callback/chat-action abstractions);
-- `docs/api-contract.md` (Sprint 6 section, boundaries и интеграция с existing SDK/runtime).
-
-Sprint 6.1 foundation implemented:
+Sprint 6 завершён:
 - `MessageTarget` abstraction (`ru.max.botframework.message.MessageTarget`) with `chat(...)` and `user(...)` targets.
 - immutable `MessageBuilder` + `Messages` factory (`ru.max.botframework.message`) as high-level adapter над `NewMessageBody`/`SendMessageRequest`.
 - `MessagingFacade` (`ru.max.botframework.message`) for high-level `send/edit/delete/reply` over existing `MaxBotClient`.
@@ -211,6 +204,11 @@ Sprint 6.1 foundation implemented:
 - Sprint 6 test coverage:
   - unit: message/keyboard/buttons/validation, callback answer builders/facade, chat actions facade/helpers;
   - integration-style: runtime handler -> `reply`, `answerCallback`, `chatAction`, plus reflective facade resolution.
+
+Следующий этап (Sprint 7):
+- upload/media abstractions и hidden multi-step flow orchestration;
+- media builders и интеграция в существующий Message API;
+- upload/media error model и regression tests.
 
 Пример:
 

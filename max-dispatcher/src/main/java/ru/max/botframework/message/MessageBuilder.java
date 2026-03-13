@@ -15,6 +15,9 @@ import ru.max.botframework.model.request.SendMessageRequest;
 
 /**
  * Immutable high-level builder for outgoing message payload.
+ *
+ * <p>Builder stays transport-agnostic until explicit mapping via
+ * {@link #toNewMessageBody()}, {@link #toSendRequest(ChatId)} or {@link #toEditRequest(ChatId, MessageId)}.</p>
  */
 public final class MessageBuilder {
     private final String text;
@@ -84,6 +87,9 @@ public final class MessageBuilder {
         return new MessageBuilder(text, notify, format, value, attachments, keyboard);
     }
 
+    /**
+     * Appends low-level attachment model as extension point for current Sprint 6 surface.
+     */
     public MessageBuilder attachment(NewMessageAttachment value) {
         Objects.requireNonNull(value, "value");
         ArrayList<NewMessageAttachment> merged = new ArrayList<>(attachments);
@@ -91,6 +97,9 @@ public final class MessageBuilder {
         return new MessageBuilder(text, notify, format, link, merged, keyboard);
     }
 
+    /**
+     * Appends low-level attachment models as extension point for current Sprint 6 surface.
+     */
     public MessageBuilder attachments(List<NewMessageAttachment> values) {
         Objects.requireNonNull(values, "values");
         ArrayList<NewMessageAttachment> merged = new ArrayList<>(attachments);
@@ -98,10 +107,16 @@ public final class MessageBuilder {
         return new MessageBuilder(text, notify, format, link, merged, keyboard);
     }
 
+    /**
+     * Assigns pre-built keyboard markup.
+     */
     public MessageBuilder keyboard(KeyboardMarkup value) {
         return new MessageBuilder(text, notify, format, link, attachments, Objects.requireNonNull(value, "value"));
     }
 
+    /**
+     * Declarative inline keyboard configuration shortcut.
+     */
     public MessageBuilder keyboard(UnaryOperator<KeyboardBuilder> spec) {
         Objects.requireNonNull(spec, "spec");
         return keyboard(Keyboards.inline(spec));
@@ -134,14 +149,23 @@ public final class MessageBuilder {
         return Optional.ofNullable(keyboard);
     }
 
+    /**
+     * Maps builder to low-level body DTO used by send/edit SDK requests.
+     */
     public NewMessageBody toNewMessageBody() {
         return new NewMessageBody(composeText(), format, composeAttachments());
     }
 
+    /**
+     * Maps builder to low-level send request without reply context.
+     */
     public SendMessageRequest toSendRequest(ChatId chatId) {
         return toSendRequest(chatId, null);
     }
 
+    /**
+     * Maps builder to low-level send request with optional reply context.
+     */
     public SendMessageRequest toSendRequest(ChatId chatId, MessageId replyToMessageId) {
         return new SendMessageRequest(
                 Objects.requireNonNull(chatId, "chatId"),
@@ -151,11 +175,17 @@ public final class MessageBuilder {
         );
     }
 
+    /**
+     * Maps builder to low-level send request with {@link MessageTarget} resolution.
+     */
     public SendMessageRequest toSendRequest(MessageTarget target, MessageTarget.UserChatResolver resolver) {
         Objects.requireNonNull(target, "target");
         return toSendRequest(target.toChatId(resolver));
     }
 
+    /**
+     * Maps builder to low-level edit request.
+     */
     public EditMessageRequest toEditRequest(ChatId chatId, MessageId messageId) {
         return new EditMessageRequest(
                 Objects.requireNonNull(chatId, "chatId"),
