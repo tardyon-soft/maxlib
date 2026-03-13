@@ -139,6 +139,12 @@ Sprint 9 contracts:
 - `docs/spring-starter.md`
 - `docs/testkit.md`
 
+Текущий прогресс Sprint 9:
+- создан module foundation `max-spring-boot-starter`:
+  - packages: `autoconfigure`, `properties`, `polling`, `webhook`;
+  - baseline `MaxBotProperties` + `MaxBotAutoConfiguration`;
+  - Spring-facing bridges: `SpringPollingBootstrap`, `SpringWebhookAdapter`.
+
 Основные результаты:
 - Spring Boot starter auto-configuration;
 - testkit для unit/integration сценариев;

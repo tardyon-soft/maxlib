@@ -114,7 +114,8 @@ Java framework для разработки ботов на платформе MA
 - `max-model` — DTO, enum и value objects для MAX domain.
 - `max-dispatcher` — runtime foundation: dispatcher, router tree, observers, dispatch/error model, ingestion integration.
 - `max-fsm` — FSM contracts и core state model/scoping strategy foundation.
-- `max-spring-boot-starter` — заготовка Spring Boot integration.
+- `max-spring-boot-starter` — Spring Boot starter foundation:
+  `MaxBotProperties`, `MaxBotAutoConfiguration`, polling/webhook bridge adapters.
 - `max-testkit` — заготовка framework test utilities.
 
 ## Quick start (client SDK foundation)

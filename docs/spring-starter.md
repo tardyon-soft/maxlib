@@ -3,6 +3,11 @@
 Документ фиксирует контракт слоя `max-spring-boot-starter`.
 Это спецификация интеграции, а не полная реализация.
 
+Текущий статус (Sprint 9.1.2):
+- создан starter module foundation (`properties`, `autoconfigure`, `polling`, `webhook`);
+- добавлен `AutoConfiguration.imports` entrypoint;
+- полноценный runtime wiring и lifecycle orchestration будут добавляться последующими задачами Sprint 9.
+
 ## Goal
 
 - дать быстрый bootstrapping framework в Spring Boot приложении;
