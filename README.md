@@ -62,6 +62,23 @@ dependencies {
 - `MAVEN_GPG_PRIVATE_KEY`
 - `MAVEN_GPG_PASSPHRASE`
 
+### 3.2) GitLab CI Pipeline
+
+Добавлен `.gitlab-ci.yml` с поведением:
+
+- при `push` в `master`:
+  - `build` (`clean assemble`)
+  - `unit_tests` (`test`)
+- после успешных тестов доступна manual job `publish_maven_central`:
+  - запускает `publishVanillaJavaToMavenCentral` и `publishStarterToMavenCentral`.
+
+Для manual publish в GitLab CI/CD Variables должны быть заданы:
+
+- `MAVEN_CENTRAL_USERNAME`
+- `MAVEN_CENTRAL_PASSWORD`
+- `MAVEN_GPG_PRIVATE_KEY`
+- `MAVEN_GPG_PASSPHRASE`
+
 ### 4) Минимальный runtime bot (без Spring)
 
 ```java
