@@ -75,13 +75,14 @@ public interface FSMContext {
 
 ```java
 public interface FSMStorage {
-    CompletionStage<Optional<String>> readState(StateKey key);
-    CompletionStage<Void> writeState(StateKey key, String state);
+    CompletionStage<Optional<String>> getState(StateKey key);
+    CompletionStage<Void> setState(StateKey key, String state);
     CompletionStage<Void> clearState(StateKey key);
 
-    CompletionStage<Map<String, Object>> readData(StateKey key);
-    CompletionStage<Void> writeData(StateKey key, Map<String, Object> data);
-    CompletionStage<Void> clearData(StateKey key);
+    CompletionStage<StateData> getStateData(StateKey key);
+    CompletionStage<Void> setStateData(StateKey key, StateData data);
+    CompletionStage<StateData> updateStateData(StateKey key, Map<String, Object> patch);
+    CompletionStage<Void> clearStateData(StateKey key);
 }
 ```
 
@@ -89,6 +90,8 @@ public interface FSMStorage {
 - clear semantics для отсутствующего state/data;
 - deterministic behavior в рамках одного process/runtime;
 - backend-specific ошибки маппятся в typed framework exceptions.
+- state и state-data хранятся раздельно; scene metadata будет отдельным контрактом (`SceneStorage`)
+  и не смешивается с `FSMStorage`.
 
 ### State Scope / Strategy
 

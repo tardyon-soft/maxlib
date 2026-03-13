@@ -25,6 +25,8 @@ Java framework для разработки ботов на платформе MA
 - контракт Sprint 8 зафиксирован в `docs/fsm-and-scenes.md`.
 - реализован core state model: `StateScope`, `StateKey`, `StateData`, `StateSnapshot`,
   `StateKeyStrategy` и built-in `StateKeyStrategies` (`USER`, `CHAT`, `USER_IN_CHAT`).
+- реализован async storage contract `FSMStorage` (typed state/state-data operations + merge update),
+  с явным разделением state и payload data.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
