@@ -57,6 +57,11 @@ Java framework для разработки ботов на платформе MA
   `fromPath(...)`, `fromBytes(...)`, `fromStream(...)` + file metadata (`fileName`, `contentType`, `knownSize`).
 - Sprint 7 orchestration contract: `UploadService` (`prepare -> transfer -> finalize`) with separated gateways
   (`UploadPreparationGateway`, `UploadTransferGateway`, `UploadFinalizeGateway`) and result mapping (`UploadResultMapper`).
+- Sprint 7 multipart transfer implementation:
+  - `MultipartUploadTransferGateway` for `UploadFlowType.MULTIPART`;
+  - reusable raw HTTP boundary: `MultipartUploadHttpClient` + `JdkMultipartUploadHttpClient`;
+  - typed transfer models: `MultipartUploadRequest`, `MultipartUploadResponse`;
+  - dedicated transfer-stage error boundary: `UploadTransferException`.
 
 ## Modules
 
@@ -162,7 +167,7 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - DI/invocation есть, но resolution сейчас by-type (без annotation qualifiers);
 - FSM/scenes runtime ещё не реализованы;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
-- upload/media pipeline ещё не реализован;
+- upload/media pipeline реализован частично (multipart path), resumable flow и high-level media send API ещё не готовы;
 - webhook source runtime loop пока не реализован (есть receiver + pipeline foundation);
 - surface MAX API покрыт частично и будет расширяться в следующих спринтах.
 
@@ -230,12 +235,20 @@ Sprint 7.1.3 implemented:
   - `UploadService.upload(InputFile, UploadRequest)`;
   - preparation command/result (`UploadPrepareCommand`, `UploadPreparation`);
   - transfer/finalize results (`UploadTransferReceipt`, `UploadFinalizeResult`);
-  - final attachment-ready result model (`UploadResult`, `UploadRef`).
+- final attachment-ready result model (`UploadResult`, `UploadRef`).
 - clear separation:
   - orchestration logic (`DefaultUploadService`);
   - raw transfer execution (`UploadTransferGateway`);
   - prepare/finalize API gateways (`UploadPreparationGateway`, `UploadFinalizeGateway`);
   - result mapping (`UploadResultMapper`).
+
+Sprint 7.2.1 implemented:
+- multipart upload flow over existing orchestration:
+  - `prepare` stage via existing `UploadPreparationGateway` (`POST /uploads` contract);
+  - multipart transfer by prepared URL via `MultipartUploadTransferGateway`;
+  - `filename`, `contentType` (`application/octet-stream` by default) and file bytes
+    propagated to low-level multipart request model (`MultipartUploadRequest`);
+  - upload request failures and non-2xx responses mapped to `UploadTransferException`.
 
 Пример:
 
