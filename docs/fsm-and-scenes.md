@@ -156,15 +156,17 @@ public interface Scene {
 
     CompletionStage<Void> onEnter(SceneContext ctx);
     CompletionStage<Void> onExit(SceneContext ctx);
-
-    Router router();
 }
 ```
 
 Границы:
-- scene описывает lifecycle hooks + scene-local routing;
+- scene описывает lifecycle hooks и metadata-bound dialog lifecycle;
 - scene не делает transport startup;
 - scene не управляет глобальным dispatcher lifecycle.
+
+`SceneContext` содержит:
+- `FSMContext` текущего scope;
+- `SceneSession` (scene id + entered timestamp).
 
 ### `SceneRegistry`
 
@@ -184,6 +186,25 @@ public interface SceneRegistry {
 Требования:
 - уникальность `scene.id()`;
 - deterministic registration order.
+- registry не смешивается с router tree и не зависит от Spring scanning.
+
+### `SceneStorage`
+
+Назначение:
+- хранить scene metadata отдельно от `FSMStorage`.
+
+Ожидаемый контракт:
+
+```java
+public interface SceneStorage {
+    CompletionStage<Optional<SceneSession>> get(StateKey key);
+    CompletionStage<Void> set(StateKey key, SceneSession session);
+    CompletionStage<Void> clear(StateKey key);
+}
+```
+
+Baseline implementation Sprint 8:
+- `MemorySceneStorage` (thread-safe in-memory storage).
 
 ### `SceneManager`
 
@@ -194,18 +215,22 @@ public interface SceneRegistry {
 
 ```java
 public interface SceneManager {
-    CompletionStage<Optional<String>> currentScene();
+    CompletionStage<Optional<SceneSession>> currentScene();
 
     CompletionStage<Void> enter(String sceneId);
-    CompletionStage<Void> transition(String sceneId);
     CompletionStage<Void> exit();
+    CompletionStage<Void> transition(String sceneId);
 }
 ```
 
 Семантика:
-- `enter` вызывает `onEnter` target scene;
+- `enter` валидирует scene в registry, создаёт `SceneSession`, сохраняет metadata в `SceneStorage`,
+  bind-ит underlying FSM state через `SceneStateBinding`, затем вызывает `onEnter`;
 - `transition` вызывает `onExit` current + `onEnter` next;
-- `exit` вызывает `onExit` current и очищает scene marker/state по policy.
+- `exit` вызывает `onExit` current и очищает scene metadata + bound FSM state.
+
+Baseline implementation Sprint 8:
+- `DefaultSceneManager` (`SceneRegistry` + `SceneStorage` + `FSMContext` + `SceneStateBinding`).
 
 ### Wizard-style Flow
 

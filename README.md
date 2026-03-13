@@ -31,6 +31,9 @@ Java framework для разработки ботов на платформе MA
   для unit/integration тестов и простых runtime сценариев.
 - реализован runtime-facing `FSMContext` (`StorageBackedFSMContext`) для
   state/data операций в handler-ориентированном API.
+- реализован базовый scene layer поверх FSM:
+  `Scene`, `SceneRegistry` (`InMemorySceneRegistry`), `SceneStorage` (`MemorySceneStorage`),
+  `SceneManager` (`DefaultSceneManager`) + scene/FSM state binding strategy.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -204,6 +207,34 @@ router.message(
 dispatcher.includeRouter(router);
 ```
 
+## Scene layer baseline (Sprint 8)
+
+```java
+import ru.max.botframework.fsm.DefaultSceneManager;
+import ru.max.botframework.fsm.FSMContext;
+import ru.max.botframework.fsm.InMemorySceneRegistry;
+import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.MemorySceneStorage;
+import ru.max.botframework.fsm.Scene;
+import ru.max.botframework.fsm.SceneManager;
+import ru.max.botframework.fsm.SceneRegistry;
+import ru.max.botframework.fsm.StateKey;
+import ru.max.botframework.model.ChatId;
+import ru.max.botframework.model.UserId;
+
+MemoryStorage storage = new MemoryStorage();
+StateKey key = StateKey.userInChat(new UserId("u-1"), new ChatId("c-1"));
+FSMContext fsm = FSMContext.of(storage, key);
+SceneRegistry registry = new InMemorySceneRegistry()
+    .register(new Scene() {
+        @Override
+        public String id() { return "checkout"; }
+    });
+
+SceneManager scenes = new DefaultSceneManager(registry, new MemorySceneStorage(), fsm);
+scenes.enter("checkout").toCompletableFuture().join();
+```
+
 ## Client configuration
 
 `MaxApiClientConfig` поддерживает builder-style конфигурацию:
@@ -267,7 +298,8 @@ MaxApiClientConfig config = MaxApiClientConfig.builder()
 - rich filter DSL ещё не реализован (доступен только базовый filter contract);
 - middleware встроены в dispatcher pipeline (`outer -> filters -> inner -> handler`), но без advanced inheritance/scoping;
 - DI/invocation есть, но resolution сейчас by-type (без annotation qualifiers);
-- FSM/scenes runtime ещё не реализованы;
+- FSM/scenes реализованы на baseline-уровне (`FSMContext`, `StateFilter`, `Scene/SceneRegistry/SceneManager`),
+  но wizard flow и scene-aware dispatcher wiring будут расширены в следующих шагах;
 - Spring Boot starter и testkit пока на уровне скелетов модулей;
 - upload/media layer реализован, но остаются ограничения:
   - нет helper слоя для `GET /videos/{videoToken}`;
