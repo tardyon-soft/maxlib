@@ -169,6 +169,12 @@ Sprint 9 contracts:
   - `UpdateFixtures` builder DSL и `statefulMessages(...)`;
   - helper methods для feed-all/probe side effects;
   - usage example добавлен в runtime tests.
+- добавлены polished end-to-end examples:
+  - Spring Boot polling/webhook minimal apps;
+  - router composition;
+  - filters + middleware + DI;
+  - messaging/keyboards/callbacks;
+  - FSM/scenes и upload/media runtime usage.
 
 Основные результаты:
 - Spring Boot starter auto-configuration;

@@ -1,0 +1,9 @@
+max:
+  bot:
+    token: ${MAX_BOT_TOKEN}
+    mode: WEBHOOK
+    webhook:
+      enabled: true
+      path: /webhook/max
+      secret: ${MAX_BOT_WEBHOOK_SECRET}
+      max-in-flight: 64

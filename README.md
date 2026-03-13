@@ -856,6 +856,20 @@ dispatcher.includeRouter(router);
 - `examples/sprint-7-upload-media/MediaFacadeExample.java`
 - `examples/sprint-7-upload-media/RuntimeMediaHandlersExample.java`
 
+## Sprint 9 E2E Examples
+
+- end-to-end examples directory: `examples/sprint-9-e2e`
+- files:
+- `SpringPollingBotApplication.java` (minimal Spring Boot polling bot)
+- `SpringWebhookBotApplication.java` (minimal Spring Boot webhook bot)
+- `RouterCompositionExample.java`
+- `FiltersMiddlewareDiExample.java`
+- `MessagingCallbacksExample.java`
+- `FsmScenesExample.java`
+- `MediaUploadExample.java`
+- `application-polling.yml`
+- `application-webhook.yml`
+
 Кейсы в примерах:
 - `InputFile.fromPath(...)`;
 - `InputFile.fromBytes(...)`;
