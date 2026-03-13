@@ -75,6 +75,10 @@ Java framework для разработки ботов на платформе MA
   - `ImageAttachment`, `FileAttachment`, `VideoAttachment`, `AudioAttachment`;
   - unified contract `MediaAttachment` mapped to low-level `NewMessageAttachment`;
   - `MessageBuilder.attachment(MediaAttachment)` for seamless message composition.
+- high-level media send/reply API:
+  - `MediaMessagingFacade` with `sendImage/sendFile/sendVideo/sendAudio`;
+  - `replyImage/replyFile/replyVideo/replyAudio` over existing reply flow;
+  - internals reuse `InputFile + UploadService + MessagingFacade`.
 
 ## Modules
 
@@ -285,6 +289,14 @@ Sprint 7.3.1 implemented:
     proper `MessageAttachmentType` and `AttachmentInput(uploadRef=...)`;
   - `MessageBuilder` now accepts `attachment(MediaAttachment)` without breaking existing low-level APIs.
 
+Sprint 7.3.2 implemented:
+- high-level media send/reply facade:
+  - `MediaMessagingFacade` hides explicit upload orchestration for common scenarios;
+  - upload flow: `UploadService.upload(...)` -> media attachment mapping -> `MessagingFacade.send/reply(...)`;
+  - supported methods:
+    - `sendImage/sendFile/sendVideo/sendAudio`;
+    - `replyImage/replyFile/replyVideo/replyAudio`.
+
 Example:
 
 ```java
@@ -294,6 +306,10 @@ UploadResult uploadedDoc = ...;
 MessageBuilder message = Messages.text("Материалы готовы")
     .attachment(ImageAttachment.from(uploadedImage).caption("Превью"))
     .attachment(FileAttachment.from(uploadedDoc).caption("Документ"));
+
+MediaMessagingFacade media = new MediaMessagingFacade(uploadService, messagingFacade);
+media.sendImage(new ChatId("chat-1"), InputFile.fromPath(Path.of("./photo.jpg")));
+media.replyVideo(sourceMessage, InputFile.fromPath(Path.of("./clip.mp4")), "Видео-ответ");
 ```
 
 Пример:

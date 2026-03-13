@@ -44,6 +44,15 @@
   - mapping в существующий low-level `NewMessageAttachment` (`AttachmentInput.uploadRef`).
 - `MessageBuilder` расширен overload-методом `attachment(MediaAttachment)`.
 
+Состояние реализации Sprint 7.3.2:
+- добавлен high-level media send/reply facade `MediaMessagingFacade`:
+  - `sendImage/sendFile/sendVideo/sendAudio`;
+  - `replyImage/replyFile/replyVideo/replyAudio`.
+- реализация переиспользует существующие слои:
+  - `InputFile`;
+  - `UploadService`;
+  - `MessagingFacade`.
+
 ## Goal
 
 Дать разработчику ergonomic API для отправки медиа в стиле framework-level DX:
