@@ -283,6 +283,20 @@ router.callback((callback, ctx) -> {
 dispatcher.includeRouter(router);
 ```
 
+## Sprint 6 Messaging Examples
+
+- `examples/sprint-6-messaging/README.md`
+- `examples/sprint-6-messaging/MessagingFacadeExample.java`
+- `examples/sprint-6-messaging/RuntimeMessagingHandlersExample.java`
+
+Кейсы в примерах:
+- send/edit/delete/reply;
+- formatted text (`plain/markdown/html`);
+- keyboard builder + typed buttons;
+- callback answer;
+- chat actions;
+- runtime usage inside handlers (`RuntimeContext` shortcuts + facade parameter resolution).
+
 ## Shared Services Injection (Sprint 5.2.3)
 
 ```java
