@@ -396,10 +396,14 @@ Sprint 6 завершён:
   - unit: message/keyboard/buttons/validation, callback answer builders/facade, chat actions facade/helpers;
   - integration-style: runtime handler -> `reply`, `answerCallback`, `chatAction`, plus reflective facade resolution.
 
-Следующий этап (Sprint 8):
-- FSMContext + storage abstraction;
-- state scopes и `StateFilter`;
-- Scene/SceneManager и minimal wizard API.
+Sprint 8 progress:
+- FSM/scenes runtime уже интегрирован (`FSMContext`, `StateFilter`, `SceneManager`, `WizardManager`);
+- error behavior зафиксирован и покрыт тестами (`SceneNotFoundException`, `WizardFlowException`, `FsmStorageException`);
+- Sprint 8 test coverage:
+  - unit: state model/scope strategies, `FSMStorage` contract/defaults, `MemoryStorage`,
+    `FSMContext`, `StateFilter`, `SceneRegistry`/`SceneManager`, wizard flow, error scenarios;
+  - integration-style: handler + `FSMContext`, routing через `StateFilter`,
+    runtime scene lifecycle (`enter -> next -> exit`) через dispatcher pipeline.
 
 Sprint 7.1.2 implemented:
 - unified `InputFile` API:

@@ -125,6 +125,9 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - state scopes + `StateFilter`;
 - `Scene` + `SceneManager` lifecycle;
 - minimal wizard-style API.
+- regression safety net:
+  - unit tests for state model/storage/FSM context/state filter/scenes/wizard/error behavior;
+  - integration-style tests for dispatcher runtime (`FSMContext`, `StateFilter`, scene lifecycle).
 
 ## Sprint 9 — Starter/Testkit/Docs Polishing
 

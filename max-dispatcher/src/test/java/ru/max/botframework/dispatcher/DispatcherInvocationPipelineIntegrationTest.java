@@ -321,6 +321,59 @@ class DispatcherInvocationPipelineIntegrationTest {
     }
 
     @Test
+    void runtimePipelineSupportsSceneEnterNextExitLifecycle() {
+        MemoryStorage storage = new MemoryStorage();
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(storage)
+                .withStateScope(StateScope.USER_IN_CHAT)
+                .withSceneRegistry(new InMemorySceneRegistry()
+                        .register(Wizard.named("checkout").step("email").step("confirm").build()))
+                .withSceneStorage(new MemorySceneStorage());
+        Router router = new Router("scenes-lifecycle");
+        AtomicInteger enterCalls = new AtomicInteger();
+        AtomicInteger nextCalls = new AtomicInteger();
+        AtomicInteger exitCalls = new AtomicInteger();
+
+        router.message(BuiltInFilters.textEquals("scene-enter"), (message, context) ->
+                context.wizard().enter("checkout")
+                        .thenCompose(ignored -> context.wizard().currentStep())
+                        .thenAccept(step -> {
+                            enterCalls.incrementAndGet();
+                            assertEquals("email", step.orElseThrow().id());
+                        }));
+        router.message(BuiltInFilters.textEquals("scene-next"), (message, context) ->
+                context.wizard().next()
+                        .thenCompose(ignored -> context.wizard().currentStep())
+                        .thenAccept(step -> {
+                            nextCalls.incrementAndGet();
+                            assertEquals("confirm", step.orElseThrow().id());
+                        }));
+        router.message(BuiltInFilters.textEquals("scene-exit"), (message, context) ->
+                context.wizard().exit().thenRun(exitCalls::incrementAndGet));
+        dispatcher.includeRouter(router);
+
+        Update enterUpdate = messageUpdate("scene-enter");
+        Update nextUpdate = messageUpdate("scene-next");
+        Update exitUpdate = messageUpdate("scene-exit");
+
+        DispatchResult enter = dispatcher.feedUpdate(enterUpdate).toCompletableFuture().join();
+        DispatchResult next = dispatcher.feedUpdate(nextUpdate).toCompletableFuture().join();
+        DispatchResult exit = dispatcher.feedUpdate(exitUpdate).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, enter.status());
+        assertEquals(DispatchStatus.HANDLED, next.status());
+        assertEquals(DispatchStatus.HANDLED, exit.status());
+        assertEquals(1, enterCalls.get());
+        assertEquals(1, nextCalls.get());
+        assertEquals(1, exitCalls.get());
+
+        ru.max.botframework.fsm.StateKey key = ru.max.botframework.fsm.StateKeyStrategies.userInChat().resolve(enterUpdate);
+        assertTrue(storage.getState(key).toCompletableFuture().join().isEmpty());
+        assertTrue(storage.getStateData(key).toCompletableFuture().join().get("wizard.stepId", String.class).isEmpty());
+        assertTrue(storage.getStateData(key).toCompletableFuture().join().get("wizard.stepIndex", Integer.class).isEmpty());
+    }
+
+    @Test
     void sceneRuntimeErrorsFlowIntoErrorObserverAsRuntimeFailures() {
         Dispatcher dispatcher = new Dispatcher()
                 .withFsmStorage(new MemoryStorage())
