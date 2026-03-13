@@ -135,6 +135,10 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 Цель:
 - Довести framework до production-ready DX уровня.
 
+Sprint 9 contracts:
+- `docs/spring-starter.md`
+- `docs/testkit.md`
+
 Основные результаты:
 - Spring Boot starter auto-configuration;
 - testkit для unit/integration сценариев;

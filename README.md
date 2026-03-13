@@ -47,6 +47,8 @@ Java framework для разработки ботов на платформе MA
 - Spring Boot starter integration;
 - testkit для unit/integration сценариев;
 - docs/README consistency polishing по фактическому API.
+- контракт starter зафиксирован: `docs/spring-starter.md`;
+- контракт testkit зафиксирован: `docs/testkit.md`.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
