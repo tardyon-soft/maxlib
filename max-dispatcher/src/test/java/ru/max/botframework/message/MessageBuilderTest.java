@@ -80,7 +80,7 @@ class MessageBuilderTest {
 
     @Test
     void supportsAttachmentsExtensionPointInBodyMapping() {
-        NewMessageAttachment attachment = new NewMessageAttachment(
+        NewMessageAttachment attachment = NewMessageAttachment.media(
                 MessageAttachmentType.FILE,
                 new AttachmentInput(null, "upload-ref-1", null),
                 "doc",
@@ -97,13 +97,21 @@ class MessageBuilderTest {
     }
 
     @Test
-    void keepsKeyboardIntegrationPointWithoutAffectingLowLevelBody() {
-        KeyboardMarkup keyboard = new KeyboardMarkup() {
-        };
-        MessageBuilder builder = Messages.text("hello").keyboard(keyboard);
+    void mapsInlineKeyboardToLowLevelInlineKeyboardAttachment() {
+        MessageBuilder builder = Messages.text("hello")
+                .keyboard(k -> k.row(
+                        Buttons.callback("Pay", "pay:1"),
+                        Buttons.link("Site", "https://example.com")
+                ));
 
         assertTrue(builder.keyboard().isPresent());
-        assertEquals("hello", builder.toNewMessageBody().text());
+        NewMessageBody body = builder.toNewMessageBody();
+        assertEquals("hello", body.text());
+        assertEquals(1, body.attachments().size());
+        assertEquals(MessageAttachmentType.INLINE_KEYBOARD, body.attachments().getFirst().type());
+        assertEquals(1, body.attachments().getFirst().inlineKeyboard().rows().size());
+        assertEquals("pay:1", body.attachments().getFirst().inlineKeyboard().rows().getFirst().getFirst().callbackData());
+        assertEquals("https://example.com", body.attachments().getFirst().inlineKeyboard().rows().getFirst().get(1).url());
     }
 
     @Test
@@ -129,7 +137,7 @@ class MessageBuilderTest {
 
     @Test
     void attachmentsOnlyMessageCanBeBuiltFromMessagesMessage() {
-        MessageBuilder builder = Messages.message().attachment(new NewMessageAttachment(
+        MessageBuilder builder = Messages.message().attachment(NewMessageAttachment.media(
                 MessageAttachmentType.FILE,
                 new AttachmentInput(null, null, "https://example.com/file.pdf"),
                 null,
@@ -163,11 +171,13 @@ class MessageBuilderTest {
                 new AttachmentInput(null, "ref-1", null),
                 null,
                 null,
+                null,
                 null
         );
         NewMessageAttachment second = new NewMessageAttachment(
                 MessageAttachmentType.FILE,
                 new AttachmentInput(null, "ref-2", null),
+                null,
                 null,
                 null,
                 null

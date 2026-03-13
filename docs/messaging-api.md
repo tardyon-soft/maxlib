@@ -124,6 +124,10 @@ Messages.text("Выберите действие")
 Состояние реализации Sprint 6.2.1:
 - выбран и реализован `MessagingFacade`.
 
+Состояние реализации Sprint 6.2.2:
+- реализованы `InlineKeyboard`, `KeyboardBuilder`, `Buttons`, `Keyboards.inline(...)`;
+- `MessageBuilder.keyboard(...)` теперь маппится в low-level inline keyboard attachment.
+
 Ответственность:
 - маппинг high-level builders -> SDK requests;
 - вызовы `MaxBotClient` (`sendMessage`, `editMessage`, `deleteMessage`, `answerCallback`, ...);

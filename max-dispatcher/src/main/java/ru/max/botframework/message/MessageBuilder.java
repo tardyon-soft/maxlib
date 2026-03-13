@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 import ru.max.botframework.model.ChatId;
 import ru.max.botframework.model.MessageId;
 import ru.max.botframework.model.TextFormat;
@@ -101,6 +102,11 @@ public final class MessageBuilder {
         return new MessageBuilder(text, notify, format, link, attachments, Objects.requireNonNull(value, "value"));
     }
 
+    public MessageBuilder keyboard(UnaryOperator<KeyboardBuilder> spec) {
+        Objects.requireNonNull(spec, "spec");
+        return keyboard(Keyboards.inline(spec));
+    }
+
     public Optional<String> text() {
         return Optional.ofNullable(text);
     }
@@ -129,7 +135,7 @@ public final class MessageBuilder {
     }
 
     public NewMessageBody toNewMessageBody() {
-        return new NewMessageBody(composeText(), format, attachments);
+        return new NewMessageBody(composeText(), format, composeAttachments());
     }
 
     public SendMessageRequest toSendRequest(ChatId chatId) {
@@ -170,5 +176,14 @@ public final class MessageBuilder {
             return text;
         }
         return text + System.lineSeparator() + link;
+    }
+
+    private List<NewMessageAttachment> composeAttachments() {
+        if (keyboard instanceof InlineKeyboard inlineKeyboard) {
+            ArrayList<NewMessageAttachment> merged = new ArrayList<>(attachments);
+            merged.add(inlineKeyboard.toAttachment());
+            return List.copyOf(merged);
+        }
+        return attachments;
     }
 }

@@ -194,6 +194,8 @@ Sprint 6.1 foundation implemented:
 - `MessageTarget` abstraction (`ru.max.botframework.message.MessageTarget`) with `chat(...)` and `user(...)` targets.
 - immutable `MessageBuilder` + `Messages` factory (`ru.max.botframework.message`) as high-level adapter над `NewMessageBody`/`SendMessageRequest`.
 - `MessagingFacade` (`ru.max.botframework.message`) for high-level `send/edit/delete/reply` over existing `MaxBotClient`.
+- inline keyboard model: `InlineKeyboard`, `KeyboardBuilder`, `Buttons`, `Keyboards.inline(...)`.
+- `MessageBuilder.keyboard(...)` maps keyboard to low-level inline keyboard attachment.
 
 Пример:
 
@@ -221,6 +223,19 @@ Message sent = messaging.send(chatTarget, Messages.text("Привет").markdown
 Message reply = messaging.reply(sent, Messages.html("<b>Принято</b>"));
 boolean edited = messaging.edit(sent, Messages.text("Обновлено"));
 boolean deleted = messaging.delete(sent);
+
+InlineKeyboard keyboard = Keyboards.inline(k -> k
+    .row(
+        Buttons.callback("Оплатить", "pay:1"),
+        Buttons.link("Сайт", "https://example.com")
+    )
+    .row(Buttons.callback("Отмена", "cancel"))
+);
+
+Message withKeyboard = messaging.send(
+    chatTarget,
+    Messages.text("Выберите действие").keyboard(keyboard)
+);
 ```
 
 ## Shared Services Injection (Sprint 5.2.3)

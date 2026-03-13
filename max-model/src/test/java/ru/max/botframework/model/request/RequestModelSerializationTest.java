@@ -34,6 +34,7 @@ class RequestModelSerializationTest {
                         List.of(new NewMessageAttachment(
                                 MessageAttachmentType.DOCUMENT,
                                 new AttachmentInput(new FileId("file-1"), null, null),
+                                null,
                                 "spec",
                                 "application/pdf",
                                 1024L
@@ -79,6 +80,30 @@ class RequestModelSerializationTest {
         AnswerCallbackRequest restored = objectMapper.readValue(json, AnswerCallbackRequest.class);
 
         assertThat(json).contains("\"callbackId\":\"cb-1\"");
+        assertThat(restored).isEqualTo(source);
+    }
+
+    @Test
+    void shouldSerializeAndDeserializeInlineKeyboardAttachment() throws Exception {
+        SendMessageRequest source = new SendMessageRequest(
+                new ChatId("chat-1"),
+                new NewMessageBody(
+                        "choose",
+                        TextFormat.PLAIN,
+                        List.of(NewMessageAttachment.inlineKeyboard(new InlineKeyboardAttachment(List.of(
+                                List.of(new InlineKeyboardButtonRequest("Pay", "pay:1", null)),
+                                List.of(new InlineKeyboardButtonRequest("Site", null, "https://example.com"))
+                        ))))
+                ),
+                true,
+                null
+        );
+
+        String json = objectMapper.writeValueAsString(source);
+        SendMessageRequest restored = objectMapper.readValue(json, SendMessageRequest.class);
+
+        assertThat(json).contains("\"type\":\"inline_keyboard\"");
+        assertThat(json).contains("\"inlineKeyboard\"");
         assertThat(restored).isEqualTo(source);
     }
 }
