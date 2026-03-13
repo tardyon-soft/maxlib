@@ -34,6 +34,9 @@ Java framework для разработки ботов на платформе MA
 - реализован базовый scene layer поверх FSM:
   `Scene`, `SceneRegistry` (`InMemorySceneRegistry`), `SceneStorage` (`MemorySceneStorage`),
   `SceneManager` (`DefaultSceneManager`) + scene/FSM state binding strategy.
+- реализован baseline wizard layer:
+  `Wizard`, `WizardStep`, `WizardManager` (`DefaultWizardManager`) с step progression
+  (`enter/next/back/exit`) поверх существующих Scene/FSM abstractions.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
@@ -233,6 +236,26 @@ SceneRegistry registry = new InMemorySceneRegistry()
 
 SceneManager scenes = new DefaultSceneManager(registry, new MemorySceneStorage(), fsm);
 scenes.enter("checkout").toCompletableFuture().join();
+```
+
+## Wizard flow baseline (Sprint 8)
+
+```java
+import ru.max.botframework.fsm.DefaultWizardManager;
+import ru.max.botframework.fsm.Wizard;
+import ru.max.botframework.fsm.WizardManager;
+
+registry.register(
+    Wizard.named("checkout")
+        .step("email")
+        .step("confirm")
+        .step("done")
+        .build()
+);
+
+WizardManager wizard = new DefaultWizardManager(registry, scenes, fsm);
+wizard.enter("checkout").toCompletableFuture().join();
+wizard.next().toCompletableFuture().join();
 ```
 
 ## Client configuration

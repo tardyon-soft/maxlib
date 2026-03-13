@@ -235,27 +235,44 @@ Baseline implementation Sprint 8:
 ### Wizard-style Flow
 
 Назначение:
-- минимальный пошаговый API поверх `Scene` + `FSMContext`.
+- минимальный линейный step-by-step API поверх `SceneManager` + `FSMContext`.
 
-Ожидаемый контракт (MVP):
+Контракт (baseline):
+
+```java
+public interface Wizard extends Scene {
+    List<WizardStep> steps();
+}
+
+public interface WizardManager {
+    CompletionStage<Void> enter(String wizardId);
+    CompletionStage<Optional<WizardStep>> currentStep();
+    CompletionStage<Void> next();
+    CompletionStage<Void> back();
+    CompletionStage<Void> exit();
+}
+```
+
+Пример:
 
 ```java
 Wizard checkout = Wizard.named("checkout")
-    .step("email", (ctx, fsm) -> {
-        return fsm.setState("checkout.email")
-            .thenCompose(v -> ctx.reply(Messages.text("Введите email")));
-    })
-    .step("confirm", (ctx, fsm) -> {
-        return fsm.setState("checkout.confirm")
-            .thenCompose(v -> ctx.reply(Messages.text("Подтвердите заказ")));
-    })
-    .onFinish((ctx, fsm) -> fsm.clearState().thenCompose(v -> fsm.clearData()));
+    .step("email")
+    .step("confirm")
+    .step("done")
+    .build();
 ```
+
+Семантика:
+- step identity задаётся `WizardStep.id`;
+- текущий шаг хранится в `FSMContext.data` (`wizard.stepIndex` + `wizard.stepId`);
+- `next`/`back` ограничены границами списка шагов (clamp behavior);
+- `exit` очищает scene metadata и wizard step metadata.
 
 Границы:
 - wizard не является BPM engine;
 - без distributed compensation/orchestration;
-- ориентирован на простые conversational flows.
+- без branching graph editor в Sprint 8 baseline.
 
 ## Desired Developer Experience
 
