@@ -144,6 +144,9 @@ Sprint 9 contracts:
   - packages: `autoconfigure`, `properties`, `polling`, `webhook`;
   - baseline `MaxBotProperties` + `MaxBotAutoConfiguration`;
   - Spring-facing bridges: `SpringPollingBootstrap`, `SpringWebhookAdapter`.
+- реализована базовая autoconfiguration SDK/runtime:
+  - `MaxApiClientConfig`, `MaxHttpClient`, `MaxBotClient`, `FSMStorage`, `Dispatcher`;
+  - user-override friendly bean conditions и automatic `Router` inclusion.
 
 Основные результаты:
 - Spring Boot starter auto-configuration;

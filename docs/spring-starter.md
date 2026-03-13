@@ -8,6 +8,12 @@
 - добавлен `AutoConfiguration.imports` entrypoint;
 - полноценный runtime wiring и lifecycle orchestration будут добавляться последующими задачами Sprint 9.
 
+Статус обновлён (Sprint 9.2.1):
+- autoconfiguration поднимает core SDK/runtime beans:
+  `MaxApiClientConfig`, `MaxHttpClient`, `MaxBotClient`, `FSMStorage`, `Dispatcher`;
+- starter включает `Router` beans в root `Dispatcher` и применяет `storage.state-scope`;
+- polling/webhook lifecycle wiring остаётся отдельной задачей.
+
 ## Goal
 
 - дать быстрый bootstrapping framework в Spring Boot приложении;

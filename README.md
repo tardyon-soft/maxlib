@@ -530,6 +530,12 @@ Sprint 9 focus:
 - testkit для runtime/unit integration сценариев;
 - docs consistency and examples polishing.
 
+Sprint 9.2.1 baseline delivered:
+- starter autoconfig now creates core beans with user-override friendly conditions:
+  `MaxApiClientConfig`, `MaxHttpClient`, `MaxBotClient`, `FSMStorage`, `Dispatcher`;
+- `Dispatcher` includes discovered `Router` beans and applies `max.bot.storage.state-scope`;
+- polling/webhook lifecycle wiring remains in follow-up Sprint 9 tasks.
+
 Sprint 7.1.2 implemented:
 - unified `InputFile` API:
   - `InputFile.fromPath(Path.of("./invoice.png"))`
