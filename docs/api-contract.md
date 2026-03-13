@@ -410,6 +410,8 @@ ctx.reply(msg);
 - [message-api-contract.md](message-api-contract.md)
 Детальный upload/media contract (input abstractions и multi-step upload flow):
 - [upload-media-contract.md](upload-media-contract.md)
+Актуальный Sprint 7 upload/media contract (InputFile, UploadService, multipart/resumable, media facade):
+- [upload-and-media.md](upload-and-media.md)
 
 ## KeyboardBuilder
 

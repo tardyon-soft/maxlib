@@ -12,6 +12,7 @@ High-level roadmap проекта MAX Java Bot Framework по спринтам.
 - Sprint 5 (`DI / handler parameter resolution`) завершён.
 - Sprint 6 (`Messages/Keyboards/Callbacks ergonomics`) завершён.
 - Следующий этап: Sprint 7 (`Upload/Media`).
+- Sprint 7.1: contract freeze для upload/media API (`docs/upload-and-media.md`).
 
 ## Sprint 0 — Spec/API Contract Freeze
 

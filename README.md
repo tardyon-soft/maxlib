@@ -20,6 +20,7 @@ Java framework для разработки ботов на платформе MA
 - upload/media abstractions поверх существующего SDK/runtime;
 - скрытие многошагового MAX upload flow за high-level API;
 - интеграция media pipeline в messaging ergonomics без ломающих изменений runtime.
+- контракт Sprint 7 зафиксирован в `docs/upload-and-media.md`.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
