@@ -1,0 +1,15 @@
+max:
+  bot:
+    token: ${MAX_BOT_TOKEN:}
+    mode: POLLING
+    polling:
+      enabled: true
+      limit: 100
+      timeout: 30s
+      types:
+        - message_created
+        - message_callback
+
+logging:
+  level:
+    ru.max.botframework: INFO

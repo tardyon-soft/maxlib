@@ -141,6 +141,7 @@ Framework состоит из трёх основных уровней:
 - `max-fsm`: FSM storage abstractions, state scopes, scenes, wizard.
 - `max-spring-boot-starter`: Spring Boot properties/autoconfiguration, polling/webhook adapter wiring.
 - `max-testkit`: runtime testing helpers (`DispatcherTestKit`, `UpdateFixtures`, `RecordingMaxBotClient`).
+- `demo-spring-polling`: отдельное Spring Boot demo-приложение для ручной проверки framework в polling mode.
 
 ## Project Status
 
@@ -256,6 +257,7 @@ DispatcherTestKit.DispatchProbe probe = kit.feedAndCapture(UpdateFixtures.messag
 - `examples/sprint-6-messaging`: messages/keyboards/callbacks/actions.
 - `examples/sprint-7-upload-media`: upload/media runtime usage.
 - `examples/sprint-9-e2e`: polished end-to-end examples (Spring polling/webhook + runtime scenarios).
+- `demo-spring-polling`: runnable Spring Boot app (`./gradlew :demo-spring-polling:run`) для ручного smoke/manual QA.
 
 ## Current Limitations
 

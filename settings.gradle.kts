@@ -7,4 +7,5 @@ include(
     "max-fsm",
     "max-spring-boot-starter",
     "max-testkit",
+    "demo-spring-polling",
 )
