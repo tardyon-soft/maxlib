@@ -5,6 +5,9 @@
 Документ фиксирует contract upload/media layer для Sprint 7.
 Это спецификация public API и runtime boundaries, а не реализация.
 
+Состояние реализации Sprint 7.1.2:
+- реализован `InputFile` (`fromPath`, `fromBytes`, `fromStream`) в `ru.max.botframework.upload`.
+
 ## Goal
 
 Дать разработчику ergonomic API для отправки медиа в стиле framework-level DX:

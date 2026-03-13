@@ -53,6 +53,8 @@ Java framework для разработки ботов на платформе MA
 - integration-style ingestion tests with JSON fixtures for polling/webhook regression safety;
 - domain-level операции в client SDK: `getMe`, message operations, callback answer, `getUpdates`, webhook subscriptions;
 - тестовая инфраструктура client SDK: JSON fixtures + reusable mocked HTTP context.
+- Sprint 7 foundation: `InputFile` abstraction (`ru.max.botframework.upload`) with
+  `fromPath(...)`, `fromBytes(...)`, `fromStream(...)` + file metadata (`fileName`, `contentType`, `knownSize`).
 
 ## Modules
 
@@ -210,6 +212,16 @@ Sprint 6 завершён:
 - upload/media abstractions и hidden multi-step flow orchestration;
 - media builders и интеграция в существующий Message API;
 - upload/media error model и regression tests.
+
+Sprint 7.1.2 implemented:
+- unified `InputFile` API:
+  - `InputFile.fromPath(Path.of("./invoice.png"))`
+  - `InputFile.fromBytes(bytes, "report.pdf")`
+  - `InputFile.fromStream(() -> stream, "voice.ogg")`
+- optional metadata overrides:
+  - `.withFileName(...)`
+  - `.withContentType(...)`
+- `knownSize()` поддерживает known/unknown size semantics (например, stream source без размера).
 
 Пример:
 
