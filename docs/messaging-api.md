@@ -140,6 +140,12 @@ Messages.text("Выберите действие")
   - до 2048 символов для `link` URL.
   Источник ограничений: MAX API docs (`inline_keyboard` attachment).
 
+Состояние реализации Sprint 6.3.1:
+- добавлен high-level callback answer API: `CallbackFacade`, `CallbackContext`, `CallbackAnswers`.
+- поддержаны сценарии:
+  - notification-only callback answer через `answerCallback`;
+  - update current callback message через `editMessage` на основе `callback.message`.
+
 Ответственность:
 - маппинг high-level builders -> SDK requests;
 - вызовы `MaxBotClient` (`sendMessage`, `editMessage`, `deleteMessage`, `answerCallback`, ...);

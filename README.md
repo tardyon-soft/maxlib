@@ -203,6 +203,7 @@ Sprint 6.1 foundation implemented:
   - max `3` buttons per row for `link/openApp/requestGeoLocation/requestContact`;
   - max `210` buttons total;
   - max `2048` chars for `link` URL.
+- callback high-level API: `CallbackFacade`, `CallbackContext`, `CallbackAnswers` for callback notification/update flows.
 
 Пример:
 
@@ -248,6 +249,14 @@ Message withKeyboard = messaging.send(
     chatTarget,
     Messages.text("Выберите действие").keyboard(keyboard)
 );
+
+CallbackFacade callbacks = new CallbackFacade(botClient);
+router.callback(cb -> {
+    CallbackContext ctx = callbacks.context(cb);
+    ctx.answer("Оплата принята");
+    ctx.updateCurrentMessage(Messages.text("Статус: оплачено"));
+    return java.util.concurrent.CompletableFuture.completedFuture(null);
+});
 ```
 
 ## Shared Services Injection (Sprint 5.2.3)
