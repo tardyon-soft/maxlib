@@ -341,7 +341,7 @@ router.message(Command.start(), (Context ctx, FSMContext fsm) -> {
 ```
 
 Детальный FSM/scenes contract (`FSMContext`, storage abstraction, scopes, state filters, scenes, wizard):
-- [fsm-scenes-contract.md](fsm-scenes-contract.md)
+- [fsm-and-scenes.md](fsm-and-scenes.md)
 
 ## Scene
 
@@ -373,7 +373,7 @@ router.scene(checkout);
 ```
 
 Детали `Scene`/`SceneManager` lifecycle и wizard-style API:
-- [fsm-scenes-contract.md](fsm-scenes-contract.md)
+- [fsm-and-scenes.md](fsm-and-scenes.md)
 
 ## MessageBuilder
 

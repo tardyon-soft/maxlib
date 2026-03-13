@@ -22,6 +22,7 @@ Java framework для разработки ботов на платформе MA
 - state scopes + `StateFilter`;
 - scenes/wizard minimal runtime APIs;
 - интеграция state layer в текущий dispatcher/runtime pipeline.
+- контракт Sprint 8 зафиксирован в `docs/fsm-and-scenes.md`.
 
 Что уже реализовано:
 - multi-module Gradle проект (Kotlin DSL) на Java 21;
