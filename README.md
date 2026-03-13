@@ -547,6 +547,25 @@ Sprint 9.2.2 webhook mode baseline:
   - `429` overloaded,
   - `500` internal error.
 
+Sprint 9.2.3 polling mode baseline:
+- polling bootstrap autoconfig creates `PollingUpdateSource`, `LongPollingRunner`,
+  and Spring lifecycle bridge for auto start/stop;
+- in polling mode runner starts on application startup and stops gracefully on shutdown;
+- polling path uses configured `Dispatcher`/`Router` graph without duplicating core polling logic.
+
+Polling configuration example:
+
+```yaml
+max:
+  bot:
+    mode: POLLING
+    polling:
+      enabled: true
+      limit: 100
+      timeout: 30s
+      types: [message_created, message_callback]
+```
+
 Sprint 7.1.2 implemented:
 - unified `InputFile` API:
   - `InputFile.fromPath(Path.of("./invoice.png"))`

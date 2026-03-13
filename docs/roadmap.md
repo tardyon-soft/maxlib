@@ -150,6 +150,9 @@ Sprint 9 contracts:
 - реализован Spring webhook adapter:
   - framework-agnostic receiver wiring (`DefaultWebhookReceiver`);
   - MVC endpoint for webhook path with mapped HTTP response contract.
+- реализован polling bootstrap для Spring:
+  - lifecycle-managed `LongPollingRunner` start/stop;
+  - dispatcher handler invocation through polling ingestion path.
 
 Основные результаты:
 - Spring Boot starter auto-configuration;

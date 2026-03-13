@@ -38,7 +38,10 @@ import ru.max.botframework.spring.webhook.SpringWebhookAdapter;
 class MaxBotAutoConfigurationTest {
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(MaxBotAutoConfiguration.class))
-            .withPropertyValues("max.bot.token=test-token");
+            .withPropertyValues(
+                    "max.bot.token=test-token",
+                    "max.bot.polling.enabled=false"
+            );
 
     @Test
     void autoConfigCreatesCoreSdkAndRuntimeBeans() {

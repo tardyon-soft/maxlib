@@ -10,7 +10,7 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 import ru.max.botframework.fsm.StateScope;
-import ru.max.botframework.model.UpdateType;
+import ru.max.botframework.model.UpdateEventType;
 
 /**
  * Spring Boot configuration properties for MAX bot runtime starter.
@@ -78,7 +78,7 @@ public class MaxBotProperties {
         private Integer limit = 100;
         @NotNull
         private Duration timeout = Duration.ofSeconds(30);
-        private final List<UpdateType> types = new ArrayList<>();
+        private final List<UpdateEventType> types = new ArrayList<>();
 
         public boolean isEnabled() {
             return enabled;
@@ -104,7 +104,7 @@ public class MaxBotProperties {
             this.timeout = timeout;
         }
 
-        public List<UpdateType> getTypes() {
+        public List<UpdateEventType> getTypes() {
             return types;
         }
     }

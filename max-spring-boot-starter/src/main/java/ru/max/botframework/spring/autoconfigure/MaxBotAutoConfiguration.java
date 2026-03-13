@@ -24,13 +24,19 @@ import ru.max.botframework.fsm.FSMStorage;
 import ru.max.botframework.fsm.MemoryStorage;
 import ru.max.botframework.fsm.SceneRegistry;
 import ru.max.botframework.fsm.SceneStorage;
+import ru.max.botframework.ingestion.DefaultLongPollingRunner;
 import ru.max.botframework.ingestion.DefaultWebhookReceiver;
 import ru.max.botframework.ingestion.DefaultWebhookSecretValidator;
+import ru.max.botframework.ingestion.LongPollingRunnerConfig;
+import ru.max.botframework.ingestion.PollingFetchRequest;
+import ru.max.botframework.ingestion.PollingUpdateSource;
+import ru.max.botframework.ingestion.SdkPollingUpdateSource;
 import ru.max.botframework.ingestion.LongPollingRunner;
 import ru.max.botframework.ingestion.WebhookReceiverConfig;
 import ru.max.botframework.ingestion.WebhookReceiver;
 import ru.max.botframework.ingestion.WebhookSecretValidator;
 import ru.max.botframework.spring.polling.SpringPollingBootstrap;
+import ru.max.botframework.spring.polling.SpringPollingLifecycle;
 import ru.max.botframework.spring.properties.MaxBotProperties;
 import ru.max.botframework.spring.properties.MaxBotStorageType;
 import ru.max.botframework.spring.webhook.SpringWebhookAdapter;
@@ -132,6 +138,51 @@ public class MaxBotAutoConfiguration {
     @ConditionalOnMissingBean
     public SpringPollingBootstrap springPollingBootstrap(ObjectProvider<LongPollingRunner> runnerProvider) {
         return new SpringPollingBootstrap(runnerProvider.getIfAvailable());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'POLLING' && '${max.bot.polling.enabled:true}' == 'true'")
+    public PollingUpdateSource pollingUpdateSource(MaxBotClient maxBotClient) {
+        return new SdkPollingUpdateSource(maxBotClient);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'POLLING' && '${max.bot.polling.enabled:true}' == 'true'")
+    public LongPollingRunnerConfig longPollingRunnerConfig(MaxBotProperties properties) {
+        Integer timeoutSeconds = null;
+        if (properties.getPolling().getTimeout() != null) {
+            timeoutSeconds = Math.toIntExact(properties.getPolling().getTimeout().toSeconds());
+        }
+        PollingFetchRequest request = new PollingFetchRequest(
+                null,
+                timeoutSeconds,
+                properties.getPolling().getLimit(),
+                properties.getPolling().getTypes()
+        );
+        return LongPollingRunnerConfig.builder()
+                .request(request)
+                .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'POLLING' && '${max.bot.polling.enabled:true}' == 'true'")
+    public LongPollingRunner longPollingRunner(
+            PollingUpdateSource source,
+            Dispatcher dispatcher,
+            LongPollingRunnerConfig config
+    ) {
+        return new DefaultLongPollingRunner(source, dispatcher, config);
+    }
+
+    @Bean
+    @ConditionalOnBean(LongPollingRunner.class)
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'POLLING' && '${max.bot.polling.enabled:true}' == 'true'")
+    public SpringPollingLifecycle springPollingLifecycle(LongPollingRunner longPollingRunner) {
+        return new SpringPollingLifecycle(longPollingRunner);
     }
 
     @Bean

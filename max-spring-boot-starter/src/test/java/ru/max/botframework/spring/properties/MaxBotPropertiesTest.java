@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import ru.max.botframework.fsm.StateScope;
-import ru.max.botframework.model.UpdateType;
+import ru.max.botframework.model.UpdateEventType;
 import ru.max.botframework.spring.autoconfigure.MaxBotAutoConfiguration;
 
 class MaxBotPropertiesTest {
@@ -45,8 +45,8 @@ class MaxBotPropertiesTest {
                         "max.bot.polling.enabled=false",
                         "max.bot.polling.limit=20",
                         "max.bot.polling.timeout=45s",
-                        "max.bot.polling.types[0]=MESSAGE",
-                        "max.bot.polling.types[1]=CALLBACK",
+                        "max.bot.polling.types[0]=message_created",
+                        "max.bot.polling.types[1]=message_callback",
                         "max.bot.webhook.enabled=true",
                         "max.bot.webhook.path=/hooks/max",
                         "max.bot.webhook.secret=secret-1",
@@ -64,8 +64,8 @@ class MaxBotPropertiesTest {
                     assertEquals(20, properties.getPolling().getLimit());
                     assertEquals(java.time.Duration.ofSeconds(45), properties.getPolling().getTimeout());
                     assertEquals(2, properties.getPolling().getTypes().size());
-                    assertEquals(UpdateType.MESSAGE, properties.getPolling().getTypes().get(0));
-                    assertEquals(UpdateType.CALLBACK, properties.getPolling().getTypes().get(1));
+                    assertEquals(UpdateEventType.MESSAGE_CREATED, properties.getPolling().getTypes().get(0));
+                    assertEquals(UpdateEventType.MESSAGE_CALLBACK, properties.getPolling().getTypes().get(1));
                     assertEquals(true, properties.getWebhook().isEnabled());
                     assertEquals("/hooks/max", properties.getWebhook().getPath());
                     assertEquals("secret-1", properties.getWebhook().getSecret());

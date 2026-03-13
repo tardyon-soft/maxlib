@@ -20,6 +20,11 @@
   - Spring MVC endpoint (`POST ${max.bot.webhook.path}`) делегирует в framework-agnostic receiver;
   - response mapping: `200/403/400/429/500`.
 
+Статус обновлён (Sprint 9.2.3):
+- реализован polling bootstrap:
+  - `PollingUpdateSource` (`SdkPollingUpdateSource`) + `LongPollingRunnerConfig` + `DefaultLongPollingRunner`;
+  - `SpringPollingLifecycle` запускает/останавливает polling вместе с lifecycle приложения.
+
 ## Goal
 
 - дать быстрый bootstrapping framework в Spring Boot приложении;
@@ -48,7 +53,7 @@
 - `max.bot.polling.enabled` (`boolean`);
 - `max.bot.polling.limit` (`int`, default `100`);
 - `max.bot.polling.timeout` (`Duration`, default `30s`);
-- `max.bot.polling.types` (`List<UpdateType>`, optional);
+- `max.bot.polling.types` (`List<UpdateEventType>`, optional; например `message_created`, `message_callback`);
 - `max.bot.webhook.enabled` (`boolean`);
 - `max.bot.webhook.path` (`String`, default `/webhook/max`);
 - `max.bot.webhook.secret` (`String`, optional but recommended);
@@ -124,6 +129,9 @@ class BotConfig {
 
 Polling mode:
 - достаточно `max.bot.mode=POLLING` и `Router` bean-ов.
+- polling lifecycle:
+  - auto-start на startup;
+  - graceful stop на shutdown.
 
 Webhook mode:
 - `max.bot.mode=WEBHOOK` + `max.bot.webhook.path` + `max.bot.webhook.secret`.
