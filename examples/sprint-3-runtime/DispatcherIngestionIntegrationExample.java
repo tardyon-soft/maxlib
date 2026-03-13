@@ -1,23 +1,23 @@
-package ru.max.botframework.examples.sprint3;
+package ru.tardyon.botframework.examples.sprint3;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import ru.max.botframework.client.MaxBotClient;
-import ru.max.botframework.client.serialization.JacksonJsonCodec;
-import ru.max.botframework.dispatcher.Dispatcher;
-import ru.max.botframework.dispatcher.Router;
-import ru.max.botframework.ingestion.DefaultLongPollingRunner;
-import ru.max.botframework.ingestion.DefaultWebhookReceiver;
-import ru.max.botframework.ingestion.DefaultWebhookSecretValidator;
-import ru.max.botframework.ingestion.LongPollingRunnerConfig;
-import ru.max.botframework.ingestion.PollingFetchRequest;
-import ru.max.botframework.ingestion.SdkPollingUpdateSource;
-import ru.max.botframework.ingestion.WebhookReceiveResult;
-import ru.max.botframework.ingestion.WebhookReceiveStatus;
-import ru.max.botframework.ingestion.WebhookRequest;
-import ru.max.botframework.model.UpdateEventType;
+import ru.tardyon.botframework.client.MaxBotClient;
+import ru.tardyon.botframework.client.serialization.JacksonJsonCodec;
+import ru.tardyon.botframework.dispatcher.Dispatcher;
+import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.ingestion.DefaultLongPollingRunner;
+import ru.tardyon.botframework.ingestion.DefaultWebhookReceiver;
+import ru.tardyon.botframework.ingestion.DefaultWebhookSecretValidator;
+import ru.tardyon.botframework.ingestion.LongPollingRunnerConfig;
+import ru.tardyon.botframework.ingestion.PollingFetchRequest;
+import ru.tardyon.botframework.ingestion.SdkPollingUpdateSource;
+import ru.tardyon.botframework.ingestion.WebhookReceiveResult;
+import ru.tardyon.botframework.ingestion.WebhookReceiveStatus;
+import ru.tardyon.botframework.ingestion.WebhookRequest;
+import ru.tardyon.botframework.model.UpdateEventType;
 
 public final class DispatcherIngestionIntegrationExample {
 

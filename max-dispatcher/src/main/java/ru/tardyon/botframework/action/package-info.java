@@ -1,0 +1,6 @@
+/**
+ * High-level chat action abstractions for runtime handlers.
+ *
+ * <p>Types in this package are transport-agnostic and delegate execution to {@code MaxBotClient}.</p>
+ */
+package ru.tardyon.botframework.action;

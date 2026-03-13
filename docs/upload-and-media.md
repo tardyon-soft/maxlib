@@ -6,10 +6,10 @@
 Это спецификация public API и runtime boundaries, а не реализация.
 
 Состояние реализации Sprint 7.1.2:
-- реализован `InputFile` (`fromPath`, `fromBytes`, `fromStream`) в `ru.max.botframework.upload`.
+- реализован `InputFile` (`fromPath`, `fromBytes`, `fromStream`) в `ru.tardyon.botframework.upload`.
 
 Состояние реализации Sprint 7.1.3:
-- реализован orchestration contract в `ru.max.botframework.upload`:
+- реализован orchestration contract в `ru.tardyon.botframework.upload`:
   - `UploadService` / `DefaultUploadService`;
   - `UploadPreparationGateway` (prepare stage, `POST /uploads`);
   - `UploadTransferGateway` (raw upload URL transfer);
@@ -38,7 +38,7 @@
   - `DefaultUploadResultMapper` нормализует результаты multipart/resumable в один contract.
 
 Состояние реализации Sprint 7.3.1:
-- добавлены high-level media attachment abstractions в `ru.max.botframework.message`:
+- добавлены high-level media attachment abstractions в `ru.tardyon.botframework.message`:
   - `ImageAttachment`, `FileAttachment`, `VideoAttachment`, `AudioAttachment`;
   - общий контракт `MediaAttachment`;
   - mapping в существующий low-level `NewMessageAttachment` (`AttachmentInput.uploadRef`).

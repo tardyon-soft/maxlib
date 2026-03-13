@@ -1,17 +1,17 @@
-package ru.max.botframework.examples.sprint7;
+package ru.tardyon.botframework.examples.sprint7;
 
 import java.nio.file.Path;
-import ru.max.botframework.client.MaxBotClient;
-import ru.max.botframework.message.MediaAttachment;
-import ru.max.botframework.message.MediaMessagingFacade;
-import ru.max.botframework.message.MessageTarget;
-import ru.max.botframework.message.Messages;
-import ru.max.botframework.message.MessagingFacade;
-import ru.max.botframework.model.ChatId;
-import ru.max.botframework.model.Message;
-import ru.max.botframework.upload.InputFile;
-import ru.max.botframework.upload.UploadResult;
-import ru.max.botframework.upload.UploadService;
+import ru.tardyon.botframework.client.MaxBotClient;
+import ru.tardyon.botframework.message.MediaAttachment;
+import ru.tardyon.botframework.message.MediaMessagingFacade;
+import ru.tardyon.botframework.message.MessageTarget;
+import ru.tardyon.botframework.message.Messages;
+import ru.tardyon.botframework.message.MessagingFacade;
+import ru.tardyon.botframework.model.ChatId;
+import ru.tardyon.botframework.model.Message;
+import ru.tardyon.botframework.upload.InputFile;
+import ru.tardyon.botframework.upload.UploadResult;
+import ru.tardyon.botframework.upload.UploadService;
 
 /**
  * Sprint 7 low-level high-level usage example outside dispatcher runtime context.

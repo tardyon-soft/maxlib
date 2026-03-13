@@ -15,30 +15,30 @@
 
 Корневой package проекта:
 
-`ru.max.botframework`
+`ru.tardyon.botframework`
 
 Правила:
 - Все публичные API типы framework используют этот root package.
-- Новые модули обязаны оставаться внутри `ru.max.botframework.*`.
+- Новые модули обязаны оставаться внутри `ru.tardyon.botframework.*`.
 - Смена root package считается ломающим изменением API.
 
 ## Module package strategy
 
 Базовая стратегия по текущим модулям:
 
-- `max-model` -> `ru.max.botframework.model`
-- `max-client-core` -> `ru.max.botframework.client`
-- `max-dispatcher` -> `ru.max.botframework.dispatcher`
-- `max-fsm` -> `ru.max.botframework.fsm`
-- `max-spring-boot-starter` -> `ru.max.botframework.spring`
-- `max-testkit` -> `ru.max.botframework.testkit`
+- `max-model` -> `ru.tardyon.botframework.model`
+- `max-client-core` -> `ru.tardyon.botframework.client`
+- `max-dispatcher` -> `ru.tardyon.botframework.dispatcher`
+- `max-fsm` -> `ru.tardyon.botframework.fsm`
+- `max-spring-boot-starter` -> `ru.tardyon.botframework.spring`
+- `max-testkit` -> `ru.tardyon.botframework.testkit`
 
 Рекомендация по расширению (post-MVP):
-- `ru.max.botframework.filters`
-- `ru.max.botframework.middleware`
-- `ru.max.botframework.message`
-- `ru.max.botframework.callback`
-- `ru.max.botframework.upload`
+- `ru.tardyon.botframework.filters`
+- `ru.tardyon.botframework.middleware`
+- `ru.tardyon.botframework.message`
+- `ru.tardyon.botframework.callback`
+- `ru.tardyon.botframework.upload`
 
 ## Public vs internal packages
 
@@ -47,9 +47,9 @@
 Публичные контракты размещаются в верхнем пространстве модуля, без маркеров internal.
 
 Примеры:
-- `ru.max.botframework.dispatcher.Dispatcher`
-- `ru.max.botframework.dispatcher.Router`
-- `ru.max.botframework.fsm.FSMContext` (контрактный target)
+- `ru.tardyon.botframework.dispatcher.Dispatcher`
+- `ru.tardyon.botframework.dispatcher.Router`
+- `ru.tardyon.botframework.fsm.FSMContext` (контрактный target)
 
 ### Internal infrastructure packages
 
@@ -58,9 +58,9 @@
 - `.internal`
 
 Примеры:
-- `ru.max.botframework.dispatcher.internal.pipeline`
-- `ru.max.botframework.client.internal.http`
-- `ru.max.botframework.fsm.internal.storage`
+- `ru.tardyon.botframework.dispatcher.internal.pipeline`
+- `ru.tardyon.botframework.client.internal.http`
+- `ru.tardyon.botframework.fsm.internal.storage`
 
 Правила:
 - Типы из `.internal` не являются частью public API.
@@ -145,7 +145,7 @@ router.message(F.message().commandStart(), ctx -> ctx.reply("Hi"));
 ### Good internal naming
 
 ```java
-package ru.max.botframework.dispatcher.internal.pipeline;
+package ru.tardyon.botframework.dispatcher.internal.pipeline;
 
 final class DefaultHandlerInvoker {
     // internal runtime glue

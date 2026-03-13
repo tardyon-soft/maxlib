@@ -195,7 +195,7 @@ Extension points:
 - webhook: получение raw payload из HTTP ingress.
 
 2. Нормализация:
-- payload приводится к `ru.max.botframework.model.Update`;
+- payload приводится к `ru.tardyon.botframework.model.Update`;
 - обязательные поля/тип update проверяются на уровне ingestion validation.
 
 3. Передача в sink:

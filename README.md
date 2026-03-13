@@ -4,6 +4,8 @@ Java framework для разработки ботов на платформе MA
 
 Важно: это не буквальная копия aiogram. Framework повторяет ergonomic-подходы там, где они совместимы с MAX.
 
+Базовый namespace проекта: `ru.tardyon.botframework`.
+
 ## Quick Start
 
 ### 1) Требования
@@ -39,13 +41,34 @@ dependencies {
 ./gradlew clean test
 ```
 
+### 3.1) Публикация в Maven Central
+
+Для vanilla Java стека (без Spring starter):
+
+```bash
+./gradlew publishVanillaJavaToMavenCentral
+```
+
+Для starter-стека (включая Spring starter и его зависимости):
+
+```bash
+./gradlew publishStarterToMavenCentral
+```
+
+Требуемые переменные окружения для публикации:
+
+- `MAVEN_CENTRAL_USERNAME`
+- `MAVEN_CENTRAL_PASSWORD`
+- `MAVEN_GPG_PRIVATE_KEY`
+- `MAVEN_GPG_PASSPHRASE`
+
 ### 4) Минимальный runtime bot (без Spring)
 
 ```java
 import java.util.concurrent.CompletableFuture;
-import ru.max.botframework.dispatcher.Dispatcher;
-import ru.max.botframework.dispatcher.Router;
-import ru.max.botframework.message.Messages;
+import ru.tardyon.botframework.dispatcher.Dispatcher;
+import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.message.Messages;
 
 Dispatcher dispatcher = new Dispatcher()
     .withBotClient(configuredMaxBotClient());
@@ -78,9 +101,9 @@ max:
 import java.util.concurrent.CompletableFuture;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import ru.max.botframework.dispatcher.BuiltInFilters;
-import ru.max.botframework.dispatcher.Router;
-import ru.max.botframework.message.Messages;
+import ru.tardyon.botframework.dispatcher.BuiltInFilters;
+import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.message.Messages;
 
 @SpringBootApplication
 class BotApp {

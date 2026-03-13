@@ -1,14 +1,14 @@
-package ru.max.botframework.examples.sprint9;
+package ru.tardyon.botframework.examples.sprint9;
 
 import java.util.concurrent.CompletableFuture;
-import ru.max.botframework.dispatcher.BuiltInFilters;
-import ru.max.botframework.dispatcher.Dispatcher;
-import ru.max.botframework.dispatcher.Router;
-import ru.max.botframework.fsm.InMemorySceneRegistry;
-import ru.max.botframework.fsm.MemorySceneStorage;
-import ru.max.botframework.fsm.MemoryStorage;
-import ru.max.botframework.fsm.Wizard;
-import ru.max.botframework.message.Messages;
+import ru.tardyon.botframework.dispatcher.BuiltInFilters;
+import ru.tardyon.botframework.dispatcher.Dispatcher;
+import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.fsm.InMemorySceneRegistry;
+import ru.tardyon.botframework.fsm.MemorySceneStorage;
+import ru.tardyon.botframework.fsm.MemoryStorage;
+import ru.tardyon.botframework.fsm.Wizard;
+import ru.tardyon.botframework.message.Messages;
 
 /**
  * Minimal FSM + scenes runtime example.
@@ -58,7 +58,7 @@ public final class FsmScenesExample {
         dispatcher.includeRouter(router);
     }
 
-    private static ru.max.botframework.client.MaxBotClient createConfiguredBotClient() {
+    private static ru.tardyon.botframework.client.MaxBotClient createConfiguredBotClient() {
         throw new UnsupportedOperationException("Provide configured MaxBotClient instance");
     }
 }

@@ -1,21 +1,21 @@
-package ru.max.botframework.examples.sprint9;
+package ru.tardyon.botframework.examples.sprint9;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import ru.max.botframework.dispatcher.DispatchResult;
-import ru.max.botframework.dispatcher.Dispatcher;
-import ru.max.botframework.dispatcher.Router;
-import ru.max.botframework.model.Chat;
-import ru.max.botframework.model.ChatId;
-import ru.max.botframework.model.ChatType;
-import ru.max.botframework.model.Message;
-import ru.max.botframework.model.MessageId;
-import ru.max.botframework.model.Update;
-import ru.max.botframework.model.UpdateId;
-import ru.max.botframework.model.UpdateType;
-import ru.max.botframework.model.User;
-import ru.max.botframework.model.UserId;
+import ru.tardyon.botframework.dispatcher.DispatchResult;
+import ru.tardyon.botframework.dispatcher.Dispatcher;
+import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.model.Chat;
+import ru.tardyon.botframework.model.ChatId;
+import ru.tardyon.botframework.model.ChatType;
+import ru.tardyon.botframework.model.Message;
+import ru.tardyon.botframework.model.MessageId;
+import ru.tardyon.botframework.model.Update;
+import ru.tardyon.botframework.model.UpdateId;
+import ru.tardyon.botframework.model.UpdateType;
+import ru.tardyon.botframework.model.User;
+import ru.tardyon.botframework.model.UserId;
 
 /**
  * Router tree composition example.

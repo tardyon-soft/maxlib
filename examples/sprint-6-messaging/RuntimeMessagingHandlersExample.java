@@ -1,30 +1,30 @@
-package ru.max.botframework.examples.sprint6;
+package ru.tardyon.botframework.examples.sprint6;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import ru.max.botframework.action.ChatActionsFacade;
-import ru.max.botframework.callback.CallbackFacade;
-import ru.max.botframework.client.MaxBotClient;
-import ru.max.botframework.dispatcher.DispatchResult;
-import ru.max.botframework.dispatcher.Dispatcher;
-import ru.max.botframework.dispatcher.Router;
-import ru.max.botframework.message.MessagingFacade;
-import ru.max.botframework.message.Messages;
-import ru.max.botframework.model.Callback;
-import ru.max.botframework.model.CallbackId;
-import ru.max.botframework.model.Chat;
-import ru.max.botframework.model.ChatAction;
-import ru.max.botframework.model.ChatId;
-import ru.max.botframework.model.ChatType;
-import ru.max.botframework.model.Message;
-import ru.max.botframework.model.MessageId;
-import ru.max.botframework.model.Update;
-import ru.max.botframework.model.UpdateId;
-import ru.max.botframework.model.UpdateType;
-import ru.max.botframework.model.User;
-import ru.max.botframework.model.UserId;
+import ru.tardyon.botframework.action.ChatActionsFacade;
+import ru.tardyon.botframework.callback.CallbackFacade;
+import ru.tardyon.botframework.client.MaxBotClient;
+import ru.tardyon.botframework.dispatcher.DispatchResult;
+import ru.tardyon.botframework.dispatcher.Dispatcher;
+import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.message.MessagingFacade;
+import ru.tardyon.botframework.message.Messages;
+import ru.tardyon.botframework.model.Callback;
+import ru.tardyon.botframework.model.CallbackId;
+import ru.tardyon.botframework.model.Chat;
+import ru.tardyon.botframework.model.ChatAction;
+import ru.tardyon.botframework.model.ChatId;
+import ru.tardyon.botframework.model.ChatType;
+import ru.tardyon.botframework.model.Message;
+import ru.tardyon.botframework.model.MessageId;
+import ru.tardyon.botframework.model.Update;
+import ru.tardyon.botframework.model.UpdateId;
+import ru.tardyon.botframework.model.UpdateType;
+import ru.tardyon.botframework.model.User;
+import ru.tardyon.botframework.model.UserId;
 
 /**
  * Sprint 6 runtime handler ergonomics example:

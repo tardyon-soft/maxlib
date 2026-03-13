@@ -1,12 +1,12 @@
-package ru.max.botframework.examples.sprint9;
+package ru.tardyon.botframework.examples.sprint9;
 
 import java.util.concurrent.CompletableFuture;
-import ru.max.botframework.dispatcher.BuiltInFilters;
-import ru.max.botframework.dispatcher.Dispatcher;
-import ru.max.botframework.dispatcher.Router;
-import ru.max.botframework.message.Buttons;
-import ru.max.botframework.message.Keyboards;
-import ru.max.botframework.message.Messages;
+import ru.tardyon.botframework.dispatcher.BuiltInFilters;
+import ru.tardyon.botframework.dispatcher.Dispatcher;
+import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.message.Buttons;
+import ru.tardyon.botframework.message.Keyboards;
+import ru.tardyon.botframework.message.Messages;
 
 /**
  * Messaging + keyboard + callback answer ergonomics.
@@ -39,7 +39,7 @@ public final class MessagingCallbacksExample {
         dispatcher.includeRouter(router);
     }
 
-    private static ru.max.botframework.client.MaxBotClient createConfiguredBotClient() {
+    private static ru.tardyon.botframework.client.MaxBotClient createConfiguredBotClient() {
         throw new UnsupportedOperationException("Provide configured MaxBotClient instance");
     }
 }

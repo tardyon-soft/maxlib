@@ -1,17 +1,17 @@
-package ru.max.botframework.examples.sprint2;
+package ru.tardyon.botframework.examples.sprint2;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import ru.max.botframework.client.serialization.JacksonJsonCodec;
-import ru.max.botframework.ingestion.DefaultWebhookReceiver;
-import ru.max.botframework.ingestion.DefaultWebhookSecretValidator;
-import ru.max.botframework.ingestion.UpdateHandlingResult;
-import ru.max.botframework.ingestion.UpdateConsumer;
-import ru.max.botframework.ingestion.WebhookReceiveResult;
-import ru.max.botframework.ingestion.WebhookReceiveStatus;
-import ru.max.botframework.ingestion.WebhookReceiverConfig;
-import ru.max.botframework.ingestion.WebhookRequest;
+import ru.tardyon.botframework.client.serialization.JacksonJsonCodec;
+import ru.tardyon.botframework.ingestion.DefaultWebhookReceiver;
+import ru.tardyon.botframework.ingestion.DefaultWebhookSecretValidator;
+import ru.tardyon.botframework.ingestion.UpdateHandlingResult;
+import ru.tardyon.botframework.ingestion.UpdateConsumer;
+import ru.tardyon.botframework.ingestion.WebhookReceiveResult;
+import ru.tardyon.botframework.ingestion.WebhookReceiveStatus;
+import ru.tardyon.botframework.ingestion.WebhookReceiverConfig;
+import ru.tardyon.botframework.ingestion.WebhookRequest;
 
 public final class WebhookHandlingExample {
 

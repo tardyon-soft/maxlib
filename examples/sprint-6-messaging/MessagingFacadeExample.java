@@ -1,18 +1,18 @@
-package ru.max.botframework.examples.sprint6;
+package ru.tardyon.botframework.examples.sprint6;
 
-import ru.max.botframework.action.ChatActionsFacade;
-import ru.max.botframework.callback.CallbackAnswers;
-import ru.max.botframework.callback.CallbackContext;
-import ru.max.botframework.callback.CallbackFacade;
-import ru.max.botframework.client.MaxBotClient;
-import ru.max.botframework.message.Buttons;
-import ru.max.botframework.message.InlineKeyboard;
-import ru.max.botframework.message.Keyboards;
-import ru.max.botframework.message.MessageTarget;
-import ru.max.botframework.message.Messages;
-import ru.max.botframework.message.MessagingFacade;
-import ru.max.botframework.model.ChatId;
-import ru.max.botframework.model.UserId;
+import ru.tardyon.botframework.action.ChatActionsFacade;
+import ru.tardyon.botframework.callback.CallbackAnswers;
+import ru.tardyon.botframework.callback.CallbackContext;
+import ru.tardyon.botframework.callback.CallbackFacade;
+import ru.tardyon.botframework.client.MaxBotClient;
+import ru.tardyon.botframework.message.Buttons;
+import ru.tardyon.botframework.message.InlineKeyboard;
+import ru.tardyon.botframework.message.Keyboards;
+import ru.tardyon.botframework.message.MessageTarget;
+import ru.tardyon.botframework.message.Messages;
+import ru.tardyon.botframework.message.MessagingFacade;
+import ru.tardyon.botframework.model.ChatId;
+import ru.tardyon.botframework.model.UserId;
 
 /**
  * Sprint 6 low-level high-level API usage example (outside dispatcher runtime context).
@@ -73,7 +73,7 @@ public final class MessagingFacadeExample {
         throw new UnsupportedOperationException("Resolve user to chat id: " + userId.value());
     }
 
-    private static ru.max.botframework.model.Callback loadCallbackEvent() {
+    private static ru.tardyon.botframework.model.Callback loadCallbackEvent() {
         throw new UnsupportedOperationException("Load callback event from update pipeline");
     }
 }

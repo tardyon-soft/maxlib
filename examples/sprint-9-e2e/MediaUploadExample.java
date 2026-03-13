@@ -1,12 +1,12 @@
-package ru.max.botframework.examples.sprint9;
+package ru.tardyon.botframework.examples.sprint9;
 
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
-import ru.max.botframework.dispatcher.BuiltInFilters;
-import ru.max.botframework.dispatcher.Dispatcher;
-import ru.max.botframework.dispatcher.Router;
-import ru.max.botframework.upload.InputFile;
-import ru.max.botframework.upload.UploadService;
+import ru.tardyon.botframework.dispatcher.BuiltInFilters;
+import ru.tardyon.botframework.dispatcher.Dispatcher;
+import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.upload.InputFile;
+import ru.tardyon.botframework.upload.UploadService;
 
 /**
  * Optional upload/media example using runtime shortcuts and media facade.
@@ -38,7 +38,7 @@ public final class MediaUploadExample {
         dispatcher.includeRouter(router);
     }
 
-    private static ru.max.botframework.client.MaxBotClient createConfiguredBotClient() {
+    private static ru.tardyon.botframework.client.MaxBotClient createConfiguredBotClient() {
         throw new UnsupportedOperationException("Provide configured MaxBotClient instance");
     }
 

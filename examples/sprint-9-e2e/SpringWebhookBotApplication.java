@@ -1,11 +1,11 @@
-package ru.max.botframework.examples.sprint9;
+package ru.tardyon.botframework.examples.sprint9;
 
 import java.util.concurrent.CompletableFuture;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import ru.max.botframework.dispatcher.Router;
-import ru.max.botframework.message.Messages;
+import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.message.Messages;
 
 /**
  * Minimal Spring Boot bot in webhook mode.

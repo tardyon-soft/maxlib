@@ -1,0 +1,165 @@
+package ru.tardyon.botframework.message;
+
+import java.util.Locale;
+import java.util.Objects;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import ru.tardyon.botframework.model.ChatId;
+import ru.tardyon.botframework.model.Message;
+import ru.tardyon.botframework.model.UserId;
+import ru.tardyon.botframework.upload.InputFile;
+import ru.tardyon.botframework.upload.UploadMediaKind;
+import ru.tardyon.botframework.upload.UploadRequest;
+import ru.tardyon.botframework.upload.UploadResult;
+import ru.tardyon.botframework.upload.UploadService;
+
+/**
+ * High-level media send/reply facade over {@link UploadService} and existing {@link MessagingFacade}.
+ *
+ * <p>Facade hides upload orchestration details and keeps runtime API close to
+ * message-level business operations.</p>
+ */
+public final class MediaMessagingFacade {
+    private final UploadService uploadService;
+    private final MessagingFacade messaging;
+
+    public MediaMessagingFacade(UploadService uploadService, MessagingFacade messaging) {
+        this.uploadService = Objects.requireNonNull(uploadService, "uploadService");
+        this.messaging = Objects.requireNonNull(messaging, "messaging");
+    }
+
+    public Message sendImage(MessageTarget target, InputFile inputFile) {
+        return sendImage(target, inputFile, null);
+    }
+
+    public Message sendImage(MessageTarget target, InputFile inputFile, String caption) {
+        return send(target, inputFile, UploadMediaKind.IMAGE, caption);
+    }
+
+    public Message sendImage(ChatId chatId, InputFile inputFile) {
+        return sendImage(MessageTarget.chat(Objects.requireNonNull(chatId, "chatId")), inputFile);
+    }
+
+    public Message sendImage(UserId userId, InputFile inputFile) {
+        return sendImage(MessageTarget.user(Objects.requireNonNull(userId, "userId")), inputFile);
+    }
+
+    public Message sendFile(MessageTarget target, InputFile inputFile) {
+        return sendFile(target, inputFile, null);
+    }
+
+    public Message sendFile(MessageTarget target, InputFile inputFile, String caption) {
+        return send(target, inputFile, UploadMediaKind.FILE, caption);
+    }
+
+    public Message sendFile(ChatId chatId, InputFile inputFile) {
+        return sendFile(MessageTarget.chat(Objects.requireNonNull(chatId, "chatId")), inputFile);
+    }
+
+    public Message sendFile(UserId userId, InputFile inputFile) {
+        return sendFile(MessageTarget.user(Objects.requireNonNull(userId, "userId")), inputFile);
+    }
+
+    public Message sendVideo(MessageTarget target, InputFile inputFile) {
+        return sendVideo(target, inputFile, null);
+    }
+
+    public Message sendVideo(MessageTarget target, InputFile inputFile, String caption) {
+        return send(target, inputFile, UploadMediaKind.VIDEO, caption);
+    }
+
+    public Message sendVideo(ChatId chatId, InputFile inputFile) {
+        return sendVideo(MessageTarget.chat(Objects.requireNonNull(chatId, "chatId")), inputFile);
+    }
+
+    public Message sendVideo(UserId userId, InputFile inputFile) {
+        return sendVideo(MessageTarget.user(Objects.requireNonNull(userId, "userId")), inputFile);
+    }
+
+    public Message sendAudio(MessageTarget target, InputFile inputFile) {
+        return sendAudio(target, inputFile, null);
+    }
+
+    public Message sendAudio(MessageTarget target, InputFile inputFile, String caption) {
+        return send(target, inputFile, UploadMediaKind.AUDIO, caption);
+    }
+
+    public Message sendAudio(ChatId chatId, InputFile inputFile) {
+        return sendAudio(MessageTarget.chat(Objects.requireNonNull(chatId, "chatId")), inputFile);
+    }
+
+    public Message sendAudio(UserId userId, InputFile inputFile) {
+        return sendAudio(MessageTarget.user(Objects.requireNonNull(userId, "userId")), inputFile);
+    }
+
+    public Message replyImage(Message sourceMessage, InputFile inputFile) {
+        return replyImage(sourceMessage, inputFile, null);
+    }
+
+    public Message replyImage(Message sourceMessage, InputFile inputFile, String caption) {
+        return reply(sourceMessage, inputFile, UploadMediaKind.IMAGE, caption);
+    }
+
+    public Message replyFile(Message sourceMessage, InputFile inputFile) {
+        return replyFile(sourceMessage, inputFile, null);
+    }
+
+    public Message replyFile(Message sourceMessage, InputFile inputFile, String caption) {
+        return reply(sourceMessage, inputFile, UploadMediaKind.FILE, caption);
+    }
+
+    public Message replyVideo(Message sourceMessage, InputFile inputFile) {
+        return replyVideo(sourceMessage, inputFile, null);
+    }
+
+    public Message replyVideo(Message sourceMessage, InputFile inputFile, String caption) {
+        return reply(sourceMessage, inputFile, UploadMediaKind.VIDEO, caption);
+    }
+
+    public Message replyAudio(Message sourceMessage, InputFile inputFile) {
+        return replyAudio(sourceMessage, inputFile, null);
+    }
+
+    public Message replyAudio(Message sourceMessage, InputFile inputFile, String caption) {
+        return reply(sourceMessage, inputFile, UploadMediaKind.AUDIO, caption);
+    }
+
+    private Message send(MessageTarget target, InputFile inputFile, UploadMediaKind kind, String caption) {
+        Objects.requireNonNull(target, "target");
+        MediaAttachment attachment = buildAttachment(inputFile, kind, caption);
+        return messaging.send(target, Messages.message().attachment(attachment));
+    }
+
+    private Message reply(Message sourceMessage, InputFile inputFile, UploadMediaKind kind, String caption) {
+        Objects.requireNonNull(sourceMessage, "sourceMessage");
+        MediaAttachment attachment = buildAttachment(inputFile, kind, caption);
+        return messaging.reply(sourceMessage, Messages.message().attachment(attachment));
+    }
+
+    private MediaAttachment buildAttachment(InputFile inputFile, UploadMediaKind kind, String caption) {
+        Objects.requireNonNull(inputFile, "inputFile");
+        Objects.requireNonNull(kind, "kind");
+
+        UploadRequest request = UploadRequest.defaults().withMediaTypeHint(kind.name().toLowerCase(Locale.ROOT));
+        UploadResult uploadResult = await(uploadService.upload(inputFile, request));
+
+        return switch (kind) {
+            case IMAGE -> ImageAttachment.from(uploadResult).caption(caption);
+            case FILE -> FileAttachment.from(uploadResult).caption(caption);
+            case VIDEO -> VideoAttachment.from(uploadResult).caption(caption);
+            case AUDIO -> AudioAttachment.from(uploadResult).caption(caption);
+            case UNKNOWN -> throw new IllegalArgumentException("UNKNOWN media kind is not supported by media facade");
+        };
+    }
+
+    private static <T> T await(CompletionStage<T> stage) {
+        try {
+            return stage.toCompletableFuture().join();
+        } catch (CompletionException completionException) {
+            if (completionException.getCause() instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            throw completionException;
+        }
+    }
+}

@@ -1,23 +1,23 @@
-package ru.max.botframework.examples.sprint2;
+package ru.tardyon.botframework.examples.sprint2;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import okhttp3.OkHttpClient;
-import ru.max.botframework.client.DefaultMaxBotClient;
-import ru.max.botframework.client.MaxApiClientConfig;
-import ru.max.botframework.client.MaxBotClient;
-import ru.max.botframework.client.http.MaxHttpClient;
-import ru.max.botframework.client.http.okhttp.OkHttpMaxHttpClient;
-import ru.max.botframework.client.serialization.JacksonJsonCodec;
-import ru.max.botframework.ingestion.DefaultLongPollingRunner;
-import ru.max.botframework.ingestion.LongPollingRunner;
-import ru.max.botframework.ingestion.LongPollingRunnerConfig;
-import ru.max.botframework.ingestion.PollingFetchRequest;
-import ru.max.botframework.ingestion.SdkPollingUpdateSource;
-import ru.max.botframework.ingestion.UpdateHandlingResult;
-import ru.max.botframework.ingestion.UpdateConsumer;
-import ru.max.botframework.model.UpdateEventType;
+import ru.tardyon.botframework.client.DefaultMaxBotClient;
+import ru.tardyon.botframework.client.MaxApiClientConfig;
+import ru.tardyon.botframework.client.MaxBotClient;
+import ru.tardyon.botframework.client.http.MaxHttpClient;
+import ru.tardyon.botframework.client.http.okhttp.OkHttpMaxHttpClient;
+import ru.tardyon.botframework.client.serialization.JacksonJsonCodec;
+import ru.tardyon.botframework.ingestion.DefaultLongPollingRunner;
+import ru.tardyon.botframework.ingestion.LongPollingRunner;
+import ru.tardyon.botframework.ingestion.LongPollingRunnerConfig;
+import ru.tardyon.botframework.ingestion.PollingFetchRequest;
+import ru.tardyon.botframework.ingestion.SdkPollingUpdateSource;
+import ru.tardyon.botframework.ingestion.UpdateHandlingResult;
+import ru.tardyon.botframework.ingestion.UpdateConsumer;
+import ru.tardyon.botframework.model.UpdateEventType;
 
 public final class LongPollingExample {
 

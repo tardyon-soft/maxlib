@@ -12,5 +12,5 @@ dependencies {
 }
 
 application {
-    mainClass.set("ru.max.botframework.demo.springpolling.DemoSpringPollingApplication")
+    mainClass.set("ru.tardyon.botframework.demo.springpolling.DemoSpringPollingApplication")
 }

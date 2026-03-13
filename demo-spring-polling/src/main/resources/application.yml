@@ -12,4 +12,4 @@ max:
 
 logging:
   level:
-    ru.max.botframework: INFO
+    ru.tardyon.botframework: INFO
