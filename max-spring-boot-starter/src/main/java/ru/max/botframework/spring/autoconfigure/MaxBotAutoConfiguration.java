@@ -20,8 +20,12 @@ import ru.max.botframework.client.serialization.JacksonJsonCodec;
 import ru.max.botframework.client.serialization.JsonCodec;
 import ru.max.botframework.dispatcher.Dispatcher;
 import ru.max.botframework.dispatcher.Router;
+import ru.max.botframework.action.ChatActionsFacade;
+import ru.max.botframework.callback.CallbackFacade;
 import ru.max.botframework.fsm.FSMStorage;
+import ru.max.botframework.fsm.InMemorySceneRegistry;
 import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.MemorySceneStorage;
 import ru.max.botframework.fsm.SceneRegistry;
 import ru.max.botframework.fsm.SceneStorage;
 import ru.max.botframework.ingestion.DefaultLongPollingRunner;
@@ -42,6 +46,9 @@ import ru.max.botframework.spring.properties.MaxBotStorageType;
 import ru.max.botframework.spring.webhook.SpringWebhookAdapter;
 import ru.max.botframework.spring.webhook.SpringWebhookController;
 import ru.max.botframework.upload.UploadService;
+import ru.max.botframework.message.MediaMessagingFacade;
+import ru.max.botframework.message.MessageTarget;
+import ru.max.botframework.message.MessagingFacade;
 
 /**
  * Baseline auto-configuration contract for MAX Spring starter.
@@ -96,6 +103,50 @@ public class MaxBotAutoConfiguration {
             return new MemoryStorage();
         }
         throw new IllegalStateException("Unsupported storage type: " + properties.getStorage().getType());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public SceneRegistry sceneRegistry() {
+        return new InMemorySceneRegistry();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public SceneStorage sceneStorage() {
+        return new MemorySceneStorage();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public MessagingFacade messagingFacade(
+            MaxBotClient maxBotClient,
+            ObjectProvider<MessageTarget.UserChatResolver> userChatResolverProvider
+    ) {
+        MessageTarget.UserChatResolver resolver = userChatResolverProvider.getIfAvailable();
+        if (resolver == null) {
+            return new MessagingFacade(maxBotClient);
+        }
+        return new MessagingFacade(maxBotClient, resolver);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public CallbackFacade callbackFacade(MaxBotClient maxBotClient) {
+        return new CallbackFacade(maxBotClient);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ChatActionsFacade chatActionsFacade(MaxBotClient maxBotClient) {
+        return new ChatActionsFacade(maxBotClient);
+    }
+
+    @Bean
+    @ConditionalOnBean(UploadService.class)
+    @ConditionalOnMissingBean
+    public MediaMessagingFacade mediaMessagingFacade(UploadService uploadService, MessagingFacade messagingFacade) {
+        return new MediaMessagingFacade(uploadService, messagingFacade);
     }
 
     @Bean

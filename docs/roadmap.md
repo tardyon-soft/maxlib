@@ -157,6 +157,10 @@ Sprint 9 contracts:
   - explicit `Router` bean aggregation into `Dispatcher`;
   - deterministic registration order via `@Order` / `Ordered`;
   - router tree composition preserved through core `router.includeRouter(...)`.
+- интегрированы runtime services и FSM/scene defaults в starter:
+  - messaging facades (`MessagingFacade`, `CallbackFacade`, `ChatActionsFacade`);
+  - in-memory defaults (`MemoryStorage`, `InMemorySceneRegistry`, `MemorySceneStorage`);
+  - optional media facade wiring when `UploadService` bean is present.
 
 Основные результаты:
 - Spring Boot starter auto-configuration;

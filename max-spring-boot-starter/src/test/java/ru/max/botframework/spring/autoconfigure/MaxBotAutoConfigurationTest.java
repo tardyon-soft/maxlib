@@ -15,10 +15,17 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import ru.max.botframework.client.MaxApiClientConfig;
 import ru.max.botframework.client.MaxBotClient;
 import ru.max.botframework.client.http.MaxHttpClient;
+import ru.max.botframework.action.ChatActionsFacade;
+import ru.max.botframework.callback.CallbackFacade;
 import ru.max.botframework.dispatcher.DispatchStatus;
 import ru.max.botframework.dispatcher.Dispatcher;
 import ru.max.botframework.dispatcher.Router;
 import ru.max.botframework.fsm.FSMStorage;
+import ru.max.botframework.fsm.InMemorySceneRegistry;
+import ru.max.botframework.fsm.MemorySceneStorage;
+import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.SceneRegistry;
+import ru.max.botframework.fsm.SceneStorage;
 import ru.max.botframework.fsm.StateScope;
 import ru.max.botframework.model.Chat;
 import ru.max.botframework.model.ChatId;
@@ -30,10 +37,16 @@ import ru.max.botframework.model.UpdateId;
 import ru.max.botframework.model.UpdateType;
 import ru.max.botframework.model.User;
 import ru.max.botframework.model.UserId;
+import ru.max.botframework.message.MediaMessagingFacade;
+import ru.max.botframework.message.MessagingFacade;
 import ru.max.botframework.spring.polling.SpringPollingBootstrap;
 import ru.max.botframework.spring.properties.MaxBotProperties;
 import ru.max.botframework.spring.properties.MaxBotStorageType;
 import ru.max.botframework.spring.webhook.SpringWebhookAdapter;
+import ru.max.botframework.upload.InputFile;
+import ru.max.botframework.upload.UploadRequest;
+import ru.max.botframework.upload.UploadResult;
+import ru.max.botframework.upload.UploadService;
 
 class MaxBotAutoConfigurationTest {
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
@@ -51,12 +64,21 @@ class MaxBotAutoConfigurationTest {
             assertTrue(context.hasSingleBean(MaxHttpClient.class));
             assertTrue(context.hasSingleBean(MaxBotClient.class));
             assertTrue(context.hasSingleBean(FSMStorage.class));
+            assertTrue(context.hasSingleBean(SceneRegistry.class));
+            assertTrue(context.hasSingleBean(SceneStorage.class));
+            assertTrue(context.hasSingleBean(MessagingFacade.class));
+            assertTrue(context.hasSingleBean(CallbackFacade.class));
+            assertTrue(context.hasSingleBean(ChatActionsFacade.class));
             assertTrue(context.hasSingleBean(Dispatcher.class));
             assertTrue(context.hasSingleBean(SpringPollingBootstrap.class));
 
             assertEquals(false, context.containsBean("springWebhookAdapter"));
+            assertEquals(false, context.containsBean("mediaMessagingFacade"));
             MaxBotProperties properties = context.getBean(MaxBotProperties.class);
             assertEquals(MaxBotStorageType.MEMORY, properties.getStorage().getType());
+            assertTrue(context.getBean(FSMStorage.class) instanceof MemoryStorage);
+            assertTrue(context.getBean(SceneRegistry.class) instanceof InMemorySceneRegistry);
+            assertTrue(context.getBean(SceneStorage.class) instanceof MemorySceneStorage);
         });
     }
 
@@ -93,6 +115,45 @@ class MaxBotAutoConfigurationTest {
         contextRunner
                 .withBean(MaxBotClient.class, () -> custom)
                 .run(context -> assertSame(custom, context.getBean(MaxBotClient.class)));
+    }
+
+    @Test
+    void backsOffWhenUserProvidesFsmStorageAndMessagingFacadeBeans() {
+        MemoryStorage customStorage = new MemoryStorage();
+        MessagingFacade customMessaging = new MessagingFacade(request -> {
+            throw new UnsupportedOperationException("custom");
+        });
+        SceneRegistry customRegistry = new InMemorySceneRegistry();
+        SceneStorage customSceneStorage = new MemorySceneStorage();
+
+        contextRunner
+                .withBean(FSMStorage.class, () -> customStorage)
+                .withBean(MessagingFacade.class, () -> customMessaging)
+                .withBean(SceneRegistry.class, () -> customRegistry)
+                .withBean(SceneStorage.class, () -> customSceneStorage)
+                .run(context -> {
+                    assertSame(customStorage, context.getBean(FSMStorage.class));
+                    assertSame(customMessaging, context.getBean(MessagingFacade.class));
+                    assertSame(customRegistry, context.getBean(SceneRegistry.class));
+                    assertSame(customSceneStorage, context.getBean(SceneStorage.class));
+                });
+    }
+
+    @Test
+    void createsMediaMessagingFacadeWhenUploadServiceBeanExists() {
+        UploadService uploadService = new UploadService() {
+            @Override
+            public java.util.concurrent.CompletionStage<UploadResult> upload(InputFile inputFile, UploadRequest request) {
+                throw new UnsupportedOperationException("not used in wiring test");
+            }
+        };
+
+        contextRunner
+                .withBean(UploadService.class, () -> uploadService)
+                .run(context -> {
+                    assertTrue(context.hasSingleBean(MediaMessagingFacade.class));
+                    assertSame(uploadService, context.getBean(UploadService.class));
+                });
     }
 
     @Test

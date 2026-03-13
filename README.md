@@ -558,6 +558,16 @@ Sprint 9.2.4 router registration story:
 - multiple routers are composed in Spring order (`@Order` / `Ordered`) and keep core first-match semantics;
 - router tree composition remains available through core `router.includeRouter(...)` without Spring-specific runtime coupling.
 
+Sprint 9.3.1 starter runtime services wiring:
+- default FSM/scene beans are auto-configured for simple startup:
+  - `FSMStorage` -> `MemoryStorage`,
+  - `SceneRegistry` -> `InMemorySceneRegistry`,
+  - `SceneStorage` -> `MemorySceneStorage`;
+- messaging beans are auto-configured and reusable outside handlers:
+  - `MessagingFacade`, `CallbackFacade`, `ChatActionsFacade`;
+- `MediaMessagingFacade` is auto-configured only when `UploadService` bean exists;
+- all defaults are override-friendly via user-defined beans (`@ConditionalOnMissingBean` pattern).
+
 Spring router registration example:
 
 ```java

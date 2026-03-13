@@ -25,6 +25,15 @@
   - `PollingUpdateSource` (`SdkPollingUpdateSource`) + `LongPollingRunnerConfig` + `DefaultLongPollingRunner`;
   - `SpringPollingLifecycle` запускает/останавливает polling вместе с lifecycle приложения.
 
+Статус обновлён (Sprint 9.3.1):
+- starter auto-configures runtime-facing services:
+  - `MessagingFacade`, `CallbackFacade`, `ChatActionsFacade`;
+  - `MediaMessagingFacade` при наличии `UploadService`;
+- starter auto-configures FSM/scene defaults:
+  - `FSMStorage` -> `MemoryStorage`,
+  - `SceneRegistry` -> `InMemorySceneRegistry`,
+  - `SceneStorage` -> `MemorySceneStorage`.
+
 ## Goal
 
 - дать быстрый bootstrapping framework в Spring Boot приложении;
@@ -142,6 +151,28 @@ class BotConfig {
 
 В этом примере starter автоматически агрегирует оба router bean-а в `Dispatcher`
 в порядке `mainRouter -> adminRouter`.
+
+## Default Beans and Overrides
+
+Default runtime beans:
+- `MaxBotClient`, `Dispatcher`;
+- `FSMStorage`, `SceneRegistry`, `SceneStorage`;
+- `MessagingFacade`, `CallbackFacade`, `ChatActionsFacade`;
+- `MediaMessagingFacade` (optional, only if `UploadService` exists).
+
+Override pattern:
+
+```java
+@Configuration
+class CustomStorageConfig {
+    @Bean
+    FSMStorage customStorage() {
+        return new MemoryStorage(); // replace with custom impl later (Redis/SQL)
+    }
+}
+```
+
+Starter uses `@ConditionalOnMissingBean`, so user beans override defaults.
 
 Polling mode:
 - достаточно `max.bot.mode=POLLING` и `Router` bean-ов.
