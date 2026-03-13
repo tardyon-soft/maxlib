@@ -24,14 +24,19 @@
 
 ## Core Testkit Contracts
 
-Минимальный ожидаемый surface:
-- `UpdateFixtures` (или эквивалент): типизированные фабрики update-событий;
-- `DispatcherTestHarness` (или эквивалент):
-  - создаёт dispatcher с роутерами;
-  - позволяет `feedUpdate(...)`;
-  - возвращает удобный test result/trace;
-- helpers для polling/webhook ingestion integration checks;
-- helpers для FSM/scenes state assertions.
+Реализованный baseline surface:
+- `DispatcherTestKit`:
+  - builder для runtime setup (`includeRouter`, `fsmStorage`, `stateScope`, scene/upload wiring);
+  - `feed(Update)` и `handle(Update)` поверх реального `Dispatcher`;
+  - `feedAndCapture(Update)` для side effects trace за один dispatch.
+- `RecordingMaxBotClient`:
+  - записывает все executed `MaxRequest`;
+  - даёт deterministic default responses для базовых runtime операций;
+  - поддерживает explicit response overrides (`respondWith(...)`).
+- `CapturedApiCall`:
+  - immutable snapshot запроса (`method/path/query/body/request`).
+- `TestUpdates`:
+  - fixture factory для `message`/`callback` update.
 
 ## Integration Boundaries
 
@@ -46,24 +51,23 @@ Testkit не должен дублировать runtime implementation.
 
 ## Desired DX
 
-Пример handler-теста через harness:
+Пример handler-теста через testkit:
 
 ```java
 Router router = new Router("main");
-router.message((message, fsm) ->
-    fsm.setState("form.email").thenApply(v -> null)
-);
+router.message((message, context) -> {
+    context.reply(Messages.text("pong"));
+    return CompletableFuture.completedFuture(null);
+});
 
-// pseudo-API: итоговый surface может отличаться, но сценарий должен быть эквивалентен
-DispatchResult result = harness(dispatcher -> dispatcher.includeRouter(router))
-    .feed(updateMessage("hello"))
-    .join();
+DispatcherTestKit kit = DispatcherTestKit.builder()
+    .includeRouter(router)
+    .build();
+
+DispatcherTestKit.DispatchProbe probe = kit.feedAndCapture(TestUpdates.message("ping"));
+assertEquals(DispatchStatus.HANDLED, probe.result().status());
+assertEquals(1, probe.sideEffects().size());
 ```
-
-Webhook/polling test story:
-- создавать фикстуры payload/update;
-- прогонять через `WebhookReceiver`/`LongPollingRunner` + `UpdateSink`;
-- валидировать, что downstream dispatch отработал одинаково.
 
 ## Sprint 9 Boundaries
 

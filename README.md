@@ -568,6 +568,30 @@ Sprint 9.3.1 starter runtime services wiring:
 - `MediaMessagingFacade` is auto-configured only when `UploadService` bean exists;
 - all defaults are override-friendly via user-defined beans (`@ConditionalOnMissingBean` pattern).
 
+Sprint 9.3.2 max-testkit core:
+- `DispatcherTestKit` for lightweight runtime setup and update dispatch in tests;
+- `RecordingMaxBotClient` for capturing message/callback/action side effects through real `MaxRequest` calls;
+- `CapturedApiCall` snapshots for assertions (`method/path/query/body`);
+- `TestUpdates` fixture factory for `message` and `callback` updates.
+
+Testkit usage example:
+
+```java
+Router router = new Router("test");
+router.message((message, context) -> {
+    context.reply(Messages.text("pong"));
+    return CompletableFuture.completedFuture(null);
+});
+
+DispatcherTestKit kit = DispatcherTestKit.builder()
+    .includeRouter(router)
+    .build();
+
+DispatcherTestKit.DispatchProbe probe = kit.feedAndCapture(TestUpdates.message("ping"));
+assertEquals(DispatchStatus.HANDLED, probe.result().status());
+assertEquals(1, probe.sideEffects().size());
+```
+
 Spring router registration example:
 
 ```java

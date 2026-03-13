@@ -161,6 +161,10 @@ Sprint 9 contracts:
   - messaging facades (`MessagingFacade`, `CallbackFacade`, `ChatActionsFacade`);
   - in-memory defaults (`MemoryStorage`, `InMemorySceneRegistry`, `MemorySceneStorage`);
   - optional media facade wiring when `UploadService` bean is present.
+- реализован core `max-testkit`:
+  - `DispatcherTestKit` harness для runtime dispatch;
+  - `RecordingMaxBotClient` + `CapturedApiCall` для side effects assertions;
+  - `TestUpdates` fixtures для message/callback test flows.
 
 Основные результаты:
 - Spring Boot starter auto-configuration;
