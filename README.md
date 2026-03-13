@@ -276,6 +276,80 @@ router.message(BuiltInFilters.textEquals("/scene-exit"), (Message message, Wizar
     wizard.exit().thenApply(ignored -> null));
 ```
 
+## Stateful menu/form example (Sprint 8.4.3)
+
+Пример ниже показывает один минимальный сценарий:
+- handler устанавливает state;
+- следующий handler с `StateFilter` реагирует только в нужном state;
+- scene/wizard lifecycle (`enter -> next -> exit`) из runtime handler-ов.
+
+```java
+import ru.max.botframework.dispatcher.BuiltInFilters;
+import ru.max.botframework.dispatcher.Dispatcher;
+import ru.max.botframework.dispatcher.Router;
+import ru.max.botframework.fsm.MemoryStorage;
+import ru.max.botframework.fsm.StateScope;
+import ru.max.botframework.fsm.Wizard;
+import ru.max.botframework.fsm.InMemorySceneRegistry;
+import ru.max.botframework.fsm.MemorySceneStorage;
+import ru.max.botframework.model.Message;
+
+Dispatcher dispatcher = new Dispatcher()
+    .withFsmStorage(new MemoryStorage())
+    .withStateScope(StateScope.USER_IN_CHAT)
+    .withSceneRegistry(new InMemorySceneRegistry()
+        .register(Wizard.named("checkout").step("email").step("confirm").build()))
+    .withSceneStorage(new MemorySceneStorage());
+
+Router router = new Router("stateful-form");
+
+// 1) Начало формы: выставляем state и scene/wizard
+router.message(BuiltInFilters.textEquals("/start-form"), (Message message, ru.max.botframework.fsm.FSMContext fsm) ->
+    fsm.setState("form.email")
+        .thenCompose(v -> fsm.updateData(java.util.Map.of("startedAt", message.timestamp().toString())))
+        .thenApply(v -> null)
+);
+router.message(BuiltInFilters.textEquals("/scene-enter"), (Message message, ru.max.botframework.fsm.WizardManager wizard) ->
+    wizard.enter("checkout").thenApply(v -> null)
+);
+
+// 2) Реакция только для нужного state через StateFilter
+router.message(
+    BuiltInFilters.state("form.email").and(BuiltInFilters.textStartsWith("email:")),
+    (Message message, ru.max.botframework.dispatcher.RuntimeContext ctx) -> {
+        String email = ctx.enrichmentValue(BuiltInFilters.TEXT_SUFFIX_KEY, String.class).orElse("");
+        return ctx.fsm()
+            .updateData(java.util.Map.of("email", email))
+            .thenCompose(v -> ctx.fsm().setState("form.confirm"))
+            .thenApply(v -> null);
+    }
+);
+
+// 3) Wizard шаги и выход из scene
+router.message(BuiltInFilters.textEquals("/scene-next"), (Message message, ru.max.botframework.fsm.WizardManager wizard) ->
+    wizard.next().thenApply(v -> null)
+);
+router.message(BuiltInFilters.textEquals("/scene-exit"), (Message message, ru.max.botframework.fsm.WizardManager wizard) ->
+    wizard.exit().thenApply(v -> null)
+);
+
+dispatcher.includeRouter(router);
+```
+
+Минимальный wizard-only пример:
+
+```java
+router.message(BuiltInFilters.textEquals("/wizard-enter"), (Message m, ru.max.botframework.fsm.WizardManager wizard) ->
+    wizard.enter("checkout").thenApply(v -> null)
+);
+router.message(BuiltInFilters.textEquals("/wizard-next"), (Message m, ru.max.botframework.fsm.WizardManager wizard) ->
+    wizard.next().thenApply(v -> null)
+);
+router.message(BuiltInFilters.textEquals("/wizard-exit"), (Message m, ru.max.botframework.fsm.WizardManager wizard) ->
+    wizard.exit().thenApply(v -> null)
+);
+```
+
 ## Client configuration
 
 `MaxApiClientConfig` поддерживает builder-style конфигурацию:
