@@ -67,6 +67,10 @@ Java framework для разработки ботов на платформе MA
   - chunk-level boundary: `ResumableChunkUploadClient` with typed request/response models;
   - configurable runtime strategy: `ResumableUploadOptions` (`chunkSizeBytes`, `maxRetriesPerChunk`);
   - in-operation resumable state: monotonically increasing chunk offset with regression guard.
+- unified upload result semantics for attachment layer:
+  - `UploadResult` carries `ref`, `flowType`, transferred bytes and `contentType`;
+  - normalized `mediaKind` (`IMAGE/FILE/VIDEO/AUDIO/UNKNOWN`);
+  - immutable `attachmentPayload` for media-specific metadata (for example dimensions/duration/preview refs).
 
 ## Modules
 
@@ -262,6 +266,12 @@ Sprint 7.2.2 implemented:
   - retry semantics are per-chunk and configurable (`ResumableUploadOptions.maxRetriesPerChunk`);
   - resumable state is local to operation (current committed offset), without global persistent resume storage;
   - failures in chunk transfer / non-retryable responses / offset regression are mapped to `UploadTransferException`.
+
+Sprint 7.2.3 implemented:
+- upload results from multipart/resumable flows are normalized into one attachment-ready model:
+  - `UploadFinalizeResult` now supports `mediaKind` and `attachmentPayload`;
+  - `DefaultUploadResultMapper` projects both flow types into unified `UploadResult`;
+  - model intentionally hides raw transport response details and keeps only data needed by future media builders.
 
 Пример:
 

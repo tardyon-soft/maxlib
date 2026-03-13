@@ -19,7 +19,9 @@ public final class DefaultUploadResultMapper implements UploadResultMapper {
                 new UploadRef(finalizeResult.uploadRef()),
                 preparation.flowType(),
                 receipt.bytesTransferred(),
-                finalizeResult.contentType()
+                finalizeResult.contentType(),
+                finalizeResult.mediaKind(),
+                finalizeResult.attachmentPayload()
         );
     }
 }

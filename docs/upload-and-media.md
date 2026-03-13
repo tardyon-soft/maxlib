@@ -31,6 +31,12 @@
   - `ResumableChunkUploadRequest` / `ResumableChunkUploadResponse`;
   - `ResumableUploadOptions` (`chunkSizeBytes`, `maxRetriesPerChunk`).
 
+Состояние реализации Sprint 7.2.3:
+- унифицирован upload result model:
+  - `UploadFinalizeResult` расширен `mediaKind` и `attachmentPayload`;
+  - единый `UploadResult` теперь содержит `mediaKind` и immutable `attachmentPayload`;
+  - `DefaultUploadResultMapper` нормализует результаты multipart/resumable в один contract.
+
 ## Goal
 
 Дать разработчику ergonomic API для отправки медиа в стиле framework-level DX:
@@ -118,11 +124,16 @@ Contract-level этапы:
 
 ### Upload Result Model
 
-`UploadResult` возвращается `UploadService` и содержит минимум:
+`UploadResult` возвращается `UploadService` и содержит:
 - `UploadRef ref` — reference для дальнейшей отправки;
-- `UploadMetadata` (optional: file id, size, mime type, checksum);
 - `UploadFlowType` (`MULTIPART` / `RESUMABLE`);
-- `stage diagnostics` для observability/testkit.
+- `bytesTransferred`, optional `contentType`;
+- `UploadMediaKind` (`IMAGE`, `FILE`, `VIDEO`, `AUDIO`, `UNKNOWN`);
+- immutable `attachmentPayload` для media-specific metadata (например, width/height/duration/preview refs).
+
+Границы:
+- результат скрывает raw transport-level детали (HTTP status, chunk protocol internals);
+- модель остаётся attachment-oriented и пригодной для high-level media builders.
 
 ### Media Attachment Abstractions
 
