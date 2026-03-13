@@ -91,8 +91,8 @@ class RequestModelSerializationTest {
                         "choose",
                         TextFormat.PLAIN,
                         List.of(NewMessageAttachment.inlineKeyboard(new InlineKeyboardAttachment(List.of(
-                                List.of(new InlineKeyboardButtonRequest("Pay", "pay:1", null)),
-                                List.of(new InlineKeyboardButtonRequest("Site", null, "https://example.com"))
+                                List.of(new InlineKeyboardButtonRequest("Pay", "pay:1", null, null, null, null, null)),
+                                List.of(new InlineKeyboardButtonRequest("Site", null, "https://example.com", null, null, null, null))
                         ))))
                 ),
                 true,

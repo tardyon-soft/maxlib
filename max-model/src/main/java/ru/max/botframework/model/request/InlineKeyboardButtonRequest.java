@@ -8,7 +8,11 @@ import java.util.Objects;
 public record InlineKeyboardButtonRequest(
         String text,
         String callbackData,
-        String url
+        String url,
+        Boolean requestContact,
+        Boolean requestGeoLocation,
+        String openApp,
+        String message
 ) {
     public InlineKeyboardButtonRequest {
         Objects.requireNonNull(text, "text");
@@ -18,8 +22,20 @@ public record InlineKeyboardButtonRequest(
 
         boolean hasCallback = callbackData != null && !callbackData.isBlank();
         boolean hasUrl = url != null && !url.isBlank();
-        if (hasCallback == hasUrl) {
-            throw new IllegalArgumentException("Exactly one of callbackData or url must be provided");
+        boolean hasRequestContact = Boolean.TRUE.equals(requestContact);
+        boolean hasRequestGeoLocation = Boolean.TRUE.equals(requestGeoLocation);
+        boolean hasOpenApp = openApp != null && !openApp.isBlank();
+        boolean hasMessage = message != null && !message.isBlank();
+
+        int actionCount = 0;
+        actionCount += hasCallback ? 1 : 0;
+        actionCount += hasUrl ? 1 : 0;
+        actionCount += hasRequestContact ? 1 : 0;
+        actionCount += hasRequestGeoLocation ? 1 : 0;
+        actionCount += hasOpenApp ? 1 : 0;
+        actionCount += hasMessage ? 1 : 0;
+        if (actionCount != 1) {
+            throw new IllegalArgumentException("Exactly one button action must be provided");
         }
     }
 }

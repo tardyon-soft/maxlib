@@ -128,6 +128,9 @@ Messages.text("Выберите действие")
 - реализованы `InlineKeyboard`, `KeyboardBuilder`, `Buttons`, `Keyboards.inline(...)`;
 - `MessageBuilder.keyboard(...)` теперь маппится в low-level inline keyboard attachment.
 
+Состояние реализации Sprint 6.2.3:
+- `Buttons` расширен typed-фабриками: `callback`, `link`, `requestContact`, `requestGeoLocation`, `openApp`, `message`.
+
 Ответственность:
 - маппинг high-level builders -> SDK requests;
 - вызовы `MaxBotClient` (`sendMessage`, `editMessage`, `deleteMessage`, `answerCallback`, ...);

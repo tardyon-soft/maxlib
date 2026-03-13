@@ -196,6 +196,7 @@ Sprint 6.1 foundation implemented:
 - `MessagingFacade` (`ru.max.botframework.message`) for high-level `send/edit/delete/reply` over existing `MaxBotClient`.
 - inline keyboard model: `InlineKeyboard`, `KeyboardBuilder`, `Buttons`, `Keyboards.inline(...)`.
 - `MessageBuilder.keyboard(...)` maps keyboard to low-level inline keyboard attachment.
+- typed buttons API supports: `callback`, `link`, `requestContact`, `requestGeoLocation`, `openApp`, `message`.
 
 Пример:
 
@@ -227,9 +228,14 @@ boolean deleted = messaging.delete(sent);
 InlineKeyboard keyboard = Keyboards.inline(k -> k
     .row(
         Buttons.callback("Оплатить", "pay:1"),
-        Buttons.link("Сайт", "https://example.com")
+        Buttons.link("Сайт", "https://example.com"),
+        Buttons.openApp("Открыть mini app", "app:orders")
     )
-    .row(Buttons.callback("Отмена", "cancel"))
+    .row(
+        Buttons.requestContact("Отправить контакт"),
+        Buttons.requestGeoLocation("Отправить геолокацию"),
+        Buttons.message("Сообщение", "Привет из кнопки")
+    )
 );
 
 Message withKeyboard = messaging.send(

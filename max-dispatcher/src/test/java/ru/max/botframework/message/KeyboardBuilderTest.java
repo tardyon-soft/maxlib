@@ -17,7 +17,7 @@ class KeyboardBuilderTest {
         assertEquals(1, keyboard.rows().size());
         assertEquals(1, keyboard.rows().getFirst().size());
         assertEquals(InlineKeyboardButton.Kind.CALLBACK, keyboard.rows().getFirst().getFirst().kind());
-        assertEquals("pay:1", keyboard.rows().getFirst().getFirst().value());
+        assertEquals("pay:1", keyboard.rows().getFirst().getFirst().callbackData());
     }
 
     @Test
@@ -48,6 +48,50 @@ class KeyboardBuilderTest {
         assertEquals(2, keyboardAttachment.inlineKeyboard().rows().size());
         assertEquals("buy:1", keyboardAttachment.inlineKeyboard().rows().getFirst().getFirst().callbackData());
         assertEquals("https://example.com", keyboardAttachment.inlineKeyboard().rows().get(1).getFirst().url());
+    }
+
+    @Test
+    void mapsRequestContactButton() {
+        MessageBuilder builder = Messages.text("Choose")
+                .keyboard(k -> k.row(Buttons.requestContact("Share contact")));
+
+        var button = builder.toNewMessageBody()
+                .attachments().getFirst()
+                .inlineKeyboard().rows().getFirst().getFirst();
+        assertEquals(Boolean.TRUE, button.requestContact());
+    }
+
+    @Test
+    void mapsRequestGeoLocationButton() {
+        MessageBuilder builder = Messages.text("Choose")
+                .keyboard(k -> k.row(Buttons.requestGeoLocation("Share location")));
+
+        var button = builder.toNewMessageBody()
+                .attachments().getFirst()
+                .inlineKeyboard().rows().getFirst().getFirst();
+        assertEquals(Boolean.TRUE, button.requestGeoLocation());
+    }
+
+    @Test
+    void mapsOpenAppButton() {
+        MessageBuilder builder = Messages.text("Choose")
+                .keyboard(k -> k.row(Buttons.openApp("Open app", "app:orders")));
+
+        var button = builder.toNewMessageBody()
+                .attachments().getFirst()
+                .inlineKeyboard().rows().getFirst().getFirst();
+        assertEquals("app:orders", button.openApp());
+    }
+
+    @Test
+    void mapsMessageButton() {
+        MessageBuilder builder = Messages.text("Choose")
+                .keyboard(k -> k.row(Buttons.message("Send", "hello-from-button")));
+
+        var button = builder.toNewMessageBody()
+                .attachments().getFirst()
+                .inlineKeyboard().rows().getFirst().getFirst();
+        assertEquals("hello-from-button", button.message());
     }
 
     @Test
