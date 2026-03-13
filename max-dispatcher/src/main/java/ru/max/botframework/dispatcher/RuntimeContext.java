@@ -4,6 +4,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import ru.max.botframework.action.ChatActionsFacade;
+import ru.max.botframework.callback.CallbackFacade;
+import ru.max.botframework.message.MessageBuilder;
+import ru.max.botframework.message.MessagingFacade;
+import ru.max.botframework.model.Callback;
+import ru.max.botframework.model.ChatAction;
+import ru.max.botframework.model.Message;
 import ru.max.botframework.model.Update;
 
 /**
@@ -126,6 +133,77 @@ public final class RuntimeContext {
 
     public Map<String, Object> enrichment() {
         return data.snapshot(RuntimeDataScope.FILTER, RuntimeDataScope.MIDDLEWARE);
+    }
+
+    /**
+     * Returns runtime messaging facade if bot client is configured on dispatcher.
+     */
+    public MessagingFacade messaging() {
+        return dataValue(RuntimeMessagingSupport.MESSAGING_FACADE_KEY)
+                .orElseThrow(() -> new IllegalStateException(
+                        "MessagingFacade is unavailable. Register MaxBotClient via Dispatcher.withBotClient(...)"
+                ));
+    }
+
+    /**
+     * Returns runtime callback facade if bot client is configured on dispatcher.
+     */
+    public CallbackFacade callbacks() {
+        return dataValue(RuntimeMessagingSupport.CALLBACK_FACADE_KEY)
+                .orElseThrow(() -> new IllegalStateException(
+                        "CallbackFacade is unavailable. Register MaxBotClient via Dispatcher.withBotClient(...)"
+                ));
+    }
+
+    /**
+     * Returns runtime chat actions facade if bot client is configured on dispatcher.
+     */
+    public ChatActionsFacade actions() {
+        return dataValue(RuntimeMessagingSupport.CHAT_ACTIONS_FACADE_KEY)
+                .orElseThrow(() -> new IllegalStateException(
+                        "ChatActionsFacade is unavailable. Register MaxBotClient via Dispatcher.withBotClient(...)"
+                ));
+    }
+
+    /**
+     * Replies to current message (message update or callback source message).
+     */
+    public Message reply(MessageBuilder builder) {
+        Objects.requireNonNull(builder, "builder");
+        Message source = currentMessage();
+        return messaging().reply(source, builder);
+    }
+
+    /**
+     * Sends callback answer for current callback update.
+     */
+    public boolean answerCallback(String text) {
+        return callbacks().notify(currentCallback(), text);
+    }
+
+    /**
+     * Sends chat action for current update chat context.
+     */
+    public boolean chatAction(ChatAction action) {
+        Objects.requireNonNull(action, "action");
+        return actions().send(this, action);
+    }
+
+    private Message currentMessage() {
+        if (update.message() != null) {
+            return update.message();
+        }
+        if (update.callback() != null && update.callback().message() != null) {
+            return update.callback().message();
+        }
+        throw new IllegalStateException("current update does not contain message context");
+    }
+
+    private Callback currentCallback() {
+        if (update.callback() != null) {
+            return update.callback();
+        }
+        throw new IllegalStateException("current update does not contain callback context");
     }
 
     private void putEnrichmentValue(String key, Object value, RuntimeDataScope scope, String source) {

@@ -205,6 +205,9 @@ Sprint 6.1 foundation implemented:
   - max `2048` chars for `link` URL.
 - callback high-level API: `CallbackFacade`, `CallbackContext`, `CallbackAnswers` for callback notification/update flows.
 - chat actions high-level API: `ChatActionsFacade` with typed `ChatAction` dispatch and helpers (`typing`, `sendingPhoto`, ...).
+- runtime integration: `Dispatcher.withBotClient(...)` injects messaging/callback/action APIs into handlers via
+  `RuntimeContext` (`reply`, `answerCallback`, `chatAction`) and parameter resolution (`MessagingFacade`,
+  `CallbackFacade`, `ChatActionsFacade`).
 
 Пример:
 
@@ -262,6 +265,19 @@ router.callback(cb -> {
 ChatActionsFacade actions = new ChatActionsFacade(botClient);
 actions.typing(new ChatId("chat-1"));
 actions.sendingPhoto(new ChatId("chat-1"));
+
+Dispatcher dispatcher = new Dispatcher().withBotClient(botClient);
+Router router = new Router("runtime");
+router.message((message, ctx) -> {
+    ctx.reply(Messages.text("Pong"));
+    ctx.chatAction(ChatAction.TYPING);
+    return java.util.concurrent.CompletableFuture.completedFuture(null);
+});
+router.callback((callback, ctx) -> {
+    ctx.answerCallback("OK");
+    return java.util.concurrent.CompletableFuture.completedFuture(null);
+});
+dispatcher.includeRouter(router);
 ```
 
 ## Shared Services Injection (Sprint 5.2.3)

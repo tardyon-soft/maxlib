@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import ru.max.botframework.client.MaxBotClient;
 import ru.max.botframework.ingestion.UpdateConsumer;
 import ru.max.botframework.ingestion.UpdateHandlingResult;
 import ru.max.botframework.ingestion.UpdateSink;
@@ -135,6 +136,13 @@ public final class Dispatcher implements UpdateConsumer {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(service, "service");
         return registerApplicationData(RuntimeDataKey.application("service:" + type.getName(), type), service);
+    }
+
+    /**
+     * Registers bot client used by runtime-level high-level APIs in handlers/context.
+     */
+    public Dispatcher withBotClient(MaxBotClient client) {
+        return registerService(MaxBotClient.class, Objects.requireNonNull(client, "client"));
     }
 
     /**
@@ -379,6 +387,7 @@ public final class Dispatcher implements UpdateConsumer {
         for (Map.Entry<RuntimeDataKey<?>, Object> entry : applicationData.entrySet()) {
             putApplicationData(context, entry.getKey(), entry.getValue());
         }
+        RuntimeMessagingSupport.bootstrap(context);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

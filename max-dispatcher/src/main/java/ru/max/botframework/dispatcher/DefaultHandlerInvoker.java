@@ -29,6 +29,7 @@ public final class DefaultHandlerInvoker implements HandlerInvoker {
     public static DefaultHandlerInvoker withDefaults() {
         return new DefaultHandlerInvoker(new ResolverRegistry()
                 .register(new RuntimeContextParameterResolver())
+                .register(new RuntimeMessagingFacadeParameterResolver())
                 .register(new UpdateParameterResolver())
                 .register(new MessageParameterResolver())
                 .register(new CallbackParameterResolver())

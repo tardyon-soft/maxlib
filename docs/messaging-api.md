@@ -153,6 +153,14 @@ Messages.text("Выберите действие")
   - runtime-context dispatch `send(runtimeContext, ChatAction)`;
   - convenience helpers (`typing`, `sendingPhoto`, ...).
 
+Состояние реализации Sprint 6.3.3:
+- runtime integration через `Dispatcher.withBotClient(...)`:
+  - `RuntimeContext.reply(MessageBuilder)`;
+  - `RuntimeContext.answerCallback(String)`;
+  - `RuntimeContext.chatAction(ChatAction)`.
+- facade objects также доступны через parameter resolution:
+  - `MessagingFacade`, `CallbackFacade`, `ChatActionsFacade`.
+
 Ответственность:
 - маппинг high-level builders -> SDK requests;
 - вызовы `MaxBotClient` (`sendMessage`, `editMessage`, `deleteMessage`, `answerCallback`, ...);
