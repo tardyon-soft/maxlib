@@ -14,6 +14,12 @@
 - starter включает `Router` beans в root `Dispatcher` и применяет `storage.state-scope`;
 - polling/webhook lifecycle wiring остаётся отдельной задачей.
 
+Статус обновлён (Sprint 9.2.2):
+- реализован Spring webhook adapter path:
+  - `WebhookSecretValidator` + `WebhookReceiverConfig` + `DefaultWebhookReceiver` автоконфигурируются;
+  - Spring MVC endpoint (`POST ${max.bot.webhook.path}`) делегирует в framework-agnostic receiver;
+  - response mapping: `200/403/400/429/500`.
+
 ## Goal
 
 - дать быстрый bootstrapping framework в Spring Boot приложении;
@@ -121,6 +127,13 @@ Polling mode:
 
 Webhook mode:
 - `max.bot.mode=WEBHOOK` + `max.bot.webhook.path` + `max.bot.webhook.secret`.
+- endpoint example:
+
+```http
+POST /webhook/max
+X-Max-Bot-Api-Secret: <configured-secret>
+Content-Type: application/json
+```
 
 ## Sprint 9 Boundaries
 

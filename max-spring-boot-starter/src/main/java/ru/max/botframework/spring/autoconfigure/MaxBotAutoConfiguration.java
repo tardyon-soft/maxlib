@@ -5,7 +5,10 @@ import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import ru.max.botframework.client.DefaultMaxBotClient;
@@ -21,12 +24,17 @@ import ru.max.botframework.fsm.FSMStorage;
 import ru.max.botframework.fsm.MemoryStorage;
 import ru.max.botframework.fsm.SceneRegistry;
 import ru.max.botframework.fsm.SceneStorage;
+import ru.max.botframework.ingestion.DefaultWebhookReceiver;
+import ru.max.botframework.ingestion.DefaultWebhookSecretValidator;
 import ru.max.botframework.ingestion.LongPollingRunner;
+import ru.max.botframework.ingestion.WebhookReceiverConfig;
 import ru.max.botframework.ingestion.WebhookReceiver;
+import ru.max.botframework.ingestion.WebhookSecretValidator;
 import ru.max.botframework.spring.polling.SpringPollingBootstrap;
 import ru.max.botframework.spring.properties.MaxBotProperties;
 import ru.max.botframework.spring.properties.MaxBotStorageType;
 import ru.max.botframework.spring.webhook.SpringWebhookAdapter;
+import ru.max.botframework.spring.webhook.SpringWebhookController;
 import ru.max.botframework.upload.UploadService;
 
 /**
@@ -127,9 +135,50 @@ public class MaxBotAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'WEBHOOK' || '${max.bot.webhook.enabled:false}' == 'true'")
+    public WebhookSecretValidator webhookSecretValidator(MaxBotProperties properties) {
+        return new DefaultWebhookSecretValidator(properties.getWebhook().getSecret());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'WEBHOOK' || '${max.bot.webhook.enabled:false}' == 'true'")
+    public WebhookReceiverConfig webhookReceiverConfig(MaxBotProperties properties) {
+        Integer maxInFlight = properties.getWebhook().getMaxInFlight();
+        if (maxInFlight == null) {
+            return WebhookReceiverConfig.defaults();
+        }
+        return new WebhookReceiverConfig(maxInFlight);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'WEBHOOK' || '${max.bot.webhook.enabled:false}' == 'true'")
+    public WebhookReceiver webhookReceiver(
+            WebhookSecretValidator secretValidator,
+            JsonCodec jsonCodec,
+            Dispatcher dispatcher,
+            WebhookReceiverConfig config
+    ) {
+        return new DefaultWebhookReceiver(secretValidator, jsonCodec, dispatcher, config);
+    }
+
+    @Bean
     @ConditionalOnBean(WebhookReceiver.class)
     @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'WEBHOOK' || '${max.bot.webhook.enabled:false}' == 'true'")
     public SpringWebhookAdapter springWebhookAdapter(WebhookReceiver webhookReceiver) {
         return new SpringWebhookAdapter(webhookReceiver);
+    }
+
+    @Bean
+    @ConditionalOnBean(SpringWebhookAdapter.class)
+    @ConditionalOnClass(name = "org.springframework.web.bind.annotation.RestController")
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+    @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'WEBHOOK' || '${max.bot.webhook.enabled:false}' == 'true'")
+    @ConditionalOnMissingBean
+    public SpringWebhookController springWebhookController(SpringWebhookAdapter springWebhookAdapter) {
+        return new SpringWebhookController(springWebhookAdapter);
     }
 }

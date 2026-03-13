@@ -147,6 +147,9 @@ Sprint 9 contracts:
 - реализована базовая autoconfiguration SDK/runtime:
   - `MaxApiClientConfig`, `MaxHttpClient`, `MaxBotClient`, `FSMStorage`, `Dispatcher`;
   - user-override friendly bean conditions и automatic `Router` inclusion.
+- реализован Spring webhook adapter:
+  - framework-agnostic receiver wiring (`DefaultWebhookReceiver`);
+  - MVC endpoint for webhook path with mapped HTTP response contract.
 
 Основные результаты:
 - Spring Boot starter auto-configuration;

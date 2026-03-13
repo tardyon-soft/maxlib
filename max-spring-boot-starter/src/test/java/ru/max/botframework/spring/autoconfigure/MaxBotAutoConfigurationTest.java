@@ -115,6 +115,7 @@ class MaxBotAutoConfigurationTest {
     @Test
     void createsWebhookAdapterWhenWebhookReceiverBeanExists() {
         contextRunner
+                .withPropertyValues("max.bot.mode=WEBHOOK")
                 .withBean(ru.max.botframework.ingestion.WebhookReceiver.class, () -> request -> {
                     assertNotNull(request);
                     return CompletableFuture.completedFuture(

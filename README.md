@@ -536,6 +536,17 @@ Sprint 9.2.1 baseline delivered:
 - `Dispatcher` includes discovered `Router` beans and applies `max.bot.storage.state-scope`;
 - polling/webhook lifecycle wiring remains in follow-up Sprint 9 tasks.
 
+Sprint 9.2.2 webhook mode baseline:
+- Spring webhook endpoint is available in webhook mode (`POST ${max.bot.webhook.path}`),
+  by default `POST /webhook/max`;
+- endpoint delegates to framework-agnostic `WebhookReceiver` (secret validation + payload parsing + dispatch);
+- HTTP contract:
+  - `200` accepted,
+  - `403` invalid secret,
+  - `400` malformed payload,
+  - `429` overloaded,
+  - `500` internal error.
+
 Sprint 7.1.2 implemented:
 - unified `InputFile` API:
   - `InputFile.fromPath(Path.of("./invoice.png"))`
