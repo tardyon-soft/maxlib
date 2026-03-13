@@ -70,6 +70,13 @@
 - `MediaMessagingFacade` добавлен в built-in parameter resolution для reflective handlers.
 - composition через `MessageBuilder + MediaAttachment` подтверждена integration-пайплайном dispatcher runtime.
 
+Состояние реализации Sprint 7.4.1:
+- добавлен regression safety net для upload/media:
+  - unit coverage: `InputFile`, orchestration, multipart, resumable, result normalization,
+    attachment mapping, token-aware video/audio behavior;
+  - integration coverage: `upload -> send/reply`, `runtime handler -> media API`,
+    builder/media composition scenarios.
+
 ## Goal
 
 Дать разработчику ergonomic API для отправки медиа в стиле framework-level DX:

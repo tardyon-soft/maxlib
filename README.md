@@ -328,6 +328,20 @@ router.message((message, context) -> {
 });
 ```
 
+Sprint 7 test coverage:
+- unit:
+  - `InputFile` sources and metadata behavior;
+  - upload orchestration (`UploadService`) wiring and failure boundaries;
+  - multipart flow (`MultipartUploadTransferGateway`, `JdkMultipartUploadHttpClient`);
+  - resumable flow (`ResumableUploadTransferGateway`, chunk retry/offset semantics);
+  - upload result normalization (`UploadResultMapper`, `UploadResultTokenTest`);
+  - media attachment mapping (`MediaAttachmentTest`);
+  - runtime media resolver coverage (`RuntimeMessagingFacadeParameterResolverTest`).
+- integration-style:
+  - `upload + send` and `upload + reply` (`MediaMessagingFacadeTest`);
+  - runtime handler -> media API (`DispatcherRuntimeMessagingIntegrationTest`);
+  - builder + media attachment composition (`MessageBuilderTest` + dispatcher integration composition probe).
+
 Example:
 
 ```java

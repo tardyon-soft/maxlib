@@ -15,6 +15,10 @@ import ru.max.botframework.model.request.AttachmentInput;
 import ru.max.botframework.model.request.NewMessageAttachment;
 import ru.max.botframework.model.request.NewMessageBody;
 import ru.max.botframework.model.request.SendMessageRequest;
+import ru.max.botframework.upload.UploadFlowType;
+import ru.max.botframework.upload.UploadMediaKind;
+import ru.max.botframework.upload.UploadRef;
+import ru.max.botframework.upload.UploadResult;
 
 class MessageBuilderTest {
 
@@ -186,5 +190,28 @@ class MessageBuilderTest {
         MessageBuilder builder = Messages.text("hello").attachments(List.of(first, second));
 
         assertEquals(2, builder.attachments().size());
+    }
+
+    @Test
+    void composesTextMediaAttachmentAndKeyboardTogether() {
+        UploadResult uploaded = new UploadResult(
+                new UploadRef("ref-media-1"),
+                UploadFlowType.MULTIPART,
+                42L,
+                "image/png",
+                UploadMediaKind.IMAGE,
+                java.util.Map.of()
+        );
+
+        NewMessageBody body = Messages.text("hello")
+                .attachment(MediaAttachment.image(uploaded).caption("preview"))
+                .keyboard(k -> k.row(Buttons.callback("Open", "open:1")))
+                .toNewMessageBody();
+
+        assertEquals("hello", body.text());
+        assertEquals(2, body.attachments().size());
+        assertEquals(MessageAttachmentType.PHOTO, body.attachments().getFirst().type());
+        assertEquals("ref-media-1", body.attachments().getFirst().input().uploadRef());
+        assertEquals(MessageAttachmentType.INLINE_KEYBOARD, body.attachments().get(1).type());
     }
 }
