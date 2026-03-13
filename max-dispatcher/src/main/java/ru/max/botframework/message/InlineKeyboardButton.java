@@ -23,7 +23,14 @@ public record InlineKeyboardButton(
 
         switch (kind) {
             case CALLBACK -> requireNonBlank(callbackData, "callbackData");
-            case LINK -> requireNonBlank(url, "url");
+            case LINK -> {
+                requireNonBlank(url, "url");
+                if (url.length() > InlineKeyboardConstraints.MAX_LINK_URL_LENGTH) {
+                    throw new IllegalArgumentException(
+                            "url length must be <= %d".formatted(InlineKeyboardConstraints.MAX_LINK_URL_LENGTH)
+                    );
+                }
+            }
             case OPEN_APP -> requireNonBlank(openApp, "openApp");
             case MESSAGE -> requireNonBlank(message, "message");
             case REQUEST_CONTACT, REQUEST_GEO_LOCATION -> {

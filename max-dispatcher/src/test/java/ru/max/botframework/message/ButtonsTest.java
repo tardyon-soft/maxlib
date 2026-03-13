@@ -60,4 +60,10 @@ class ButtonsTest {
         assertThrows(IllegalArgumentException.class, () -> Buttons.openApp("Open", " "));
         assertThrows(IllegalArgumentException.class, () -> Buttons.message("Send", " "));
     }
+
+    @Test
+    void validatesLinkUrlLength() {
+        String tooLong = "h".repeat(InlineKeyboardConstraints.MAX_LINK_URL_LENGTH + 1);
+        assertThrows(IllegalArgumentException.class, () -> Buttons.link("Site", tooLong));
+    }
 }

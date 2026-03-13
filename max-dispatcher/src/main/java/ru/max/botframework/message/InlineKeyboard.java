@@ -25,6 +25,7 @@ public final class InlineKeyboard implements KeyboardMarkup {
                     return List.copyOf(row);
                 })
                 .toList();
+        InlineKeyboardConstraints.validateLayout(this.rows);
     }
 
     public List<List<InlineKeyboardButton>> rows() {

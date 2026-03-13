@@ -3,6 +3,7 @@ package ru.max.botframework.message;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import ru.max.botframework.model.MessageAttachmentType;
 
@@ -100,5 +101,72 @@ class KeyboardBuilderTest {
                 IllegalArgumentException.class,
                 () -> new KeyboardBuilder().row()
         );
+    }
+
+    @Test
+    void rejectsMoreThanThirtyRows() {
+        KeyboardBuilder builder = new KeyboardBuilder();
+        IntStream.range(0, 31)
+                .forEach(i -> builder.row(Buttons.callback("b" + i, "v:" + i)));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, builder::build);
+        assertEquals("Inline keyboard supports up to 30 rows, got 31", exception.getMessage());
+    }
+
+    @Test
+    void rejectsMoreThanSevenButtonsInRow() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> Keyboards.inline(k -> k.row(
+                        Buttons.callback("1", "v1"),
+                        Buttons.callback("2", "v2"),
+                        Buttons.callback("3", "v3"),
+                        Buttons.callback("4", "v4"),
+                        Buttons.callback("5", "v5"),
+                        Buttons.callback("6", "v6"),
+                        Buttons.callback("7", "v7"),
+                        Buttons.callback("8", "v8")
+                ))
+        );
+
+        assertEquals("Inline keyboard row 0 supports up to 7 buttons, got 8", exception.getMessage());
+    }
+
+    @Test
+    void rejectsLinkLikeRowWithMoreThanThreeButtons() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> Keyboards.inline(k -> k.row(
+                        Buttons.link("Docs", "https://example.com/1"),
+                        Buttons.link("Site", "https://example.com/2"),
+                        Buttons.link("Help", "https://example.com/3"),
+                        Buttons.link("More", "https://example.com/4")
+                ))
+        );
+
+        assertEquals(
+                "Inline keyboard row 0 with link/open_app/request_geo_location/request_contact buttons"
+                        + " supports up to 3 buttons, got 4",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void rejectsMoreThanTwoHundredTenButtonsInTotal() {
+        KeyboardBuilder builder = new KeyboardBuilder();
+        IntStream.range(0, 30)
+                .forEach(row -> builder.row(
+                        Buttons.callback("1", "v:" + row + ":1"),
+                        Buttons.callback("2", "v:" + row + ":2"),
+                        Buttons.callback("3", "v:" + row + ":3"),
+                        Buttons.callback("4", "v:" + row + ":4"),
+                        Buttons.callback("5", "v:" + row + ":5"),
+                        Buttons.callback("6", "v:" + row + ":6"),
+                        Buttons.callback("7", "v:" + row + ":7")
+                ));
+        builder.row(Buttons.callback("extra", "extra"));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, builder::build);
+        assertEquals("Inline keyboard supports up to 210 buttons in total, got 211", exception.getMessage());
     }
 }

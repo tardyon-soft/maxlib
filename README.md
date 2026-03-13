@@ -197,6 +197,12 @@ Sprint 6.1 foundation implemented:
 - inline keyboard model: `InlineKeyboard`, `KeyboardBuilder`, `Buttons`, `Keyboards.inline(...)`.
 - `MessageBuilder.keyboard(...)` maps keyboard to low-level inline keyboard attachment.
 - typed buttons API supports: `callback`, `link`, `requestContact`, `requestGeoLocation`, `openApp`, `message`.
+- keyboard client-side validation (pre-SDK call):
+  - max `30` rows;
+  - max `7` buttons per row;
+  - max `3` buttons per row for `link/openApp/requestGeoLocation/requestContact`;
+  - max `210` buttons total;
+  - max `2048` chars for `link` URL.
 
 Пример:
 

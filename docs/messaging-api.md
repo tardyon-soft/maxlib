@@ -131,6 +131,15 @@ Messages.text("Выберите действие")
 Состояние реализации Sprint 6.2.3:
 - `Buttons` расширен typed-фабриками: `callback`, `link`, `requestContact`, `requestGeoLocation`, `openApp`, `message`.
 
+Состояние реализации Sprint 6.2.4:
+- добавлена client-side валидация inline keyboard constraints в high-level API:
+  - до 30 рядов;
+  - до 7 кнопок в ряду;
+  - до 3 кнопок в ряду для `link/open_app/request_geo_location/request_contact`;
+  - до 210 кнопок суммарно;
+  - до 2048 символов для `link` URL.
+  Источник ограничений: MAX API docs (`inline_keyboard` attachment).
+
 Ответственность:
 - маппинг high-level builders -> SDK requests;
 - вызовы `MaxBotClient` (`sendMessage`, `editMessage`, `deleteMessage`, `answerCallback`, ...);
