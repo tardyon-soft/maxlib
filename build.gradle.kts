@@ -60,9 +60,9 @@ subprojects {
                             }
                         }
                         scm {
-                            connection.set("scm:git:https://github.com/tardyon/max-bot-framework.git")
-                            developerConnection.set("scm:git:ssh://git@github.com/tardyon/max-bot-framework.git")
-                            url.set("https://github.com/tardyon/max-bot-framework")
+                            connection.set("scm:git:https://github.com/tardyon-soft/maxlib.git")
+                            developerConnection.set("scm:git:ssh://git@github.com:tardyon-soft/maxlib.git")
+                            url.set("https://github.com/tardyon-soft/maxlib")
                         }
                     }
                 }
