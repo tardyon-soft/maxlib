@@ -1,200 +1,27 @@
-# Project Roadmap
+# Roadmap
 
-## Scope
+## Done
 
-High-level roadmap проекта MAX Java Bot Framework по спринтам.
+- Core client/model modules
+- Dispatcher/router runtime
+- Filters/middleware pipeline
+- Reflective invocation + resolver registry
+- Messaging/callback/actions/media layers
+- FSM/scenes/wizard
+- Unified polling/webhook ingestion
+- Spring Boot starter
+- Testkit
+- Annotation routing sugar (`@Route`, `@Command`, `@Callback`, etc.)
 
-## Current Status
+## Near-term improvements
 
-- Sprint 2 (`Polling/Webhook ingestion`) завершён.
-- Sprint 3 (`Dispatcher/Router runtime foundation`) завершён.
-- Sprint 4 (`Filters/Middleware/context enrichment`) завершён.
-- Sprint 5 (`DI / handler parameter resolution`) завершён.
-- Sprint 6 (`Messages/Keyboards/Callbacks ergonomics`) завершён.
-- Sprint 7 (`Upload/Media`) завершён.
-- Sprint 8 (`FSM/Scenes/Storage`) завершён.
-- Sprint 9 (`Starter/Testkit/Docs polishing`) завершён.
-- Следующий этап: V2 hardening/expansion (SDK surface, persistent storages, observability adapters).
+- Расширение MAX endpoint coverage в `max-client-core`
+- Дополнительные FSM storage implementations (beyond memory)
+- Расширенные diagnostics/observability hooks
+- Более глубокие examples для annotation API и modular router composition
 
-## Sprint 0 — Spec/API Contract Freeze
+## Mid-term
 
-Цель:
-- Зафиксировать product spec, API contracts, ADR baseline и правила contribution.
-
-Основные результаты:
-- `product-spec`, `api-contract`, профильные contracts (filters/middleware/DI/message/callback/upload/FSM);
-- ADR по модульности, router model, client/runtime separation, unified update pipeline;
-- naming/package strategy и contributing workflow.
-
-## Sprint 1 — Client/DTO/Errors
-
-Цель:
-- Реализовать базовый `max-client-core` и `max-model` для работы с MAX API.
-
-Основные результаты:
-- DTO/enums для MVP surface;
-- HTTP client abstractions;
-- типизированная модель ошибок (`validation`, `api`, `transport`);
-- базовые client tests.
-
-## Sprint 2 — Polling/Webhook
-
-Цель:
-- Реализовать transport adapters для polling и webhook с общим ingress контрактом.
-
-Основные результаты:
-- polling runtime foundation (`SdkPollingUpdateSource`, `DefaultLongPollingRunner`);
-- webhook runtime entry foundation (`DefaultWebhookReceiver`, secret validation);
-- normalize raw updates -> `Update` + typed transport results;
-- unified ingestion pipeline для polling и webhook;
-- lifecycle/shutdown semantics + lightweight overload control;
-- integration-style fixtures/tests для regression safety.
-
-## Sprint 3 — Dispatcher/Router
-
-Цель:
-- Реализовать core orchestration слой `Dispatcher/Router`.
-
-Основные результаты:
-- router graph + `includeRouter` semantics;
-- observer registration (`message`, `callback`);
-- deterministic handler resolution (first-match);
-- runtime error boundary + `error` observer;
-- ingestion integration through `UpdateConsumer` (`Dispatcher` as ingestion target);
-- расширенные routing/integration tests.
-
-## Sprint 4 — Filters/Middleware
-
-Цель:
-- Реализовать filter DSL и middleware pipeline.
-
-Основные результаты:
-- built-in MVP filters;
-- `and/or/not` композиция;
-- outer/inner middleware execution order;
-- request-scoped context enrichment from filters and middleware;
-- runtime error policy для `filter/middleware/enrichment/handler`;
-- unit + integration-style regression safety net;
-- usage examples for filter/middleware runtime API.
-
-## Sprint 5 — DI
-
-Цель:
-- Ввести handler argument resolution model в runtime.
-
-Основные результаты:
-- invocation contract (`HandlerInvoker`, `HandlerParameterResolver`, `ResolverRegistry`);
-- injection sources: context/update objects, filter data, middleware data, shared application services;
-- shared registration APIs: `Dispatcher.registerApplicationData(...)`, `Dispatcher.registerService(...)`;
-- диагностируемые resolution/invocation errors (`PARAMETER_RESOLUTION_FAILURE`, `INVOCATION_FAILURE`);
-- usage examples + DI regression safety net (unit + integration-style tests).
-
-## Sprint 6 — Messages/Keyboards/Callbacks
-
-Цель:
-- Реализовать high-level API для message/callback операций.
-
-Основные результаты:
-- builder-style send/edit/delete/reply over existing SDK (`MessagingFacade`);
-- keyboard builders + typed buttons + platform-aware keyboard validation;
-- callback answer abstraction (`CallbackFacade`, `CallbackContext`, `CallbackAnswers`);
-- chat actions abstraction (`ChatActionsFacade`);
-- runtime integration (`Dispatcher.withBotClient(...)`, `RuntimeContext.reply/answerCallback/chatAction`);
-- Sprint 6 examples + unit/integration-style regression safety net.
-
-## Sprint 7 — Upload/Media
-
-Цель:
-- Реализовать upload/media abstractions с сокрытием MAX multi-step upload flow.
-
-Основные результаты:
-- `InputFile` forms (`fromPath`, `fromBytes`, `fromStream`) с metadata API;
-- hidden `prepare/transfer/finalize` orchestration (`UploadService`) + multipart/resumable transfer paths;
-- unified `UploadResult` с `UploadMediaKind` и attachment payload normalization;
-- high-level media attachments (`ImageAttachment`, `FileAttachment`, `VideoAttachment`, `AudioAttachment`);
-- high-level media send/reply facade (`MediaMessagingFacade`);
-- token-aware video/audio behavior внутри media mapping;
-- runtime integration (`Dispatcher.withUploadService`, `RuntimeContext.media/replyImage/replyFile/sendVideo/sendAudio`);
-- Sprint 7 regression safety net (unit + integration-style coverage) и usage examples.
-
-## Sprint 8 — FSM/Scenes
-
-Цель:
-- Реализовать stateful dialog subsystem.
-
-Основные результаты:
-- `FSMContext` + storage abstraction;
-- state scopes + `StateFilter`;
-- `Scene` + `SceneManager` lifecycle;
-- minimal wizard-style API.
-- regression safety net:
-  - unit tests for state model/storage/FSM context/state filter/scenes/wizard/error behavior;
-  - integration-style tests for dispatcher runtime (`FSMContext`, `StateFilter`, scene lifecycle).
-
-## Sprint 9 — Starter/Testkit/Docs Polishing
-
-Цель:
-- Довести framework до production-ready DX уровня.
-
-Sprint 9 contracts:
-- `docs/spring-starter.md`
-- `docs/testkit.md`
-
-Текущий прогресс Sprint 9:
-- создан module foundation `max-spring-boot-starter`:
-  - packages: `autoconfigure`, `properties`, `polling`, `webhook`;
-  - baseline `MaxBotProperties` + `MaxBotAutoConfiguration`;
-  - Spring-facing bridges: `SpringPollingBootstrap`, `SpringWebhookAdapter`.
-- реализована базовая autoconfiguration SDK/runtime:
-  - `MaxApiClientConfig`, `MaxHttpClient`, `MaxBotClient`, `FSMStorage`, `Dispatcher`;
-  - user-override friendly bean conditions и automatic `Router` inclusion.
-- реализован Spring webhook adapter:
-  - framework-agnostic receiver wiring (`DefaultWebhookReceiver`);
-  - MVC endpoint for webhook path with mapped HTTP response contract.
-- реализован polling bootstrap для Spring:
-  - lifecycle-managed `LongPollingRunner` start/stop;
-  - dispatcher handler invocation through polling ingestion path.
-- реализована router/handler registration story для starter:
-  - explicit `Router` bean aggregation into `Dispatcher`;
-  - deterministic registration order via `@Order` / `Ordered`;
-  - router tree composition preserved through core `router.includeRouter(...)`.
-- интегрированы runtime services и FSM/scene defaults в starter:
-  - messaging facades (`MessagingFacade`, `CallbackFacade`, `ChatActionsFacade`);
-  - in-memory defaults (`MemoryStorage`, `InMemorySceneRegistry`, `MemorySceneStorage`);
-  - optional media facade wiring when `UploadService` bean is present.
-- реализован core `max-testkit`:
-  - `DispatcherTestKit` harness для runtime dispatch;
-  - `RecordingMaxBotClient` + `CapturedApiCall` для side effects assertions;
-  - `TestUpdates` fixtures для message/callback test flows.
-- расширен testkit ergonomics:
-  - `UpdateFixtures` builder DSL и `statefulMessages(...)`;
-  - helper methods для feed-all/probe side effects;
-  - usage example добавлен в runtime tests.
-- добавлены polished end-to-end examples:
-  - Spring Boot polling/webhook minimal apps;
-  - router composition;
-  - filters + middleware + DI;
-  - messaging/keyboards/callbacks;
-  - FSM/scenes и upload/media runtime usage.
-- проведён docs/README hardening для public entrypoint:
-  - README перестроен в quick-start/architecture/modules/limitations формате;
-  - `api-contract.md` синхронизирован с фактическими public interfaces;
-  - документация очищена от устаревших и противоречивых обещаний.
-
-Основные результаты:
-- Spring Boot starter auto-configuration;
-- testkit для unit/integration сценариев;
-- examples и docs polishing;
-- финальная проверка consistency между кодом, contracts и README.
-
-Итог Sprint 9.4.3 (cleanup/finalization):
-- naming и package layout публичных starter/testkit APIs выровнены;
-- JavaDoc улучшен в example-visible APIs;
-- docs синхронизированы с фактическим post-sprint состоянием;
-- зафиксированы текущие ограничения и V2 направления.
-
-## Notes
-
-- Приоритет сохраняется: архитектура и стабильность API важнее расширения surface area.
-- Каждый спринт может быть разбит на несколько атомарных задач и коммитов.
-- Если MAX API ограничения блокируют фичу, это фиксируется в docs как explicit limitation.
+- Optional OpenTelemetry/metrics adapters
+- Extended webhook operational knobs
+- Testkit assertion helpers for enrichment and middleware chains

@@ -1,276 +1,30 @@
-# Messaging API Contract (Sprint 6)
+# Messaging API
 
-## Status
+## Scope
 
-Документ фиксирует контракт high-level messaging layer для Sprint 6.
-Это спецификация public API и поведения, а не полная реализация.
+Документ описывает runtime messaging слой в `max-dispatcher`.
 
-## Goal
+## Facades
 
-Дать разработчику ergonomic API для типичных bot-сценариев:
-- отправка текста/ответа;
-- редактирование/удаление;
-- inline keyboard builder;
-- callback answer;
-- chat actions.
+- `MessagingFacade`: send/edit/delete/reply сообщений
+- `CallbackFacade`: answer callback/update callback message
+- `ChatActionsFacade`: chat actions (`typing`, etc.)
+- `MediaMessagingFacade`: media send/reply (если подключен upload service)
 
-При этом messaging layer должен строиться поверх уже существующих слоёв:
-- runtime (`Dispatcher` / `Router` / `RuntimeContext`);
-- typed SDK (`MaxBotClient` и request/response модели);
-- без дублирования transport logic.
+## Builders
 
-## Sprint 6 boundaries
+- `Messages` / `MessageBuilder`
+- `Buttons` / `Keyboards` / `KeyboardBuilder`
+- `CallbackAnswers` / `CallbackAnswerBuilder`
 
-В scope Sprint 6:
-- high-level message/callback/chat-action facade;
-- builders/factories для message/keyboard/buttons;
-- runtime-level convenience API для handler-кода.
+## RuntimeContext shortcuts
 
-Вне scope Sprint 6:
-- полноценный upload/media subsystem (будет отдельным этапом);
-- FSM/scenes;
-- Spring starter integration.
+- `reply(...)`
+- `answerCallback(...)`
+- `chatAction(...)`
+- `media()` + media convenience methods
 
-## Core contracts
+## Integration requirements
 
-### `MessageTarget`
-
-Назначение:
-- typed target для message operations без ручной сборки transport request.
-
-Ответственность:
-- инкапсулировать минимальный routing context (`chatId`, optional `messageId`, optional thread/reply context);
-- использоваться как единая точка для `send/reply/edit/delete`.
-
-Пример (концептуально):
-
-```java
-MessageTarget target = MessageTarget.chat(chatId);
-MessageTarget replyTarget = MessageTarget.replyTo(chatId, messageId);
-```
-
-### `MessageBuilder`
-
-Назначение:
-- builder-style сборка send/reply payload.
-
-Ответственность:
-- выразить message payload в framework-уровневых типах;
-- валидировать обязательные поля до SDK вызова;
-- хранить keyboard/format/notify параметры.
-
-MVP поля:
-- `text`;
-- `format` (`TextFormat`-совместимая модель);
-- `notify`;
-- `keyboard` (inline keyboard contract Sprint 6);
-- reply targeting через `MessageTarget`/runtime context.
-
-### `Messages` factory
-
-Назначение:
-- entrypoint для создания builders.
-
-Пример (концептуально):
-
-```java
-Messages.text("Привет");
-Messages.markdown("*Привет*");
-Messages.html("<b>Привет</b>");
-Messages.reply("Готово");
-Messages.edit("Новый текст");
-Messages.delete();
-```
-
-Контракт:
-- factory не выполняет HTTP-запросы;
-- factory возвращает immutable/controlled builders.
-
-### `KeyboardBuilder`
-
-Назначение:
-- декларативная сборка inline keyboard в Java-friendly DSL стиле.
-
-Пример (концептуально):
-
-```java
-Messages.text("Выберите действие")
-    .keyboard(k -> k.row(
-        Buttons.callback("Оплатить", "pay:1"),
-        Buttons.link("Сайт", "https://example.com")
-    ));
-```
-
-Контракт:
-- deterministic button order;
-- валидация payload/button constraints до SDK вызова.
-
-### `Buttons`
-
-Назначение:
-- factory typed button-конструкторов (`callback`, `link`, и т.д. в пределах MAX возможностей).
-
-Контракт:
-- no magic strings where typed value possible;
-- validation-friendly input model.
-
-### High-level messaging facade/service
-
-Назначение:
-- тонкий orchestration слой для выполнения high-level operations через `MaxBotClient`.
-
-Рабочее имя контракта: `MessagingFacade` (финальное имя может быть скорректировано при реализации).
-
-Состояние реализации Sprint 6.2.1:
-- выбран и реализован `MessagingFacade`.
-
-Состояние реализации Sprint 6.2.2:
-- реализованы `InlineKeyboard`, `KeyboardBuilder`, `Buttons`, `Keyboards.inline(...)`;
-- `MessageBuilder.keyboard(...)` теперь маппится в low-level inline keyboard attachment.
-
-Состояние реализации Sprint 6.2.3:
-- `Buttons` расширен typed-фабриками: `callback`, `link`, `requestContact`, `requestGeoLocation`, `openApp`, `message`.
-
-Состояние реализации Sprint 6.2.4:
-- добавлена client-side валидация inline keyboard constraints в high-level API:
-  - до 30 рядов;
-  - до 7 кнопок в ряду;
-  - до 3 кнопок в ряду для `link/open_app/request_geo_location/request_contact`;
-  - до 210 кнопок суммарно;
-  - до 2048 символов для `link` URL.
-  Источник ограничений: MAX API docs (`inline_keyboard` attachment).
-
-Состояние реализации Sprint 6.3.1:
-- добавлен high-level callback answer API: `CallbackFacade`, `CallbackContext`, `CallbackAnswers`.
-- поддержаны сценарии:
-  - notification-only callback answer через `answerCallback`;
-  - update current callback message через `editMessage` на основе `callback.message`.
-
-Состояние реализации Sprint 6.3.2:
-- добавлен high-level chat actions API: `ChatActionsFacade`.
-- поддержаны:
-  - typed dispatch `send(chatId, ChatAction)`;
-  - runtime-context dispatch `send(runtimeContext, ChatAction)`;
-  - convenience helpers (`typing`, `sendingPhoto`, ...).
-
-Состояние реализации Sprint 6.3.3:
-- runtime integration через `Dispatcher.withBotClient(...)`:
-  - `RuntimeContext.reply(MessageBuilder)`;
-  - `RuntimeContext.answerCallback(String)`;
-  - `RuntimeContext.chatAction(ChatAction)`.
-- facade objects также доступны через parameter resolution:
-  - `MessagingFacade`, `CallbackFacade`, `ChatActionsFacade`.
-
-Состояние реализации Sprint 6.4.1:
-- добавлен regression safety net для high-level messaging API:
-  - unit coverage: message builder, keyboard builder, buttons, keyboard validation,
-    callback answer API, chat actions API;
-  - integration-style coverage: runtime handler `reply`/`answerCallback`/`chatAction`,
-    reflective facade injection и mapping в low-level SDK calls.
-
-Ответственность:
-- маппинг high-level builders -> SDK requests;
-- вызовы `MaxBotClient` (`sendMessage`, `editMessage`, `deleteMessage`, `answerCallback`, ...);
-- единый error boundary messaging-слоя (validation + API failure propagation).
-
-Не отвечает за:
-- routing/dispatch (это runtime layer);
-- raw HTTP/serialization (это SDK layer).
-
-### Callback answer abstraction
-
-Назначение:
-- ergonomic API для ответа на callback внутри handler-кода.
-
-Пример (концептуально):
-
-```java
-ctx.callback().answer("OK");
-// или
-ctx.answerCallback("OK");
-```
-
-Контракт:
-- используется существующий SDK callback method;
-- runtime convenience API не дублирует transport client.
-
-### Chat actions abstraction
-
-Назначение:
-- удобная отправка chat action (typing/upload/etc.) как high-level operation.
-
-Пример (концептуально):
-
-```java
-ctx.chatAction(ChatAction.TYPING);
-```
-
-Контракт:
-- основан на typed `ChatAction` model;
-- выполняется через существующий SDK client слой.
-
-## Desired DX examples
-
-### 1) Send text
-
-```java
-ctx.send(
-    Messages.text("Привет!")
-);
-```
-
-### 2) Reply
-
-```java
-ctx.reply(
-    Messages.text("Принято")
-);
-```
-
-### 3) Edit/Delete
-
-```java
-ctx.edit(
-    Messages.edit("Статус обновлён")
-);
-
-ctx.delete(
-    Messages.delete()
-);
-```
-
-### 4) Keyboard builder
-
-```java
-ctx.reply(
-    Messages.text("Выберите действие")
-        .keyboard(k -> k.row(
-            Buttons.callback("Оплатить", "pay:1"),
-            Buttons.link("Сайт", "https://example.com")
-        ))
-);
-```
-
-### 5) Callback answer + chat action
-
-```java
-router.callback(callback -> {
-    return ctx.answerCallback("OK")
-        .thenCompose(ignored -> ctx.chatAction(ChatAction.TYPING));
-});
-```
-
-## Architecture constraints
-
-- Messaging layer обязан использовать существующий `MaxBotClient` и runtime context.
-- Нельзя дублировать transport/client abstractions новым параллельным client API.
-- Upload/media details не подтягиваются в Sprint 6.1 (только совместимые extension points).
-- Контракт должен оставаться совместимым с текущим dispatcher/filter/middleware/DI pipeline.
-
-## Related docs
-
-- [api-contract.md](api-contract.md)
-- [runtime-contract.md](runtime-contract.md)
-- [message-api-contract.md](message-api-contract.md)
-- [callback-contract.md](callback-contract.md)
-- [roadmap.md](roadmap.md)
+- `Dispatcher.withBotClient(...)` обязателен для messaging/callback/actions.
+- `Dispatcher.withUploadService(...)` нужен для media shortcuts.
