@@ -19,6 +19,8 @@ public final class BuiltInFilters {
     public static final String COMMAND_KEY = "command";
     public static final String COMMAND_ARGS_KEY = "commandArgs";
     public static final String TEXT_SUFFIX_KEY = "textSuffix";
+    public static final String CALLBACK_DATA_KEY = "callbackData";
+    public static final String CALLBACK_SUFFIX_KEY = "callbackSuffix";
     public static final String USER_ID_KEY = "userId";
     public static final String CHAT_TYPE_KEY = "chatType";
     public static final String STATE_KEY = "state";
@@ -108,6 +110,53 @@ public final class BuiltInFilters {
                         ? FilterResult.matched()
                         : FilterResult.notMatched()
         );
+    }
+
+    /**
+     * Matches callback with non-blank data and exposes data as {@link #CALLBACK_DATA_KEY}.
+     */
+    public static Filter<Callback> callbackDataPresent() {
+        return callback -> {
+            if (callback == null || callback.data() == null || callback.data().isBlank()) {
+                return CompletableFuture.completedFuture(FilterResult.notMatched());
+            }
+            return CompletableFuture.completedFuture(FilterResult.matched(Map.of(CALLBACK_DATA_KEY, callback.data())));
+        };
+    }
+
+    /**
+     * Matches callback data by exact value and exposes data as {@link #CALLBACK_DATA_KEY}.
+     */
+    public static Filter<Callback> callbackDataEquals(String value) {
+        Objects.requireNonNull(value, "value");
+        if (value.isEmpty()) {
+            throw new IllegalArgumentException("value must not be empty");
+        }
+        return callback -> {
+            if (callback == null || callback.data() == null || !value.equals(callback.data())) {
+                return CompletableFuture.completedFuture(FilterResult.notMatched());
+            }
+            return CompletableFuture.completedFuture(FilterResult.matched(Map.of(CALLBACK_DATA_KEY, callback.data())));
+        };
+    }
+
+    /**
+     * Matches callback data prefix and exposes suffix as {@link #CALLBACK_SUFFIX_KEY}.
+     */
+    public static Filter<Callback> callbackDataStartsWith(String prefix) {
+        Objects.requireNonNull(prefix, "prefix");
+        if (prefix.isEmpty()) {
+            throw new IllegalArgumentException("prefix must not be empty");
+        }
+        return callback -> {
+            if (callback == null || callback.data() == null || !callback.data().startsWith(prefix)) {
+                return CompletableFuture.completedFuture(FilterResult.notMatched());
+            }
+            return CompletableFuture.completedFuture(FilterResult.matched(Map.of(
+                    CALLBACK_DATA_KEY, callback.data(),
+                    CALLBACK_SUFFIX_KEY, callback.data().substring(prefix.length())
+            )));
+        };
     }
 
     /**

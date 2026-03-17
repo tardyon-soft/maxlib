@@ -102,6 +102,45 @@ class BuiltInFiltersTest {
     }
 
     @Test
+    void callbackDataEqualsMatchesExactValue() {
+        Callback callback = new Callback(
+                new CallbackId("cb-2"),
+                "menu:pay",
+                user("u-8"),
+                message("source", ChatType.PRIVATE, user("u-8"), List.of()),
+                Instant.parse("2026-03-12T00:00:02Z")
+        );
+
+        FilterResult result = BuiltInFilters.callbackDataEquals("menu:pay")
+                .test(callback)
+                .toCompletableFuture()
+                .join();
+
+        assertEquals(FilterStatus.MATCHED, result.status());
+        assertEquals("menu:pay", result.enrichment().get(BuiltInFilters.CALLBACK_DATA_KEY));
+    }
+
+    @Test
+    void callbackDataStartsWithMatchesAndExtractsSuffix() {
+        Callback callback = new Callback(
+                new CallbackId("cb-3"),
+                "menu:pay:42",
+                user("u-9"),
+                message("source", ChatType.PRIVATE, user("u-9"), List.of()),
+                Instant.parse("2026-03-12T00:00:03Z")
+        );
+
+        FilterResult result = BuiltInFilters.callbackDataStartsWith("menu:")
+                .test(callback)
+                .toCompletableFuture()
+                .join();
+
+        assertEquals(FilterStatus.MATCHED, result.status());
+        assertEquals("menu:pay:42", result.enrichment().get(BuiltInFilters.CALLBACK_DATA_KEY));
+        assertEquals("pay:42", result.enrichment().get(BuiltInFilters.CALLBACK_SUFFIX_KEY));
+    }
+
+    @Test
     void hasAttachmentFilterMatchesWhenAttachmentsPresent() {
         MessageAttachment attachment = new MessageAttachment(
                 MessageAttachmentType.PHOTO,

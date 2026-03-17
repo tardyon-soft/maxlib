@@ -1,108 +1,85 @@
 # MAX Java Bot Framework
 
-Java framework для разработки ботов на платформе MAX с DX в стиле aiogram 3, адаптированный под Java ecosystem и реальные ограничения MAX API.
+Java framework для разработки ботов на платформе MAX.
 
-Важно: это не буквальная копия aiogram. Framework повторяет ergonomic-подходы там, где они совместимы с MAX.
+README ниже ориентирован на использование библиотеки как опубликованных Maven-артефактов с вашим namespace:
 
-Базовый namespace проекта: `ru.tardyon.botframework`.
+- `groupId`: `ru.tardyon.maven`
 
-## Quick Start
+Если у вас в репозитории артефакты публикуются под этим namespace, используйте координаты именно в таком виде.
 
-### 1) Требования
+## Что дает framework
+
+- typed MAX client (`max-client-core`, `max-model`);
+- runtime dispatcher/router (`max-dispatcher`);
+- FSM/scenes/wizard (`max-fsm`);
+- Spring Boot starter (`max-spring-boot-starter`);
+- testkit для unit/integration тестов (`max-testkit`).
+
+## Требования
 
 - JDK 21+
-- Gradle wrapper (`./gradlew`)
+- Gradle 8+/9+ или Maven 3.9+
 
-### 2) Подключение
+## Установка зависимостей (namespace `ru.tardyon.maven`)
 
-На текущем этапе проект используется как source-first framework (из checkout репозитория).
+### 1) Spring Boot проект (рекомендуется)
 
-Для модульного использования внутри этого монорепо:
-
-```kotlin
-dependencies {
-    implementation(project(":max-dispatcher"))
-    implementation(project(":max-client-core"))
-    implementation(project(":max-fsm"))
-}
-```
-
-Для Spring Boot integration:
+Gradle:
 
 ```kotlin
 dependencies {
-    implementation(project(":max-spring-boot-starter"))
+    implementation("ru.tardyon.maven:max-spring-boot-starter:0.1.0")
 }
 ```
 
-### 3) Сборка
+Maven:
 
-```bash
-./gradlew clean test
+```xml
+<dependency>
+  <groupId>ru.tardyon.maven</groupId>
+  <artifactId>max-spring-boot-starter</artifactId>
+  <version>0.1.0</version>
+</dependency>
 ```
 
-### 3.1) Публикация в Maven Central
+### 2) Vanilla Java runtime (без Spring)
 
-Для vanilla Java стека (без Spring starter):
+Gradle:
 
-```bash
-./gradlew publishVanillaJavaToMavenCentral
+```kotlin
+dependencies {
+    implementation("ru.tardyon.maven:max-dispatcher:0.1.0")
+    implementation("ru.tardyon.maven:max-client-core:0.1.0")
+    implementation("ru.tardyon.maven:max-fsm:0.1.0")
+}
 ```
 
-Для starter-стека (включая Spring starter и его зависимости):
+Maven:
 
-```bash
-./gradlew publishStarterToMavenCentral
+```xml
+<dependency>
+  <groupId>ru.tardyon.maven</groupId>
+  <artifactId>max-dispatcher</artifactId>
+  <version>0.1.0</version>
+</dependency>
+<dependency>
+  <groupId>ru.tardyon.maven</groupId>
+  <artifactId>max-client-core</artifactId>
+  <version>0.1.0</version>
+</dependency>
+<dependency>
+  <groupId>ru.tardyon.maven</groupId>
+  <artifactId>max-fsm</artifactId>
+  <version>0.1.0</version>
+</dependency>
 ```
 
-Требуемые переменные окружения для публикации:
+## Быстрый старт: Spring Boot (polling)
 
-- `MAVEN_CENTRAL_USERNAME`
-- `MAVEN_CENTRAL_PASSWORD`
-- `MAVEN_GPG_PRIVATE_KEY`
-- `MAVEN_GPG_PASSPHRASE`
-
-### 3.2) GitLab CI Pipeline
-
-Добавлен `.gitlab-ci.yml` с поведением:
-
-- при `push` в `master`:
-  - `build` (`clean assemble`)
-  - `unit_tests` (`test`)
-- после успешных тестов доступна manual job `publish_maven_central`:
-  - запускает `publishVanillaJavaToMavenCentral` и `publishStarterToMavenCentral`.
-
-Для manual publish в GitLab CI/CD Variables должны быть заданы:
-
-- `MAVEN_CENTRAL_USERNAME`
-- `MAVEN_CENTRAL_PASSWORD`
-- `MAVEN_GPG_PRIVATE_KEY`
-- `MAVEN_GPG_PASSPHRASE`
-
-### 4) Минимальный runtime bot (без Spring)
-
-```java
-import java.util.concurrent.CompletableFuture;
-import ru.tardyon.botframework.dispatcher.Dispatcher;
-import ru.tardyon.botframework.dispatcher.Router;
-import ru.tardyon.botframework.message.Messages;
-
-Dispatcher dispatcher = new Dispatcher()
-    .withBotClient(configuredMaxBotClient());
-
-Router router = new Router("main");
-router.message((message, ctx) -> {
-    ctx.reply(Messages.text("Привет, MAX!"));
-    return CompletableFuture.completedFuture(null);
-});
-
-dispatcher.includeRouter(router);
-```
-
-### 5) Минимальный Spring Boot bot (polling)
+`application.yml`:
 
 ```yaml
-# application.yml
 max:
   bot:
     token: ${MAX_BOT_TOKEN}
@@ -111,8 +88,12 @@ max:
       enabled: true
       limit: 100
       timeout: 30s
-      types: [message_created, message_callback]
+      types:
+        - message_created
+        - message_callback
 ```
+
+Простой router-bean:
 
 ```java
 import java.util.concurrent.CompletableFuture;
@@ -123,12 +104,12 @@ import ru.tardyon.botframework.dispatcher.Router;
 import ru.tardyon.botframework.message.Messages;
 
 @SpringBootApplication
-class BotApp {
+public class BotApplication {
     @Bean
     Router botRouter() {
         Router router = new Router("main");
         router.message(BuiltInFilters.command("start"), (message, ctx) -> {
-            ctx.reply(Messages.text("Привет из polling mode"));
+            ctx.reply(Messages.text("Привет из MAX bot"));
             return CompletableFuture.completedFuture(null);
         });
         return router;
@@ -136,205 +117,188 @@ class BotApp {
 }
 ```
 
-### 6) Минимальный Spring Boot bot (webhook)
+## Быстрый старт: аннотационный API (sugar поверх Router)
 
-```yaml
-# application.yml
-max:
-  bot:
-    token: ${MAX_BOT_TOKEN}
-    mode: WEBHOOK
-    webhook:
-      enabled: true
-      path: /webhook/max
-      secret: ${MAX_BOT_WEBHOOK_SECRET}
-      max-in-flight: 64
+```java
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import org.springframework.stereotype.Component;
+import ru.tardyon.botframework.dispatcher.RuntimeContext;
+import ru.tardyon.botframework.dispatcher.annotation.Callback;
+import ru.tardyon.botframework.dispatcher.annotation.CallbackPrefix;
+import ru.tardyon.botframework.dispatcher.annotation.Command;
+import ru.tardyon.botframework.dispatcher.annotation.Route;
+import ru.tardyon.botframework.message.Messages;
+
+@Component
+@Route(value = "menu", autoRegister = true)
+public class MenuRoute {
+
+    @Command("start")
+    public CompletionStage<Void> start(RuntimeContext ctx) {
+        ctx.reply(Messages.text("Откройте /menu"));
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Command("menu")
+    public void menu(RuntimeContext ctx) {
+        ctx.reply(Messages.text("Меню готово"));
+    }
+
+    @Callback("menu:pay")
+    public void pay(ru.tardyon.botframework.model.Callback callback, RuntimeContext ctx) {
+        ctx.answerCallback("Оплата подтверждена");
+    }
+
+    @CallbackPrefix("menu:")
+    public void fallback(ru.tardyon.botframework.model.Callback callback, RuntimeContext ctx) {
+        ctx.answerCallback("Неизвестный пункт меню");
+    }
+}
 ```
 
-Starter поднимет webhook endpoint и передаст update в тот же dispatcher pipeline.
+Поддерживаемые аннотации:
 
-## Architecture Overview
+- `@Route(value, autoRegister=true|false)`
+- `@Message(text, startsWith)`
+- `@Text(...)`
+- `@Command(...)`
+- `@Callback(...)`
+- `@CallbackPrefix(...)`
+- `@State(...)`
+- `@UseFilters(...)`
+- `@UseMiddleware(...)`
 
-Framework состоит из трёх основных уровней:
+Важно:
 
-1. Client SDK (`max-client-core`, `max-model`)
-- typed requests/responses
-- HTTP transport, auth, serialization, error model
+- Это дополнительный синтаксический слой.
+- Старый API через `Router`/`BuiltInFilters` работает без изменений.
 
-2. Runtime (`max-dispatcher`, `max-fsm`)
-- ingestion (polling/webhook)
-- dispatcher/router/handlers
-- filters + middleware + runtime context enrichment
-- DI parameter resolution
-- high-level messaging/media API
-- FSM/scenes/wizard
+## Быстрый старт: vanilla Java (без Spring)
 
-3. Integration & Testing (`max-spring-boot-starter`, `max-testkit`)
-- Spring Boot autoconfiguration + polling/webhook bootstrap
-- test harness + fixtures + side-effect capture
+```java
+import java.util.concurrent.CompletableFuture;
+import ru.tardyon.botframework.dispatcher.Dispatcher;
+import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.message.Messages;
 
-## Module Overview
+Dispatcher dispatcher = new Dispatcher()
+        .withBotClient(configuredMaxBotClient());
 
-- `max-client-core`: typed MAX API client, transport/auth/serialization/errors.
-- `max-model`: DTO, enums, value objects.
-- `max-dispatcher`: ingestion + dispatcher/router + filters/middleware + DI + messaging/media runtime.
-- `max-fsm`: FSM storage abstractions, state scopes, scenes, wizard.
-- `max-spring-boot-starter`: Spring Boot properties/autoconfiguration, polling/webhook adapter wiring.
-- `max-testkit`: runtime testing helpers (`DispatcherTestKit`, `UpdateFixtures`, `RecordingMaxBotClient`).
-- `demo-spring-polling`: отдельное Spring Boot demo-приложение для ручной проверки framework в polling mode.
+Router router = new Router("main");
+router.message((message, ctx) -> {
+    ctx.reply(Messages.text("Привет, MAX!"));
+    return CompletableFuture.completedFuture(null);
+});
 
-## Project Status
+dispatcher.includeRouter(router);
+```
 
-Sprint 9 завершён: framework включает core runtime, Spring Boot starter, testkit и рабочие examples.
+## Основные runtime-концепции
 
-Что стабилизировано после Sprint 9:
+### Dispatcher / Router
 
-- public starter properties/autoconfiguration surface;
-- polling/webhook Spring integration over framework-agnostic ingestion;
-- testkit harness + fixtures для handler/runtime testing;
-- docs и contracts синхронизированы с фактическим API.
+- `Dispatcher` — корневой orchestration слой;
+- `Router` — модуль регистрации handlers;
+- поддерживается router tree через `includeRouter(...)`;
+- first-match routing + deterministic traversal.
 
-## Polling vs Webhook
+### Filters / Middleware
 
-- Polling: `LongPollingRunner` + `PollingUpdateSource`, lifecycle-managed (`start/stop/shutdown`).
-- Webhook: framework-agnostic `WebhookReceiver` + secret validation (`X-Max-Bot-Api-Secret`).
-- Оба источника сходятся в единый internal update pipeline и одинаковый dispatcher flow.
-
-## Filters and Middleware
-
-Pipeline order:
+Порядок pipeline:
 
 1. outer middleware
 2. filter evaluation
 3. inner middleware
 4. handler invocation
 
-Базовые built-in filters:
+Базовые фильтры:
 
 - `BuiltInFilters.command("start")`
 - `BuiltInFilters.textEquals(...)`
 - `BuiltInFilters.textStartsWith(...)`
-- `BuiltInFilters.chatType(...)`
-- `BuiltInFilters.fromUser(...)`
-- `BuiltInFilters.hasAttachment()`
+- `BuiltInFilters.callbackDataEquals(...)`
+- `BuiltInFilters.callbackDataStartsWith(...)`
 - `BuiltInFilters.state(...)`
 
-## DI and Handler Invocation
+### DI и сигнатуры handler-ов
 
-Framework вызывает handler-ы через invocation engine (`HandlerInvoker` + `HandlerParameterResolver`).
+Handler может получать:
 
-Поддерживаются параметры из:
+- `RuntimeContext`, `Update`, `Message`, `Callback`, `User`, `Chat`
+- filter/middleware enrichment данные
+- сервисы, зарегистрированные через `Dispatcher.registerService(...)`
+- FSM объекты (`FSMContext`, `SceneManager`, `WizardManager`)
 
-- runtime objects (`RuntimeContext`, `Update`, `Message`, `Callback`, `User`, `Chat`)
-- filter/middleware enrichment data
-- shared services (`Dispatcher.registerService(...)`)
-- FSM/scenes (`FSMContext`, `SceneManager`, `WizardManager`)
+Допустимые возвращаемые типы handler-методов:
 
-## Messaging, Keyboards, Callbacks
+- `void`
+- `CompletionStage<?>`
 
-High-level API:
+## Spring режимы
 
-- `MessagingFacade` (`send/edit/delete/reply`)
-- `Messages` / `MessageBuilder`
-- `Keyboards` / `KeyboardBuilder` / `Buttons`
-- `CallbackFacade` / `CallbackContext`
-- `ChatActionsFacade`
+### Polling
 
-Runtime shortcuts через `RuntimeContext`:
+- `max.bot.mode=POLLING`
+- starter поднимет `LongPollingRunner` и будет доставлять updates в `Dispatcher`
 
-- `ctx.reply(...)`
-- `ctx.answerCallback(...)`
-- `ctx.chatAction(...)`
+### Webhook
 
-## Upload / Media
+- `max.bot.mode=WEBHOOK`
+- starter поднимет webhook endpoint и тот же dispatcher pipeline
 
-Upload/media слой:
+## Тестирование
 
-- `InputFile.fromPath / fromBytes / fromStream`
-- `UploadService` (`prepare -> transfer -> finalize`)
-- multipart + resumable upload modes
-- normalized `UploadResult`
-- `MediaMessagingFacade` (`sendImage/sendFile/sendVideo/sendAudio`, reply variants)
+Для тестов используйте `max-testkit`:
 
-## FSM / Scenes
-
-Состояние и диалоги:
-
-- `FSMStorage` + `MemoryStorage`
-- `FSMContext`
-- state scopes: `USER`, `CHAT`, `USER_IN_CHAT`
-- `StateFilter`
-- `SceneRegistry`, `SceneManager`
-- `WizardManager` (`enter/next/back/exit`)
-
-## Testing Story
-
-`max-testkit` даёт быстрый runtime testing без ручного boilerplate:
-
-- `DispatcherTestKit` для setup и dispatch
-- `UpdateFixtures` DSL (`message`, `callback`, `statefulMessages`)
-- `RecordingMaxBotClient` + `CapturedApiCall` для assertions side effects
+- `DispatcherTestKit`
+- `UpdateFixtures`
+- `RecordingMaxBotClient`
 
 Пример:
 
 ```java
 Router router = new Router("test");
 router.message((message, ctx) -> {
-    ctx.reply(Messages.text("pong"));
+    ctx.reply(ru.tardyon.botframework.message.Messages.text("pong"));
     return java.util.concurrent.CompletableFuture.completedFuture(null);
 });
 
-DispatcherTestKit kit = DispatcherTestKit.withRouter(router);
-DispatcherTestKit.DispatchProbe probe = kit.feedAndCapture(UpdateFixtures.message().text("ping").build());
+ru.tardyon.botframework.testkit.DispatcherTestKit kit =
+        ru.tardyon.botframework.testkit.DispatcherTestKit.withRouter(router);
+
+var probe = kit.feedAndCapture(ru.tardyon.botframework.testkit.UpdateFixtures.message().text("ping").build());
 ```
 
-## Examples
+## Локальная сборка репозитория
 
-- `examples/sprint-2-low-level`: polling/webhook ingestion low-level.
-- `examples/sprint-3-runtime`: dispatcher/router basics.
-- `examples/sprint-4-filters-middleware`: filters + middleware.
-- `examples/sprint-5-di-invocation`: DI/invocation signatures.
-- `examples/sprint-6-messaging`: messages/keyboards/callbacks/actions.
-- `examples/sprint-7-upload-media`: upload/media runtime usage.
-- `examples/sprint-9-e2e`: polished end-to-end examples (Spring polling/webhook + runtime scenarios).
-- `demo-spring-polling`: runnable Spring Boot app (`./gradlew :demo-spring-polling:run`) для ручного smoke/manual QA.
+```bash
+./gradlew clean test
+```
 
-## Current Limitations
+## Публикация с вашим namespace
 
-- MAX API surface покрыт частично; расширение endpoints продолжается.
-- Rich magic DSL в стиле aiogram не реализуется как цель сама по себе; приоритет — явный typed API.
-- Upload resumable state пока runtime-local (без distributed persistent resume manager).
-- `GET /videos/{videoToken}` helper layer пока не вынесен в отдельный read-model abstraction.
-- Spring starter не включает отдельный enterprise observability/deployment toolkit.
+Если вы публикуете как `ru.tardyon.maven`, проверьте перед release:
 
-## Future Work (V2+)
+1. `group`/`artifactId` в publish-конфигурации соответствуют вашему namespace.
+2. Версии модулей выровнены.
+3. Все модули (`max-model`, `max-client-core`, `max-fsm`, `max-dispatcher`, `max-spring-boot-starter`, `max-testkit`) опубликованы в один репозиторий.
 
-- расширение SDK surface по дополнительным MAX endpoints;
-- дополнительные persistent storages для FSM/scenes;
-- расширение testkit assertions/helpers без дублирования runtime;
-- optional observability integrations (logging/metrics/tracing adapters).
+## Примеры в репозитории
 
-## Documentation
+- `examples/sprint-2-low-level`
+- `examples/sprint-3-runtime`
+- `examples/sprint-4-filters-middleware`
+- `examples/sprint-5-di-invocation`
+- `examples/sprint-6-messaging`
+- `examples/sprint-7-upload-media`
+- `examples/sprint-9-e2e`
+- `demo-spring-polling` (включая demo аннотационного API)
 
-- Product vision: [docs/product-spec.md](docs/product-spec.md)
-- API contract: [docs/api-contract.md](docs/api-contract.md)
-- Runtime contract: [docs/runtime-contract.md](docs/runtime-contract.md)
-- Filters/middleware: [docs/filters-and-middleware.md](docs/filters-and-middleware.md)
-- DI/invocation: [docs/di-and-invocation.md](docs/di-and-invocation.md)
-- Messaging API: [docs/messaging-api.md](docs/messaging-api.md)
-- Upload/media: [docs/upload-and-media.md](docs/upload-and-media.md)
-- FSM/scenes: [docs/fsm-and-scenes.md](docs/fsm-and-scenes.md)
-- Spring starter: [docs/spring-starter.md](docs/spring-starter.md)
-- Testkit: [docs/testkit.md](docs/testkit.md)
-- Roadmap: [docs/roadmap.md](docs/roadmap.md)
-- Contributing: [docs/contributing.md](docs/contributing.md)
-- ADR index: [docs/adr/README.md](docs/adr/README.md)
+## Документация
 
-## Source of Truth
-
-- MAX API docs:
-  - https://dev.max.ru/docs-api
-  - https://dev.max.ru/docs-api/methods
-  - https://dev.max.ru/docs-api/objects
-- aiogram reference (DX patterns):
-  - https://docs.aiogram.dev/
+- [docs/product-spec.md](docs/product-spec.md)
+- [docs/api-contract.md](docs/api-contract.md)
+- [docs/runtime-contract.md](docs/runtime-contract.md)
+- [docs/spring-starter.md](docs/spring-starter.md)
+- [docs/testkit.md](docs/testkit.md)

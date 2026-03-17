@@ -27,7 +27,10 @@ public class DemoSpringPollingApplication {
         Router router = new Router("demo-main");
 
         router.message(BuiltInFilters.command("start"), (message, ctx) -> {
-            ctx.reply(Messages.text("Привет! Доступные команды: /menu, /typing, /form"));
+            ctx.reply(Messages.text(
+                    "Привет! Классический API: /menu, /typing, /form. "
+                            + "Аннотационный API: /a-start, /a-menu, /a-form, /a-echo <text>"
+            ));
             return CompletableFuture.completedFuture(null);
         });
 

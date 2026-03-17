@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import ru.tardyon.botframework.client.DefaultMaxBotClient;
 import ru.tardyon.botframework.client.MaxApiClientConfig;
@@ -18,6 +19,7 @@ import ru.tardyon.botframework.client.http.MaxHttpClient;
 import ru.tardyon.botframework.client.http.okhttp.OkHttpMaxHttpClient;
 import ru.tardyon.botframework.client.serialization.JacksonJsonCodec;
 import ru.tardyon.botframework.client.serialization.JsonCodec;
+import ru.tardyon.botframework.dispatcher.AnnotatedRouteRegistrar;
 import ru.tardyon.botframework.dispatcher.Dispatcher;
 import ru.tardyon.botframework.dispatcher.Router;
 import ru.tardyon.botframework.action.ChatActionsFacade;
@@ -183,6 +185,37 @@ public class MaxBotAutoConfiguration {
             dispatcher.includeRouter(router);
         }
         return dispatcher;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public AnnotatedRouteRegistrar annotatedRouteRegistrar(ApplicationContext applicationContext) {
+        return new AnnotatedRouteRegistrar(new AnnotatedRouteRegistrar.ComponentResolver() {
+            @Override
+            public <T> T resolve(Class<T> type) {
+                return applicationContext.getBeanProvider(type).getIfAvailable(() -> {
+                    try {
+                        var constructor = type.getDeclaredConstructor();
+                        if (!constructor.canAccess(null)) {
+                            constructor.setAccessible(true);
+                        }
+                        return constructor.newInstance();
+                    } catch (ReflectiveOperationException e) {
+                        throw new IllegalStateException("Failed to resolve " + type.getName(), e);
+                    }
+                });
+            }
+        });
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public SpringAnnotatedRouteBootstrap springAnnotatedRouteBootstrap(
+            Dispatcher dispatcher,
+            AnnotatedRouteRegistrar annotatedRouteRegistrar,
+            ObjectProvider<Object> beanProvider
+    ) {
+        return new SpringAnnotatedRouteBootstrap(dispatcher, annotatedRouteRegistrar, beanProvider);
     }
 
     @Bean

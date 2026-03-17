@@ -17,6 +17,8 @@ import ru.tardyon.botframework.dispatcher.DispatchResult;
 import ru.tardyon.botframework.dispatcher.DispatchStatus;
 import ru.tardyon.botframework.dispatcher.Dispatcher;
 import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.dispatcher.annotation.Command;
+import ru.tardyon.botframework.dispatcher.annotation.Route;
 import ru.tardyon.botframework.model.Chat;
 import ru.tardyon.botframework.model.ChatId;
 import ru.tardyon.botframework.model.ChatType;
@@ -105,6 +107,36 @@ class SpringRouterRegistrationIntegrationTest {
                 });
     }
 
+    @Test
+    void routeAnnotatedBeanWithAutoRegisterIsRegistered() {
+        AutoRouteConfig.CALLS.set(0);
+
+        contextRunner
+                .withUserConfiguration(AutoRouteConfig.class)
+                .run(context -> {
+                    Dispatcher dispatcher = context.getBean(Dispatcher.class);
+
+                    DispatchResult result = dispatcher.feedUpdate(sampleUpdate("/start")).toCompletableFuture().join();
+                    assertEquals(DispatchStatus.HANDLED, result.status());
+                    assertEquals(1, AutoRouteConfig.CALLS.get());
+                });
+    }
+
+    @Test
+    void routeAnnotatedBeanWithoutAutoRegisterIsIgnored() {
+        ManualRouteConfig.CALLS.set(0);
+
+        contextRunner
+                .withUserConfiguration(ManualRouteConfig.class)
+                .run(context -> {
+                    Dispatcher dispatcher = context.getBean(Dispatcher.class);
+
+                    DispatchResult result = dispatcher.feedUpdate(sampleUpdate("/start")).toCompletableFuture().join();
+                    assertEquals(DispatchStatus.IGNORED, result.status());
+                    assertEquals(0, ManualRouteConfig.CALLS.get());
+                });
+    }
+
     private static Update sampleUpdate(String text) {
         return new Update(
                 new UpdateId("u-spring-router-1"),
@@ -155,6 +187,44 @@ class SpringRouterRegistrationIntegrationTest {
                 return CompletableFuture.completedFuture(null);
             });
             return second;
+        }
+    }
+
+    @Configuration
+    static class AutoRouteConfig {
+        static final AtomicInteger CALLS = new AtomicInteger();
+
+        @Bean
+        RouteController autoRoute() {
+            return new RouteController();
+        }
+
+        @Route(value = "auto", autoRegister = true)
+        static class RouteController {
+            @Command("start")
+            public java.util.concurrent.CompletionStage<Void> onStart() {
+                AutoRouteConfig.CALLS.incrementAndGet();
+                return CompletableFuture.completedFuture(null);
+            }
+        }
+    }
+
+    @Configuration
+    static class ManualRouteConfig {
+        static final AtomicInteger CALLS = new AtomicInteger();
+
+        @Bean
+        ManualController manualRoute() {
+            return new ManualController();
+        }
+
+        @Route(value = "manual", autoRegister = false)
+        static class ManualController {
+            @Command("start")
+            public java.util.concurrent.CompletionStage<Void> onStart() {
+                ManualRouteConfig.CALLS.incrementAndGet();
+                return CompletableFuture.completedFuture(null);
+            }
         }
     }
 }

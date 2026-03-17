@@ -7,6 +7,7 @@
 Этот demo показывает фактический текущий API framework без вымышленных слоёв:
 - Spring Boot starter в `POLLING` режиме;
 - `Dispatcher/Router` handlers;
+- annotation routes (`@Route`, `@Command`, `@Callback`, `@State`, `@UseFilters`, `@UseMiddleware`);
 - built-in filters;
 - inline keyboard + callback handling;
 - chat action (`typing`);
@@ -15,6 +16,8 @@
 ## Структура
 
 - `src/main/java/.../DemoSpringPollingApplication.java` — main app + router handlers.
+- `src/main/java/.../AnnotatedMenuRoute.java` — demo route на annotation API для команд/callback/filter/middleware.
+- `src/main/java/.../AnnotatedFormRoute.java` — demo route на annotation API для FSM state flow.
 - `src/main/resources/application.yml` — конфигурация через properties/env.
 - `src/test/java/.../DemoSpringPollingApplicationSmokeTest.java` — smoke test поднятия контекста.
 
@@ -48,6 +51,13 @@ export MAX_BOT_TOKEN=<your-max-bot-token>
 - `/typing` — отправка chat action `typing`.
 - `/form` — старт FSM flow (ожидание имени), затем сохранение имени и завершение.
 - любое другое сообщение — echo reply.
+
+Аннотационный API (новый sugar):
+- `/a-start` — приветствие для annotation routes.
+- `/a-menu` — inline keyboard (callback `a-menu:pay`, `a-menu:help`).
+- callback `a-menu:*` — обработка через `@Callback/@CallbackPrefix`.
+- `/a-form` — FSM flow через `@State(...)`.
+- `/a-echo <text>` — обработка через `@Message(text=..., startsWith=true)`.
 
 ## Что осознанно не покрыто в этом demo
 
