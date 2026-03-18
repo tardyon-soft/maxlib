@@ -3,6 +3,7 @@ package ru.tardyon.botframework.dispatcher;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -50,6 +51,7 @@ public final class AnnotatedRouteRegistrar {
         }
 
         Filter<?> classFilter = composeClassFilter(routeObject.getClass().getAnnotation(UseFilters.class));
+        List<MethodRegistration> registrations = new ArrayList<>();
         for (Method method : routeObject.getClass().getDeclaredMethods()) {
             if (method.isSynthetic() || method.isBridge() || Modifier.isStatic(method.getModifiers())) {
                 continue;
@@ -58,6 +60,17 @@ public final class AnnotatedRouteRegistrar {
             if (registration == null) {
                 continue;
             }
+            registrations.add(new MethodRegistration(method, registration));
+        }
+
+        registrations.sort(Comparator
+                .comparingInt((MethodRegistration value) -> value.registration().priority())
+                .reversed()
+                .thenComparing(value -> value.method().getName()));
+
+        for (MethodRegistration methodRegistration : registrations) {
+            Method method = methodRegistration.method();
+            Registration registration = methodRegistration.registration();
             if (registration.eventType == EventType.MESSAGE) {
                 registerMessage(router, registration);
                 log.debug("Mapped annotated method to message handler: route={}, method={}", routeName, method.getName());
@@ -115,7 +128,7 @@ public final class AnnotatedRouteRegistrar {
         if (!methodMiddlewares.isEmpty()) {
             handler = wrapWithMethodMiddlewares(handler, methodMiddlewares);
         }
-        return new Registration(eventType, merged, handler);
+        return new Registration(eventType, merged, handler, resolvePriority(method, eventType));
     }
 
     private EventType resolveEventType(Method method) {
@@ -294,6 +307,39 @@ public final class AnnotatedRouteRegistrar {
         return ((Filter<TEvent>) left).and((Filter<? super TEvent>) right);
     }
 
+    private static int resolvePriority(Method method, EventType eventType) {
+        if (eventType == EventType.CALLBACK) {
+            boolean exact = method.isAnnotationPresent(ru.tardyon.botframework.dispatcher.annotation.Callback.class);
+            boolean prefix = method.isAnnotationPresent(ru.tardyon.botframework.dispatcher.annotation.CallbackPrefix.class);
+            if (exact && prefix) {
+                return 300;
+            }
+            if (exact) {
+                return 250;
+            }
+            if (prefix) {
+                return 150;
+            }
+            return 100;
+        }
+
+        int priority = 100;
+        Message message = method.getAnnotation(Message.class);
+        if (message != null && !message.text().isBlank()) {
+            priority = Math.max(priority, message.startsWith() ? 140 : 220);
+        }
+        if (method.isAnnotationPresent(Text.class)) {
+            priority = Math.max(priority, 210);
+        }
+        if (method.isAnnotationPresent(Command.class)) {
+            priority = Math.max(priority, 230);
+        }
+        if (method.isAnnotationPresent(State.class)) {
+            priority = Math.max(priority, 160);
+        }
+        return priority;
+    }
+
     private static String normalizeRouteName(String value) {
         String normalized = Objects.requireNonNull(value, "route name").trim();
         if (normalized.isEmpty()) {
@@ -307,7 +353,10 @@ public final class AnnotatedRouteRegistrar {
         CALLBACK
     }
 
-    private record Registration(EventType eventType, Filter<?> filter, ContextualEventHandler<?> handler) {
+    private record Registration(EventType eventType, Filter<?> filter, ContextualEventHandler<?> handler, int priority) {
+    }
+
+    private record MethodRegistration(Method method, Registration registration) {
     }
 
     @FunctionalInterface

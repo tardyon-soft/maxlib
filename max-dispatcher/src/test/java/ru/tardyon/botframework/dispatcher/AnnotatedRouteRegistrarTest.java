@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import ru.tardyon.botframework.dispatcher.annotation.Callback;
 import ru.tardyon.botframework.dispatcher.annotation.CallbackPrefix;
 import ru.tardyon.botframework.dispatcher.annotation.Command;
 import ru.tardyon.botframework.dispatcher.annotation.Route;
@@ -51,6 +52,21 @@ class AnnotatedRouteRegistrarTest {
         assertEquals(DispatchStatus.HANDLED, handled.status());
         assertEquals(1, route.calls.get());
         assertEquals(11, route.lastAttempt);
+    }
+
+    @Test
+    void exactCallbackMappingHasPriorityOverPrefixMapping() {
+        CallbackPriorityRoute route = new CallbackPriorityRoute();
+        Router router = new AnnotatedRouteRegistrar().register(route);
+        Dispatcher dispatcher = new Dispatcher().includeRouter(router);
+
+        DispatchResult callbackResult = dispatcher.feedUpdate(TestUpdates.callback("amenu:pay"))
+                .toCompletableFuture()
+                .join();
+
+        assertEquals(DispatchStatus.HANDLED, callbackResult.status());
+        assertEquals(1, route.exactCalls.get());
+        assertEquals(0, route.prefixCalls.get());
     }
 
     @Route("menu")
@@ -101,6 +117,24 @@ class AnnotatedRouteRegistrarTest {
         public java.util.concurrent.CompletionStage<DispatchResult> invoke(RuntimeContext context, MiddlewareNext next) {
             context.putEnrichment("attempt", 11);
             return next.proceed();
+        }
+    }
+
+    @Route("callback-priority")
+    static final class CallbackPriorityRoute {
+        final AtomicInteger exactCalls = new AtomicInteger();
+        final AtomicInteger prefixCalls = new AtomicInteger();
+
+        @CallbackPrefix("amenu:")
+        public CompletableFuture<Void> anyAmenu() {
+            prefixCalls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Callback("amenu:pay")
+        public CompletableFuture<Void> payOnly() {
+            exactCalls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
         }
     }
 }
