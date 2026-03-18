@@ -55,7 +55,8 @@ class MaxBotAutoConfigurationTest {
             .withConfiguration(AutoConfigurations.of(MaxBotAutoConfiguration.class))
             .withPropertyValues(
                     "max.bot.token=test-token",
-                    "max.bot.polling.enabled=false"
+                    "max.bot.polling.enabled=false",
+                    "max.bot.route-component-scan.enabled=false"
             );
 
     @Test

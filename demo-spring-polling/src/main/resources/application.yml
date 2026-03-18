@@ -10,6 +10,11 @@ max:
         - message_created
         - message_callback
 
+demo:
+  smoke:
+    destructive: ${DEMO_SMOKE_DESTRUCTIVE:false}
+    webhook-url: ${DEMO_SMOKE_WEBHOOK_URL:}
+
 logging:
   level:
     ru.tardyon.botframework: INFO

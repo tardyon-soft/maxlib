@@ -2,7 +2,6 @@ package ru.tardyon.botframework.demo.springpolling;
 
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
-import org.springframework.stereotype.Component;
 import ru.tardyon.botframework.dispatcher.RuntimeContext;
 import ru.tardyon.botframework.dispatcher.annotation.Command;
 import ru.tardyon.botframework.dispatcher.annotation.Route;
@@ -13,7 +12,6 @@ import ru.tardyon.botframework.model.Message;
 /**
  * Annotation-based route demo for FSM flow.
  */
-@Component
 @Route(value = "annotated-form", autoRegister = true)
 public final class AnnotatedFormRoute {
     private static final String FORM_NAME_STATE = "demo.annotated.form.name";

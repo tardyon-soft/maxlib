@@ -9,6 +9,7 @@ import ru.tardyon.botframework.model.Update;
 import ru.tardyon.botframework.model.UpdateId;
 import ru.tardyon.botframework.model.UpdateType;
 import ru.tardyon.botframework.model.response.MessageResponse;
+import ru.tardyon.botframework.model.response.MessagesResponse;
 
 class JacksonJsonCodecRoundTripTest {
 
@@ -63,6 +64,29 @@ class JacksonJsonCodecRoundTripTest {
         assertThat(response.message().messageId().value()).isEqualTo("m-raw-1");
         assertThat(response.message().chat().id().value()).isEqualTo("247923392");
         assertThat(response.message().text()).isEqualTo("hello raw");
+    }
+
+    @Test
+    void shouldDeserializeMessagesResponseFromRawTransportShape() {
+        String json = """
+                {
+                  "messages": [
+                    {
+                      "mid": "m-raw-1",
+                      "timestamp": 1735689600,
+                      "recipient": {"chat_id": 247923392, "chat_type": "dialog"},
+                      "sender": {"user_id": 1001, "first_name": "Alice", "is_bot": false},
+                      "body": {"text": "hello raw"}
+                    }
+                  ]
+                }
+                """;
+
+        MessagesResponse response = jsonCodec.read(json, MessagesResponse.class);
+
+        assertThat(response.messages()).hasSize(1);
+        assertThat(response.messages().getFirst().messageId().value()).isEqualTo("m-raw-1");
+        assertThat(response.messages().getFirst().chat().id().value()).isEqualTo("247923392");
     }
 
     private record SampleDto(String id, String optionalComment, Instant createdAt) {

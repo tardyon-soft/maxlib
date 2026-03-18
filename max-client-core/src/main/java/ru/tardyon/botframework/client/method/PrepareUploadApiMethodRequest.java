@@ -1,7 +1,7 @@
 package ru.tardyon.botframework.client.method;
 
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Map;
 import ru.tardyon.botframework.client.MaxRequest;
 import ru.tardyon.botframework.client.http.HttpMethod;
 import ru.tardyon.botframework.model.request.PrepareUploadApiRequest;
@@ -33,7 +33,7 @@ public final class PrepareUploadApiMethodRequest implements MaxRequest<ApiUpload
     }
 
     @Override
-    public Optional<Object> body() {
-        return Optional.of(request);
+    public Map<String, String> queryParameters() {
+        return Map.of("type", request.type().value());
     }
 }

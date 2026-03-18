@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -62,6 +63,14 @@ import ru.tardyon.botframework.message.MessagingFacade;
 @EnableConfigurationProperties(MaxBotProperties.class)
 public class MaxBotAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(MaxBotAutoConfiguration.class);
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "max.bot.route-component-scan.enabled", havingValue = "true", matchIfMissing = true)
+    public static RouteComponentAutoRegistrar routeComponentAutoRegistrar() {
+        return new RouteComponentAutoRegistrar();
+    }
+
     @Bean
     @ConditionalOnMissingBean
     public MaxApiClientConfig maxApiClientConfig(MaxBotProperties properties) {

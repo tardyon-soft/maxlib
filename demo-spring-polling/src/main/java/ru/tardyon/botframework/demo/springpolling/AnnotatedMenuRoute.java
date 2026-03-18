@@ -2,7 +2,6 @@ package ru.tardyon.botframework.demo.springpolling;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.springframework.stereotype.Component;
 import ru.tardyon.botframework.dispatcher.DispatchResult;
 import ru.tardyon.botframework.dispatcher.Filter;
 import ru.tardyon.botframework.dispatcher.FilterResult;
@@ -24,14 +23,13 @@ import ru.tardyon.botframework.model.ChatType;
 /**
  * Annotation-based route demo for menu/callback flow.
  */
-@Component
 @Route(value = "annotated-menu", autoRegister = true)
 @UseMiddleware(AnnotatedMenuRoute.TraceMiddleware.class)
 public final class AnnotatedMenuRoute {
 
     @Command("astart")
     public void start(RuntimeContext ctx) {
-        ctx.reply(Messages.text("Annotation API: /amenu, /aform, /aecho <text>"));
+        ctx.reply(Messages.text("Annotation API: /amenu, /aform, /aecho <text>; Smoke API: /qa, /qa_run_all"));
     }
 
     @Command("amenu")

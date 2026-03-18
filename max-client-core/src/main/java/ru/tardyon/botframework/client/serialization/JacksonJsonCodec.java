@@ -7,6 +7,7 @@ import ru.tardyon.botframework.client.error.MaxSerializationException;
 import ru.tardyon.botframework.model.Message;
 import ru.tardyon.botframework.model.mapping.MaxApiModelMapper;
 import ru.tardyon.botframework.model.response.MessageResponse;
+import ru.tardyon.botframework.model.response.MessagesResponse;
 import ru.tardyon.botframework.model.transport.ApiMessage;
 
 /**
@@ -25,6 +26,10 @@ public final class JacksonJsonCodec implements JsonCodec {
             return objectMapper.readValue(source, targetType);
         } catch (JsonProcessingException e) {
             T fallback = tryReadMessageResponseFallback(source, targetType);
+            if (fallback != null) {
+                return fallback;
+            }
+            fallback = tryReadMessagesResponseFallback(source, targetType);
             if (fallback != null) {
                 return fallback;
             }
@@ -60,6 +65,36 @@ public final class JacksonJsonCodec implements JsonCodec {
                 return (T) new MessageResponse(MaxApiModelMapper.toNormalized(apiMessage));
             }
             return null;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T tryReadMessagesResponseFallback(String source, Class<T> targetType) {
+        if (targetType != MessagesResponse.class) {
+            return null;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(source);
+            JsonNode payload = root.has("messages") ? root.get("messages") : root;
+            if (payload == null || !payload.isArray()) {
+                return null;
+            }
+
+            java.util.ArrayList<Message> messages = new java.util.ArrayList<>();
+            for (JsonNode node : payload) {
+                Message normalized = tryTreeToValue(node, Message.class);
+                if (normalized != null) {
+                    messages.add(normalized);
+                    continue;
+                }
+                ApiMessage apiMessage = tryTreeToValue(node, ApiMessage.class);
+                if (apiMessage != null) {
+                    messages.add(MaxApiModelMapper.toNormalized(apiMessage));
+                }
+            }
+            return (T) new MessagesResponse(messages);
         } catch (Exception ignored) {
             return null;
         }

@@ -35,7 +35,8 @@ public class DemoSpringPollingApplication {
         router.message(BuiltInFilters.command("start"), (message, ctx) -> {
             ctx.reply(Messages.text(
                     "Привет! Классический API: /menu, /typing, /form. "
-                            + "Аннотационный API: /astart, /amenu, /aform, /aecho <text>"
+                            + "Аннотационный API: /astart, /amenu, /aform, /aecho <text>. "
+                            + "Smoke API: /qa, /qa_run_all, /qa_callback, /qa_set_video <token>"
             ));
             return CompletableFuture.completedFuture(null);
         });

@@ -35,7 +35,8 @@ class SpringRouterRegistrationIntegrationTest {
             .withConfiguration(AutoConfigurations.of(MaxBotAutoConfiguration.class))
             .withPropertyValues(
                     "max.bot.token=test-token",
-                    "max.bot.polling.enabled=false"
+                    "max.bot.polling.enabled=false",
+                    "max.bot.route-component-scan.enabled=false"
             );
 
     @Test
@@ -137,6 +138,22 @@ class SpringRouterRegistrationIntegrationTest {
                 });
     }
 
+    @Test
+    void routeAnnotatedClassIsAutoDetectedAsBeanWithoutComponentOrBeanMethod() {
+        AutoDetectedRouteController.CALLS.set(0);
+
+        contextRunner
+                .withUserConfiguration(AutoDetectedRouteScanConfig.class)
+                .withPropertyValues("max.bot.route-component-scan.enabled=true")
+                .run(context -> {
+                    Dispatcher dispatcher = context.getBean(Dispatcher.class);
+
+                    DispatchResult result = dispatcher.feedUpdate(sampleUpdate("/autodetected")).toCompletableFuture().join();
+                    assertEquals(DispatchStatus.HANDLED, result.status());
+                    assertEquals(1, AutoDetectedRouteController.CALLS.get());
+                });
+    }
+
     private static Update sampleUpdate(String text) {
         return new Update(
                 new UpdateId("u-spring-router-1"),
@@ -226,5 +243,9 @@ class SpringRouterRegistrationIntegrationTest {
                 return CompletableFuture.completedFuture(null);
             }
         }
+    }
+
+    @Configuration
+    static class AutoDetectedRouteScanConfig {
     }
 }

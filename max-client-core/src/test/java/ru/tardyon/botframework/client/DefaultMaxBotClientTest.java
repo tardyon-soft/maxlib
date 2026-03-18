@@ -483,8 +483,8 @@ class DefaultMaxBotClientTest {
 
         RecordedRequest recorded = http.takeRequest();
         assertThat(recorded.getMethod()).isEqualTo("POST");
-        assertThat(recorded.getPath()).isEqualTo("/uploads");
-        assertThat(recorded.getBody().readUtf8()).contains("\"type\":\"video\"");
+        assertThat(recorded.getPath()).isEqualTo("/uploads?type=video");
+        assertThat(recorded.getBody().readUtf8()).isEmpty();
         assertThat(response.url()).isEqualTo("https://upload.max.ru/session-1");
         assertThat(response.token()).isEqualTo("upload-token-1");
     }
