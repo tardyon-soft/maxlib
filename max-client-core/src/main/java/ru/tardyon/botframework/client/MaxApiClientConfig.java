@@ -10,7 +10,7 @@ import ru.tardyon.botframework.client.auth.AuthProvider;
  */
 public interface MaxApiClientConfig {
 
-    URI DEFAULT_BASE_URI = URI.create("https://api.max.ru");
+    URI DEFAULT_BASE_URI = URI.create("https://platform-api.max.ru");
     Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(5);
     Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(30);
     String DEFAULT_USER_AGENT = "max-bot-framework-client";
@@ -114,7 +114,6 @@ public interface MaxApiClientConfig {
             Objects.requireNonNull(token, "token");
             Objects.requireNonNull(connectTimeout, "connectTimeout");
             Objects.requireNonNull(readTimeout, "readTimeout");
-            Objects.requireNonNull(userAgent, "userAgent");
             Objects.requireNonNull(retryPolicy, "retryPolicy");
             Objects.requireNonNull(rateLimiter, "rateLimiter");
 
@@ -127,9 +126,6 @@ public interface MaxApiClientConfig {
             if (token.isBlank()) {
                 throw new IllegalArgumentException("token must not be blank");
             }
-            if (userAgent.isBlank()) {
-                throw new IllegalArgumentException("userAgent must not be blank");
-            }
         }
     }
 
@@ -138,6 +134,6 @@ public interface MaxApiClientConfig {
         if (normalized.regionMatches(true, 0, "Bearer ", 0, "Bearer ".length())) {
             return normalized;
         }
-        return "Bearer " + normalized;
+        return normalized;
     }
 }

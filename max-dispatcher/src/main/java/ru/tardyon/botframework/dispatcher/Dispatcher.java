@@ -8,6 +8,8 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.tardyon.botframework.client.MaxBotClient;
 import ru.tardyon.botframework.fsm.FSMStorage;
 import ru.tardyon.botframework.fsm.MemorySceneStorage;
@@ -30,6 +32,7 @@ import ru.tardyon.botframework.upload.UploadService;
  * {@link UpdateConsumer}.</p>
  */
 public final class Dispatcher implements UpdateConsumer {
+    private static final Logger log = LoggerFactory.getLogger(Dispatcher.class);
     private final List<Router> rootRouters = new ArrayList<>();
     private final List<OuterMiddleware> outerMiddlewares = new ArrayList<>();
     private final Map<RuntimeDataKey<?>, Object> applicationData = new java.util.concurrent.ConcurrentHashMap<>();
@@ -65,6 +68,9 @@ public final class Dispatcher implements UpdateConsumer {
     public Dispatcher(UpdateEventResolver eventResolver, HandlerInvoker handlerInvoker) {
         this.eventResolver = Objects.requireNonNull(eventResolver, "eventResolver");
         this.handlerInvoker = Objects.requireNonNull(handlerInvoker, "handlerInvoker");
+        log.debug("Dispatcher initialized: eventResolver={}, handlerInvoker={}",
+                this.eventResolver.getClass().getSimpleName(),
+                this.handlerInvoker.getClass().getSimpleName());
     }
 
     /**
@@ -81,6 +87,7 @@ public final class Dispatcher implements UpdateConsumer {
             throw new IllegalStateException("router already included in dispatcher");
         }
         rootRouters.add(candidate);
+        log.debug("Root router included: name={}, totalRouters={}", candidate.name(), rootRouters.size());
         return this;
     }
 
@@ -103,7 +110,9 @@ public final class Dispatcher implements UpdateConsumer {
      * Registers dispatcher-scoped outer middleware.
      */
     public Dispatcher outerMiddleware(OuterMiddleware middleware) {
-        outerMiddlewares.add(Objects.requireNonNull(middleware, "middleware"));
+        OuterMiddleware value = Objects.requireNonNull(middleware, "middleware");
+        outerMiddlewares.add(value);
+        log.debug("Outer middleware registered: type={}, total={}", value.getClass().getName(), outerMiddlewares.size());
         return this;
     }
 
@@ -138,6 +147,7 @@ public final class Dispatcher implements UpdateConsumer {
         if (existing != null && !Objects.equals(existing, value)) {
             throw new RuntimeDataConflictException(key.name(), existing, value, key.scope());
         }
+        log.debug("Application data registered: key={}, scope={}, type={}", key.name(), key.scope(), key.type().getName());
         return this;
     }
 
@@ -171,6 +181,7 @@ public final class Dispatcher implements UpdateConsumer {
      */
     public Dispatcher withFsmStorage(FSMStorage storage) {
         this.fsmStorage = Objects.requireNonNull(storage, "storage");
+        log.debug("FSM storage configured: type={}", storage.getClass().getName());
         return this;
     }
 
@@ -179,6 +190,7 @@ public final class Dispatcher implements UpdateConsumer {
      */
     public Dispatcher withStateKeyStrategy(StateKeyStrategy strategy) {
         this.stateKeyStrategy = Objects.requireNonNull(strategy, "strategy");
+        log.debug("State key strategy configured: type={}", strategy.getClass().getName());
         return this;
     }
 
@@ -197,6 +209,9 @@ public final class Dispatcher implements UpdateConsumer {
         if (this.sceneStorage == null) {
             this.sceneStorage = new MemorySceneStorage();
         }
+        log.debug("Scene registry configured: type={}, sceneStorage={}",
+                registry.getClass().getName(),
+                this.sceneStorage == null ? "null" : this.sceneStorage.getClass().getName());
         return this;
     }
 
@@ -205,6 +220,7 @@ public final class Dispatcher implements UpdateConsumer {
      */
     public Dispatcher withSceneStorage(SceneStorage storage) {
         this.sceneStorage = Objects.requireNonNull(storage, "storage");
+        log.debug("Scene storage configured: type={}", storage.getClass().getName());
         return this;
     }
 
@@ -213,6 +229,7 @@ public final class Dispatcher implements UpdateConsumer {
      */
     public Dispatcher withSceneStateBinding(SceneStateBinding binding) {
         this.sceneStateBinding = Objects.requireNonNull(binding, "binding");
+        log.debug("Scene state binding configured: type={}", binding.getClass().getName());
         return this;
     }
 
@@ -236,6 +253,7 @@ public final class Dispatcher implements UpdateConsumer {
      */
     public CompletionStage<DispatchResult> feedUpdate(Update update) {
         Objects.requireNonNull(update, "update");
+        log.debug("feedUpdate started: updateId={}, type={}", updateId(update), update.type());
         RuntimeContext context = new RuntimeContext(update);
         injectApplicationData(context);
         return MiddlewareChainExecutor.executeOuter(
@@ -245,9 +263,14 @@ public final class Dispatcher implements UpdateConsumer {
         ).handle((result, throwable) -> new FeedUpdateOutcome(result, throwable))
                 .thenCompose(outcome -> {
                     if (outcome.throwable() == null) {
+                        log.debug("feedUpdate completed: updateId={}, status={}", updateId(update), outcome.result().status());
                         return CompletableFuture.completedFuture(outcome.result());
                     }
                     FailureClassification classification = classifyFailure(unwrap(outcome.throwable()));
+                    log.debug("feedUpdate failed: updateId={}, errorType={}, error={}",
+                            updateId(update),
+                            classification.type(),
+                            classification.error().toString());
                     if (classification.type() == RuntimeDispatchErrorType.OUTER_MIDDLEWARE_FAILURE) {
                         return handleGlobalFailure(update, classification.error(), classification.type());
                     }
@@ -268,6 +291,7 @@ public final class Dispatcher implements UpdateConsumer {
      */
     @Override
     public CompletionStage<UpdateHandlingResult> handle(Update update) {
+        log.debug("handle invoked from ingestion: updateId={}", updateId(update));
         return feedUpdate(update).handle((result, throwable) -> {
             if (throwable != null) {
                 return UpdateHandlingResult.failure(unwrap(throwable));
@@ -549,6 +573,13 @@ public final class Dispatcher implements UpdateConsumer {
             return throwable.getCause();
         }
         return throwable;
+    }
+
+    private static String updateId(Update update) {
+        if (update == null || update.updateId() == null) {
+            return "null";
+        }
+        return update.updateId().value();
     }
 
     private record ObserverNotificationOutcome(HandlerExecutionResult result, Throwable throwable) {

@@ -18,6 +18,12 @@ import ru.tardyon.botframework.model.UpdateId;
 import ru.tardyon.botframework.model.UpdateType;
 import ru.tardyon.botframework.model.request.GetUpdatesRequest;
 import ru.tardyon.botframework.model.response.GetUpdatesResponse;
+import ru.tardyon.botframework.model.transport.ApiGetUpdatesResponse;
+import ru.tardyon.botframework.model.transport.ApiMessage;
+import ru.tardyon.botframework.model.transport.ApiMessageBody;
+import ru.tardyon.botframework.model.transport.ApiRecipient;
+import ru.tardyon.botframework.model.transport.ApiUpdate;
+import ru.tardyon.botframework.model.transport.ApiUser;
 
 class SdkPollingUpdateSourceTest {
 
@@ -51,6 +57,40 @@ class SdkPollingUpdateSourceTest {
         assertSame(update, batch.updates().getFirst());
         assertEquals(11L, batch.nextMarker());
         verify(client).getUpdates(new GetUpdatesRequest(10L, 10, 100, List.of(UpdateEventType.MESSAGE_CALLBACK)));
+    }
+
+    @Test
+    void pollMapsTransportUpdatesWhenApiShapeResponseIsReturned() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        SdkPollingUpdateSource source = new SdkPollingUpdateSource(client);
+        PollingFetchRequest request = new PollingFetchRequest(1L, 10, 10, List.of(UpdateEventType.MESSAGE_CREATED));
+
+        ApiUpdate apiUpdate = new ApiUpdate(
+                55L,
+                "message_created",
+                1735689600L,
+                new ApiMessage(
+                        "101",
+                        new ApiUser(7L, "Alice", null, "alice", false, null, "Alice"),
+                        new ApiRecipient(10L, null, "chat"),
+                        1735689600L,
+                        null,
+                        new ApiMessageBody("hello", List.of()),
+                        null,
+                        null
+                ),
+                null,
+                "ru-RU"
+        );
+        when(client.getUpdatesApi(new GetUpdatesRequest(1L, 10, 10, List.of(UpdateEventType.MESSAGE_CREATED))))
+                .thenReturn(new ApiGetUpdatesResponse(List.of(apiUpdate), 2L));
+
+        PollingBatch batch = source.poll(request);
+
+        assertEquals(1, batch.updates().size());
+        assertEquals("55", batch.updates().getFirst().updateId().value());
+        assertEquals(UpdateType.MESSAGE, batch.updates().getFirst().type());
+        assertEquals(2L, batch.nextMarker());
     }
 
     @Test

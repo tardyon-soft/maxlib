@@ -1,7 +1,10 @@
 package ru.tardyon.botframework.spring.autoconfigure;
 
+import java.time.Duration;
 import java.util.List;
 import okhttp3.OkHttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -58,6 +61,7 @@ import ru.tardyon.botframework.message.MessagingFacade;
 @AutoConfiguration
 @EnableConfigurationProperties(MaxBotProperties.class)
 public class MaxBotAutoConfiguration {
+    private static final Logger log = LoggerFactory.getLogger(MaxBotAutoConfiguration.class);
     @Bean
     @ConditionalOnMissingBean
     public MaxApiClientConfig maxApiClientConfig(MaxBotProperties properties) {
@@ -73,6 +77,7 @@ public class MaxBotAutoConfiguration {
         return new OkHttpClient.Builder()
                 .connectTimeout(config.connectTimeout())
                 .readTimeout(config.readTimeout())
+                .callTimeout(java.time.Duration.ZERO)
                 .build();
     }
 
@@ -162,6 +167,7 @@ public class MaxBotAutoConfiguration {
             ObjectProvider<SceneStorage> sceneStorageProvider,
             ObjectProvider<Router> routerProvider
     ) {
+        log.debug("Creating Dispatcher bean: mode={}, baseUrl={}", properties.getMode(), properties.getBaseUrl());
         Dispatcher dispatcher = new Dispatcher()
                 .withBotClient(maxBotClient)
                 .withFsmStorage(fsmStorage)
@@ -181,15 +187,18 @@ public class MaxBotAutoConfiguration {
         }
 
         List<Router> routers = routerProvider.orderedStream().toList();
+        log.debug("Registering Router beans into Dispatcher: count={}", routers.size());
         for (Router router : routers) {
             dispatcher.includeRouter(router);
         }
+        log.debug("Dispatcher bean initialized: routers={}", dispatcher.routers().stream().map(Router::name).toList());
         return dispatcher;
     }
 
     @Bean
     @ConditionalOnMissingBean
     public AnnotatedRouteRegistrar annotatedRouteRegistrar(ApplicationContext applicationContext) {
+        log.debug("Creating AnnotatedRouteRegistrar bean");
         return new AnnotatedRouteRegistrar(new AnnotatedRouteRegistrar.ComponentResolver() {
             @Override
             public <T> T resolve(Class<T> type) {
@@ -215,6 +224,7 @@ public class MaxBotAutoConfiguration {
             AnnotatedRouteRegistrar annotatedRouteRegistrar,
             ObjectProvider<Object> beanProvider
     ) {
+        log.debug("Creating SpringAnnotatedRouteBootstrap bean");
         return new SpringAnnotatedRouteBootstrap(dispatcher, annotatedRouteRegistrar, beanProvider);
     }
 

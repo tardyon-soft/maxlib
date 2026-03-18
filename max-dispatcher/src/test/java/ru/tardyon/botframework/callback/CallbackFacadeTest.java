@@ -1,9 +1,10 @@
 package ru.tardyon.botframework.callback;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import ru.tardyon.botframework.client.MaxBotClient;
+import ru.tardyon.botframework.client.error.MaxBadRequestException;
 import ru.tardyon.botframework.message.Messages;
 import ru.tardyon.botframework.model.Callback;
 import ru.tardyon.botframework.model.CallbackId;
@@ -26,6 +28,7 @@ import ru.tardyon.botframework.model.User;
 import ru.tardyon.botframework.model.UserId;
 import ru.tardyon.botframework.model.request.AnswerCallbackRequest;
 import ru.tardyon.botframework.model.request.EditMessageRequest;
+import ru.tardyon.botframework.model.request.SendMessageRequest;
 
 class CallbackFacadeTest {
 
@@ -103,17 +106,75 @@ class CallbackFacadeTest {
     }
 
     @Test
-    void updateCurrentMessageFailsWhenCallbackHasNoMessage() {
+    void notificationAnswerFallsBackToMessageModeWhenApiRejectsNotificationMode() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        when(client.answerCallback(any(AnswerCallbackRequest.class)))
+                .thenThrow(new MaxBadRequestException("{}", "POST", "/answers"))
+                .thenReturn(true);
+        CallbackFacade facade = new CallbackFacade(client);
+        Callback callback = sampleCallbackWithMessage("cb-9", "src-9");
+
+        boolean result = facade.notify(callback, "Done");
+
+        assertTrue(result);
+        ArgumentCaptor<AnswerCallbackRequest> captor = ArgumentCaptor.forClass(AnswerCallbackRequest.class);
+        verify(client, times(2)).answerCallback(captor.capture());
+        assertEquals(Boolean.TRUE, captor.getAllValues().getFirst().sendNotification());
+        assertEquals(Boolean.FALSE, captor.getAllValues().get(1).sendNotification());
+        assertEquals("Done", captor.getAllValues().get(1).text());
+    }
+
+    @Test
+    void updateCurrentMessageReturnsFalseWhenCallbackHasNoMessage() {
         MaxBotClient client = Mockito.mock(MaxBotClient.class);
         CallbackFacade facade = new CallbackFacade(client);
         Callback callback = new Callback(new CallbackId("cb-1"), "data", null, null, Instant.now());
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> facade.updateCurrentMessage(callback, Messages.text("updated"))
+        boolean updated = facade.updateCurrentMessage(callback, Messages.text("updated"));
+        assertEquals(false, updated);
+        verify(client, never()).editMessage(any(EditMessageRequest.class));
+    }
+
+    @Test
+    void updateCurrentMessageFallsBackToSendMessageWhenSourceMessageIdUnknown() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessageWithId("m-out"));
+        CallbackFacade facade = new CallbackFacade(client);
+        Callback callback = new Callback(
+                new CallbackId("cb-10"),
+                "menu:pay",
+                null,
+                new Message(
+                        new MessageId("msg-unknown"),
+                        new Chat(new ChatId("chat-1"), ChatType.PRIVATE, null, null, null),
+                        null,
+                        null,
+                        Instant.now(),
+                        null,
+                        List.of(),
+                        List.of()
+                ),
+                Instant.now()
         );
 
-        assertEquals("callback message is required to update current message", exception.getMessage());
+        boolean updated = facade.updateCurrentMessage(callback, Messages.text("fallback"));
+
+        assertTrue(updated);
+        verify(client, never()).editMessage(any(EditMessageRequest.class));
+        verify(client).sendMessage(any(SendMessageRequest.class));
+    }
+
+    private static Message sampleMessageWithId(String messageId) {
+        return new Message(
+                new MessageId(messageId),
+                new Chat(new ChatId("chat-1"), ChatType.PRIVATE, null, null, null),
+                null,
+                "sent",
+                Instant.now(),
+                null,
+                List.of(),
+                List.of()
+        );
     }
 
     private static Callback sampleCallbackWithMessage(String callbackId, String messageId) {

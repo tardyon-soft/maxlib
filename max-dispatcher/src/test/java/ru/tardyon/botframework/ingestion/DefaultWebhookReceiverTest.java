@@ -77,6 +77,25 @@ class DefaultWebhookReceiverTest {
     }
 
     @Test
+    void validTransportShapePayloadIsAcceptedAndMapped() {
+        UpdateSink sink = Mockito.mock(UpdateSink.class);
+        when(sink.handle(any())).thenReturn(CompletableFuture.completedFuture(UpdateHandlingResult.success()));
+
+        DefaultWebhookReceiver receiver = new DefaultWebhookReceiver(
+                new DefaultWebhookSecretValidator("secret-1"),
+                new JacksonJsonCodec(),
+                sink
+        );
+
+        WebhookReceiveResult result = receiver.receive(request(validTransportPayload(), "secret-1"))
+                .toCompletableFuture()
+                .join();
+
+        assertEquals(WebhookReceiveStatus.ACCEPTED, result.status());
+        verify(sink).handle(any(Update.class));
+    }
+
+    @Test
     void sinkFailureReturnsInternalError() {
         UpdateSink sink = Mockito.mock(UpdateSink.class);
         when(sink.handle(any())).thenReturn(
@@ -136,6 +155,33 @@ class DefaultWebhookReceiverTest {
                 {
                   "updateId": "upd-1",
                   "type": "message"
+                }
+                """;
+    }
+
+    private static String validTransportPayload() {
+        return """
+                {
+                  "update_id": 4001,
+                  "update_type": "message_created",
+                  "timestamp": 1735689600,
+                  "message": {
+                    "message_id": 3001,
+                    "sender": {
+                      "user_id": 1001,
+                      "first_name": "Alice",
+                      "username": "alice",
+                      "is_bot": false
+                    },
+                    "recipient": {
+                      "chat_id": 2001,
+                      "chat_type": "chat"
+                    },
+                    "timestamp": 1735689600,
+                    "body": {
+                      "text": "hello"
+                    }
+                  }
                 }
                 """;
     }

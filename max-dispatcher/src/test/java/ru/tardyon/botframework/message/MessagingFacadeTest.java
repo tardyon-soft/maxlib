@@ -91,6 +91,22 @@ class MessagingFacadeTest {
     }
 
     @Test
+    void replySkipsReplyToWhenSourceMessageIdIsSyntheticUnknown() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        when(client.sendMessage(any(SendMessageRequest.class))).thenReturn(sampleMessage("m-reply", "ok"));
+        MessagingFacade facade = new MessagingFacade(client);
+        Message source = sampleMessage("msg-unknown", "incoming");
+
+        facade.reply(source, Messages.text("ok"));
+
+        ArgumentCaptor<SendMessageRequest> captor = ArgumentCaptor.forClass(SendMessageRequest.class);
+        verify(client).sendMessage(captor.capture());
+        SendMessageRequest request = captor.getValue();
+        assertEquals(source.chat().id().value(), request.chatId().value());
+        assertEquals(null, request.replyToMessageId());
+    }
+
+    @Test
     void editMapsBuilderToLowLevelEditRequest() {
         MaxBotClient client = Mockito.mock(MaxBotClient.class);
         when(client.editMessage(any(EditMessageRequest.class))).thenReturn(true);

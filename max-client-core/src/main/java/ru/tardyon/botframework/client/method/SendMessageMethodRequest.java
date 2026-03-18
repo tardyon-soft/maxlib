@@ -1,14 +1,11 @@
 package ru.tardyon.botframework.client.method;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import ru.tardyon.botframework.client.MaxRequest;
 import ru.tardyon.botframework.client.http.HttpMethod;
-import ru.tardyon.botframework.model.MessageId;
-import ru.tardyon.botframework.model.TextFormat;
-import ru.tardyon.botframework.model.request.NewMessageAttachment;
+import ru.tardyon.botframework.model.mapping.MaxApiModelMapper;
 import ru.tardyon.botframework.model.request.SendMessageRequest;
 import ru.tardyon.botframework.model.response.MessageResponse;
 
@@ -39,13 +36,7 @@ public final class SendMessageMethodRequest implements MaxRequest<MessageRespons
 
     @Override
     public Optional<Object> body() {
-        return Optional.of(new SendOrEditMessageBody(
-                request.body().text(),
-                request.body().format(),
-                request.sendNotification(),
-                request.body().attachments(),
-                request.replyToMessageId()
-        ));
+        return Optional.of(MaxApiModelMapper.toApiOutgoing(request.body(), request.sendNotification(), request.replyToMessageId()));
     }
 
     @Override
@@ -53,12 +44,4 @@ public final class SendMessageMethodRequest implements MaxRequest<MessageRespons
         return Map.of("chat_id", request.chatId().value());
     }
 
-    private record SendOrEditMessageBody(
-            String text,
-            TextFormat format,
-            @JsonProperty("notify") Boolean sendNotification,
-            java.util.List<NewMessageAttachment> attachments,
-            MessageId replyToMessageId
-    ) {
-    }
 }

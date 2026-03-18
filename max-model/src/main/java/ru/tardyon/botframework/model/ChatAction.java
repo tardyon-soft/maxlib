@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * Chat action values supported by MAX API.
  */
 public enum ChatAction {
-    TYPING("typing"),
+    TYPING("typing_on"),
     SENDING_PHOTO("sending_photo"),
     SENDING_VIDEO("sending_video"),
     SENDING_AUDIO("sending_audio"),
@@ -34,6 +34,9 @@ public enum ChatAction {
     public static ChatAction fromValue(String value) {
         if (value == null) {
             return UNKNOWN;
+        }
+        if ("typing".equalsIgnoreCase(value)) {
+            return TYPING;
         }
         for (ChatAction action : values()) {
             if (action.value.equalsIgnoreCase(value)) {

@@ -19,7 +19,7 @@ public final class AnnotatedFormRoute {
     private static final String FORM_NAME_STATE = "demo.annotated.form.name";
     private static final String FORM_DONE_STATE = "demo.annotated.form.done";
 
-    @Command("a-form")
+    @Command("aform")
     public CompletionStage<Void> start(RuntimeContext ctx) {
         return ctx.fsm().setState(FORM_NAME_STATE)
                 .thenAccept(ignored -> ctx.reply(Messages.text("Annotated form: введите имя")));
@@ -36,6 +36,6 @@ public final class AnnotatedFormRoute {
     @State(FORM_DONE_STATE)
     public CompletionStage<Void> done(RuntimeContext ctx) {
         return ctx.fsm().clear().thenAccept(ignored ->
-                ctx.reply(Messages.text("Annotated form очищен. Повторите /a-form")));
+                ctx.reply(Messages.text("Annotated form очищен. Повторите /aform")));
     }
 }

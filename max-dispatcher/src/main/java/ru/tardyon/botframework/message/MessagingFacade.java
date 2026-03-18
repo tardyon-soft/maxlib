@@ -44,6 +44,10 @@ public final class MessagingFacade {
     public Message reply(Message sourceMessage, MessageBuilder builder) {
         Objects.requireNonNull(sourceMessage, "sourceMessage");
         Objects.requireNonNull(builder, "builder");
+        MessageId replyTo = sourceMessage.messageId();
+        if (replyTo == null || isSyntheticUnknownMessageId(replyTo)) {
+            return client.sendMessage(builder.toSendRequest(sourceMessage.chat().id()));
+        }
         return client.sendMessage(builder.toSendRequest(sourceMessage.chat().id(), sourceMessage.messageId()));
     }
 
@@ -65,5 +69,9 @@ public final class MessagingFacade {
 
     public boolean delete(MessageId messageId) {
         return client.deleteMessage(Objects.requireNonNull(messageId, "messageId"));
+    }
+
+    private static boolean isSyntheticUnknownMessageId(MessageId messageId) {
+        return messageId.value().startsWith("msg-unknown");
     }
 }

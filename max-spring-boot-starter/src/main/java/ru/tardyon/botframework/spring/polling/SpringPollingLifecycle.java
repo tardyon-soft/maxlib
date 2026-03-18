@@ -2,12 +2,15 @@ package ru.tardyon.botframework.spring.polling;
 
 import java.util.Objects;
 import org.springframework.context.SmartLifecycle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.tardyon.botframework.ingestion.LongPollingRunner;
 
 /**
  * Spring lifecycle bridge that starts/stops {@link LongPollingRunner} with application context lifecycle.
  */
 public final class SpringPollingLifecycle implements SmartLifecycle {
+    private static final Logger log = LoggerFactory.getLogger(SpringPollingLifecycle.class);
     private final LongPollingRunner runner;
     private volatile boolean running;
 
@@ -20,6 +23,7 @@ public final class SpringPollingLifecycle implements SmartLifecycle {
         if (running) {
             return;
         }
+        log.debug("SpringPollingLifecycle starting LongPollingRunner");
         runner.start();
         running = true;
     }
@@ -29,6 +33,7 @@ public final class SpringPollingLifecycle implements SmartLifecycle {
         if (!running) {
             return;
         }
+        log.debug("SpringPollingLifecycle stopping LongPollingRunner");
         runner.stop();
         running = false;
     }

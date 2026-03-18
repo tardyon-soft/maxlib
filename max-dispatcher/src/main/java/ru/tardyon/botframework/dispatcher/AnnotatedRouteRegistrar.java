@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.tardyon.botframework.dispatcher.annotation.Command;
 import ru.tardyon.botframework.dispatcher.annotation.Message;
 import ru.tardyon.botframework.dispatcher.annotation.Route;
@@ -19,6 +21,7 @@ import ru.tardyon.botframework.dispatcher.annotation.UseMiddleware;
  * Registers annotation-driven route declarations on top of existing {@link Router} API.
  */
 public final class AnnotatedRouteRegistrar {
+    private static final Logger log = LoggerFactory.getLogger(AnnotatedRouteRegistrar.class);
     private final ComponentResolver componentResolver;
 
     public AnnotatedRouteRegistrar() {
@@ -37,6 +40,10 @@ public final class AnnotatedRouteRegistrar {
         }
         String routeName = normalizeRouteName(route.value());
         Router router = new Router(routeName);
+        log.debug("Registering annotated route: type={}, name={}, autoRegister={}",
+                routeObject.getClass().getName(),
+                routeName,
+                route.autoRegister());
 
         for (InnerMiddleware middleware : resolveMiddlewares(routeObject.getClass().getAnnotation(UseMiddleware.class))) {
             router.innerMiddleware(middleware);
@@ -53,11 +60,17 @@ public final class AnnotatedRouteRegistrar {
             }
             if (registration.eventType == EventType.MESSAGE) {
                 registerMessage(router, registration);
+                log.debug("Mapped annotated method to message handler: route={}, method={}", routeName, method.getName());
             } else {
                 registerCallback(router, registration);
+                log.debug("Mapped annotated method to callback handler: route={}, method={}", routeName, method.getName());
             }
         }
 
+        log.debug("Annotated route registration completed: name={}, handlers(message={}, callback={})",
+                routeName,
+                router.messages().handlers().size(),
+                router.callbacks().handlers().size());
         return router;
     }
 

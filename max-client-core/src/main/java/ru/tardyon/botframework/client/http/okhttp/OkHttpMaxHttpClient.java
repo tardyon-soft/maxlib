@@ -46,7 +46,7 @@ public final class OkHttpMaxHttpClient implements MaxHttpClient {
         String resolvedUrl = baseUri.resolve(normalizePath(request.path())).toString();
         Request.Builder builder = new Request.Builder().url(resolvedUrl);
 
-        request.headers().forEach(builder::addHeader);
+        request.headers().forEach(builder::header);
 
         return switch (request.method()) {
             case GET -> {

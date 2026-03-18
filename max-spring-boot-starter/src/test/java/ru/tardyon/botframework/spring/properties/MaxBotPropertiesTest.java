@@ -25,7 +25,7 @@ class MaxBotPropertiesTest {
                     MaxBotProperties properties = context.getBean(MaxBotProperties.class);
 
                     assertEquals("test-token", properties.getToken());
-                    assertEquals("https://api.max.ru", properties.getBaseUrl());
+                    assertEquals("https://platform-api.max.ru", properties.getBaseUrl());
                     assertEquals(MaxBotMode.POLLING, properties.getMode());
                     assertTrue(properties.getPolling().isEnabled());
                     assertEquals(100, properties.getPolling().getLimit());

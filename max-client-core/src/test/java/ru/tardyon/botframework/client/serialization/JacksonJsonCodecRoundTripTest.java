@@ -6,8 +6,9 @@ import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import ru.tardyon.botframework.client.test.JsonFixtures;
 import ru.tardyon.botframework.model.Update;
-import ru.tardyon.botframework.model.UpdateType;
 import ru.tardyon.botframework.model.UpdateId;
+import ru.tardyon.botframework.model.UpdateType;
+import ru.tardyon.botframework.model.response.MessageResponse;
 
 class JacksonJsonCodecRoundTripTest {
 
@@ -43,6 +44,25 @@ class JacksonJsonCodecRoundTripTest {
         assertThat(json).contains("\"createdAt\":\"2026-01-01T00:00:00Z\"");
         assertThat(json).doesNotContain("optionalComment");
         assertThat(restored).isEqualTo(source);
+    }
+
+    @Test
+    void shouldDeserializeMessageResponseFromRawTransportShape() {
+        String json = """
+                {
+                  "mid": "m-raw-1",
+                  "timestamp": 1735689600,
+                  "recipient": {"chat_id": 247923392, "chat_type": "dialog"},
+                  "sender": {"user_id": 1001, "first_name": "Alice", "is_bot": false},
+                  "body": {"text": "hello raw"}
+                }
+                """;
+
+        MessageResponse response = jsonCodec.read(json, MessageResponse.class);
+
+        assertThat(response.message().messageId().value()).isEqualTo("m-raw-1");
+        assertThat(response.message().chat().id().value()).isEqualTo("247923392");
+        assertThat(response.message().text()).isEqualTo("hello raw");
     }
 
     private record SampleDto(String id, String optionalComment, Instant createdAt) {

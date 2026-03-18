@@ -1,0 +1,9 @@
+{
+  "text": "Hello, MAX",
+  "notify": false,
+  "format": "markdown",
+  "link": {
+    "type": "reply",
+    "message": "3001"
+  }
+}

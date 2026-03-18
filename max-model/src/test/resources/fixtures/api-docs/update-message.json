@@ -1,0 +1,23 @@
+{
+  "update_id": 4001,
+  "update_type": "message_created",
+  "timestamp": 1735689600,
+  "message": {
+    "message_id": 3001,
+    "sender": {
+      "user_id": 1001,
+      "first_name": "Alice",
+      "username": "alice",
+      "is_bot": false
+    },
+    "recipient": {
+      "chat_id": 2001,
+      "chat_type": "chat"
+    },
+    "timestamp": 1735689600,
+    "body": {
+      "text": "hello"
+    }
+  },
+  "user_locale": "ru-RU"
+}

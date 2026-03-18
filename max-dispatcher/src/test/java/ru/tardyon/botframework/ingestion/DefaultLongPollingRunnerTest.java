@@ -162,7 +162,7 @@ class DefaultLongPollingRunnerTest {
     }
 
     @Test
-    void sinkFailureDoesNotAdvanceMarkerAndLoopContinues() throws Exception {
+    void sinkFailureAdvancesMarkerAndLoopContinuesWithoutBatchReplay() throws Exception {
         PollingUpdateSource source = Mockito.mock(PollingUpdateSource.class);
         UpdateSink sink = Mockito.mock(UpdateSink.class);
         CountDownLatch secondPollReached = new CountDownLatch(1);
@@ -197,7 +197,7 @@ class DefaultLongPollingRunnerTest {
 
         assertTrue(markers.size() >= 2);
         assertNull(markers.get(0));
-        assertNull(markers.get(1));
+        assertEquals(300L, markers.get(1));
 
         verify(source, atLeast(2)).poll(any());
         verify(sink, atLeast(2)).handle(any());

@@ -23,6 +23,7 @@ import ru.tardyon.botframework.model.response.GetUpdatesResponse;
 import ru.tardyon.botframework.model.response.MessageResponse;
 import ru.tardyon.botframework.model.response.OperationStatusResponse;
 import ru.tardyon.botframework.model.response.SubscriptionsResponse;
+import ru.tardyon.botframework.model.transport.ApiGetUpdatesResponse;
 
 /**
  * In-memory {@link MaxBotClient} double that records executed requests and returns deterministic defaults.
@@ -87,6 +88,9 @@ public final class RecordingMaxBotClient implements MaxBotClient {
         }
         if (responseType == GetUpdatesResponse.class) {
             return new GetUpdatesResponse(List.of(), null);
+        }
+        if (responseType == ApiGetUpdatesResponse.class) {
+            return new ApiGetUpdatesResponse(List.of(), null);
         }
         if (responseType == BotInfo.class || request instanceof GetMeRequest) {
             return new BotInfo(new UserId("bot-test"), "testbot", "Test Bot", null, null);

@@ -1,0 +1,8 @@
+{
+  "chat_id": 2001,
+  "type": "chat",
+  "status": "active",
+  "title": "Payments",
+  "description": "Payment operations",
+  "is_public": false
+}

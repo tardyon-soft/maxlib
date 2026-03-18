@@ -29,44 +29,44 @@ import ru.tardyon.botframework.model.ChatType;
 @UseMiddleware(AnnotatedMenuRoute.TraceMiddleware.class)
 public final class AnnotatedMenuRoute {
 
-    @Command("a-start")
+    @Command("astart")
     public void start(RuntimeContext ctx) {
-        ctx.reply(Messages.text("Annotation API: /a-menu, /a-form, /a-echo <text>"));
+        ctx.reply(Messages.text("Annotation API: /amenu, /aform, /aecho <text>"));
     }
 
-    @Command("a-menu")
+    @Command("amenu")
     @UseFilters(PrivateChatFilter.class)
     @UseMiddleware(AttemptMiddleware.class)
     public CompletionStage<Void> menu(RuntimeContext ctx, Integer attempt) {
         ctx.reply(
                 Messages.text("Аннотационное меню (attempt=" + attempt + ")")
                         .keyboard(Keyboards.inline(k -> k.row(
-                                Buttons.callback("Оплатить", "a-menu:pay"),
-                                Buttons.callback("Помощь", "a-menu:help")
+                                Buttons.callback("Оплатить", "amenu:pay"),
+                                Buttons.callback("Помощь", "amenu:help")
                         )))
         );
         return CompletableFuture.completedFuture(null);
     }
 
-    @Callback("a-menu:pay")
+    @Callback("amenu:pay")
     public void pay(ru.tardyon.botframework.model.Callback callback, RuntimeContext ctx) {
         ctx.answerCallback("Платёж подтверждён (annotated)");
         ctx.callbacks().updateCurrentMessage(callback, Messages.markdown("*Платёж:* подтверждён (annotated)"));
     }
 
-    @CallbackPrefix("a-menu:")
+    @CallbackPrefix("amenu:")
     public void menuFallback(ru.tardyon.botframework.model.Callback callback, RuntimeContext ctx) {
-        if ("a-menu:help".equals(callback.data())) {
+        if ("amenu:help".equals(callback.data())) {
             ctx.answerCallback("Подсказка отправлена (annotated)");
-            ctx.callbacks().updateCurrentMessage(callback, Messages.text("Используйте /a-start для навигации"));
+            ctx.callbacks().updateCurrentMessage(callback, Messages.text("Используйте /astart для навигации"));
             return;
         }
         ctx.answerCallback("Неизвестное действие");
     }
 
-    @ru.tardyon.botframework.dispatcher.annotation.Message(text = "/a-echo ", startsWith = true)
+    @ru.tardyon.botframework.dispatcher.annotation.Message(text = "/aecho ", startsWith = true)
     public void echo(Message message, RuntimeContext ctx) {
-        String text = message.text() == null ? "" : message.text().substring("/a-echo ".length()).trim();
+        String text = message.text() == null ? "" : message.text().substring("/aecho ".length()).trim();
         ctx.reply(Messages.text("Annotated echo: " + text));
     }
 

@@ -2,15 +2,21 @@ package ru.tardyon.botframework.demo.springpolling;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import ru.tardyon.botframework.dispatcher.BuiltInFilters;
 import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.ingestion.LongPollingRunnerConfig;
+import ru.tardyon.botframework.ingestion.PollingFetchRequest;
 import ru.tardyon.botframework.message.Buttons;
 import ru.tardyon.botframework.message.Keyboards;
 import ru.tardyon.botframework.message.Messages;
 import ru.tardyon.botframework.model.ChatAction;
+import ru.tardyon.botframework.spring.properties.MaxBotProperties;
 
 /**
  * Manual Spring Boot demo app for polling-mode runtime verification.
@@ -29,7 +35,7 @@ public class DemoSpringPollingApplication {
         router.message(BuiltInFilters.command("start"), (message, ctx) -> {
             ctx.reply(Messages.text(
                     "Привет! Классический API: /menu, /typing, /form. "
-                            + "Аннотационный API: /a-start, /a-menu, /a-form, /a-echo <text>"
+                            + "Аннотационный API: /astart, /amenu, /aform, /aecho <text>"
             ));
             return CompletableFuture.completedFuture(null);
         });
@@ -45,12 +51,8 @@ public class DemoSpringPollingApplication {
             return CompletableFuture.completedFuture(null);
         });
 
-        router.callback((callback, ctx) -> {
+        router.callback(BuiltInFilters.callbackDataStartsWith("menu:"), (callback, ctx) -> {
             String data = callback.data();
-            if (data == null || !data.startsWith("menu:")) {
-                return CompletableFuture.completedFuture(null);
-            }
-
             switch (data) {
                 case "menu:pay" -> {
                     ctx.answerCallback("Платёж подтверждён");
@@ -92,12 +94,32 @@ public class DemoSpringPollingApplication {
                         ctx.reply(Messages.text("Форма уже заполнена. Для нового ввода снова используйте /form")))
         );
 
-        router.message((message, ctx) -> {
-            String text = message.text() == null ? "" : message.text();
-            ctx.reply(Messages.text("Echo: " + text));
-            return CompletableFuture.completedFuture(null);
-        });
-
         return router;
+    }
+
+    @Bean
+    LongPollingRunnerConfig longPollingRunnerConfig(MaxBotProperties properties) {
+        Integer timeoutSeconds = null;
+        if (properties.getPolling().getTimeout() != null) {
+            timeoutSeconds = Math.toIntExact(properties.getPolling().getTimeout().toSeconds());
+        }
+        PollingFetchRequest request = new PollingFetchRequest(
+                null,
+                timeoutSeconds,
+                properties.getPolling().getLimit(),
+                properties.getPolling().getTypes()
+        );
+
+        ThreadFactory threadFactory = runnable -> {
+            Thread thread = new Thread(runnable, "demo-long-polling-runner");
+            thread.setDaemon(false);
+            return thread;
+        };
+        ExecutorService executor = Executors.newSingleThreadExecutor(threadFactory);
+
+        return LongPollingRunnerConfig.builder()
+                .request(request)
+                .executor(executor, true)
+                .build();
     }
 }

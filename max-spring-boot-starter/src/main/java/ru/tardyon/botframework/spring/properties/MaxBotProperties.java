@@ -22,7 +22,7 @@ public class MaxBotProperties {
     private String token;
 
     @NotBlank
-    private String baseUrl = "https://api.max.ru";
+    private String baseUrl = "https://platform-api.max.ru";
 
     @NotNull
     private MaxBotMode mode = MaxBotMode.POLLING;

@@ -1,14 +1,12 @@
 package ru.tardyon.botframework.client.method;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import ru.tardyon.botframework.client.MaxRequest;
 import ru.tardyon.botframework.client.http.HttpMethod;
-import ru.tardyon.botframework.model.TextFormat;
+import ru.tardyon.botframework.model.mapping.MaxApiModelMapper;
 import ru.tardyon.botframework.model.request.EditMessageRequest;
-import ru.tardyon.botframework.model.request.NewMessageAttachment;
 import ru.tardyon.botframework.model.response.OperationStatusResponse;
 
 /**
@@ -38,12 +36,7 @@ public final class EditMessageMethodRequest implements MaxRequest<OperationStatu
 
     @Override
     public Optional<Object> body() {
-        return Optional.of(new SendOrEditMessageBody(
-                request.body().text(),
-                request.body().format(),
-                request.sendNotification(),
-                request.body().attachments()
-        ));
+        return Optional.of(MaxApiModelMapper.toApiOutgoing(request.body(), request.sendNotification(), null));
     }
 
     @Override
@@ -51,11 +44,4 @@ public final class EditMessageMethodRequest implements MaxRequest<OperationStatu
         return Map.of("message_id", request.messageId().value());
     }
 
-    private record SendOrEditMessageBody(
-            String text,
-            TextFormat format,
-            @JsonProperty("notify") Boolean sendNotification,
-            java.util.List<NewMessageAttachment> attachments
-    ) {
-    }
 }
