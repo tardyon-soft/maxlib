@@ -11,7 +11,7 @@
 - `@Route` auto-detect как Spring bean (без обязательного `@Component`);
 - built-in filters;
 - inline keyboard + callback handling;
-- chat action (`typing`);
+- chat action (`typing_on`);
 - FSM (`/form`) через `BuiltInFilters.state(...)` и `FSMContext`.
 - smoke bot команды для ручной проверки MAX API (`/qa_*`).
 
@@ -56,7 +56,7 @@ export DEMO_SMOKE_WEBHOOK_URL=https://example.com/max-webhook
 - `/start` — приветствие и список команд.
 - `/menu` — сообщение с inline keyboard.
 - callback `menu:pay`, `menu:help` — ответ на callback и update текущего сообщения.
-- `/typing` — отправка chat action `typing`.
+- `/typing` — отправка chat action `typing_on`.
 - `/form` — старт FSM flow (ожидание имени), затем сохранение имени и завершение.
 - любое другое сообщение — echo reply.
 
@@ -81,7 +81,7 @@ Smoke API:
 - `GET/PUT/DELETE /chats/{chatId}/pin`
 - `GET /updates`
 - `GET/POST/DELETE /subscriptions` (POST/DELETE при заполненном `demo.smoke.webhook-url`)
-- `POST /uploads`
+- `POST /uploads?type=...`
 - `GET /videos/{videoToken}` (если заранее задан token)
 
 ## Что осознанно не покрыто в этом demo

@@ -8,7 +8,7 @@
 
 - `MessagingFacade`: send/edit/delete/reply сообщений
 - `CallbackFacade`: answer callback/update callback message
-- `ChatActionsFacade`: chat actions (`typing`, etc.)
+- `ChatActionsFacade`: chat actions (`typing_on`, etc.)
 - `MediaMessagingFacade`: media send/reply (если подключен upload service)
 
 ## Builders

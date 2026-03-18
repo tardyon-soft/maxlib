@@ -29,6 +29,10 @@
 - `type` (`MEMORY`)
 - `state-scope` (`USER | CHAT | USER_IN_CHAT`)
 
+`max.bot.route-component-scan.*`:
+
+- `enabled` (default `true`) — авто-детект классов с `@Route` как Spring beans.
+
 ## Auto-configured beans
 
 - `MaxBotClient` stack
@@ -41,3 +45,4 @@
 
 - Все `Router` beans автоматически включаются в dispatcher (ordered stream).
 - `@Route(autoRegister = true)` beans автоматически конвертируются в routers через `AnnotatedRouteRegistrar`.
+- Классы с `@Route` можно не аннотировать `@Component`: starter регистрирует их автоматически (если включен `max.bot.route-component-scan.enabled=true`).

@@ -129,7 +129,6 @@ public class BotApplication {
 ```java
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.springframework.stereotype.Component;
 import ru.tardyon.botframework.dispatcher.RuntimeContext;
 import ru.tardyon.botframework.dispatcher.annotation.Callback;
 import ru.tardyon.botframework.dispatcher.annotation.CallbackPrefix;
@@ -137,7 +136,6 @@ import ru.tardyon.botframework.dispatcher.annotation.Command;
 import ru.tardyon.botframework.dispatcher.annotation.Route;
 import ru.tardyon.botframework.message.Messages;
 
-@Component
 @Route(value = "menu", autoRegister = true)
 public class MenuRoute {
 
@@ -180,6 +178,7 @@ public class MenuRoute {
 
 - Это дополнительный синтаксический слой.
 - Старый API через `Router`/`BuiltInFilters` работает без изменений.
+- В Spring starter `@Route` автоматически поднимается как bean (без обязательного `@Component`).
 
 ## Быстрый старт: vanilla Java (без Spring)
 

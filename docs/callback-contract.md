@@ -46,3 +46,4 @@ router.callback(BuiltInFilters.callbackDataStartsWith("menu:"), (callback, ctx) 
 - `@CallbackPrefix("menu:")`
 
 Они транслируются в обычные callback filters через `AnnotatedRouteRegistrar`.
+При одновременном наличии exact и prefix-обработчиков exact (`@Callback`) имеет более высокий приоритет.

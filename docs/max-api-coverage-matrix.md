@@ -21,7 +21,7 @@
 | PUT | `/messages` | `editMessage(EditMessageRequest)` | LEGACY | работает через нормализованный DTO |
 | POST | `/messages` | `sendMessageApi(SendMessageApiRequest)` | EXACT | поддержаны `user_id/chat_id`, `disable_link_preview` |
 | GET | `/messages` | `getMessagesApi(GetMessagesApiRequest)` | EXACT | `chat_id`, `from`, `to`, `count` |
-| POST | `/uploads` | `prepareUploadApi(PrepareUploadApiRequest)` | EXACT | |
+| POST | `/uploads` | `prepareUploadApi(PrepareUploadApiRequest)` | EXACT | `type` передается query-параметром (`/uploads?type=...`) |
 | GET | `/updates` | `getUpdatesApi(GetUpdatesRequest)` | EXACT | `getUpdates()` остается LEGACY sugar |
 | DELETE | `/subscriptions` | `deleteSubscription(DeleteSubscriptionRequest)` | LEGACY | соответствует по `url` |
 | POST | `/subscriptions` | `createSubscription(CreateSubscriptionRequest)` | LEGACY | |

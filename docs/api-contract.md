@@ -81,5 +81,6 @@ Handler return types:
 - `@Route`, `@Message`, `@Text`, `@Command`, `@Callback`, `@CallbackPrefix`, `@State`
 - `@UseFilters`, `@UseMiddleware`
 - `AnnotatedRouteRegistrar` маппит аннотации в обычный `Router` registration.
+- В `max-spring-boot-starter` классы с `@Route` автоматически регистрируются как Spring beans (без обязательного `@Component`).
 
 Старый API не меняется и остаётся полностью рабочим.
