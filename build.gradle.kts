@@ -1,14 +1,14 @@
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.plugins.signing.SigningExtension
 
 plugins {
     base
+    id("org.jreleaser") version "1.23.0"
 }
 
 allprojects {
     group = "ru.tardyon.botframework"
-    version = "0.1.0-SNAPSHOT"
+    version = providers.environmentVariable("RELEASE_VERSION").orElse("0.1.0-SNAPSHOT").get()
 
     repositories {
         mavenCentral()
@@ -37,28 +37,32 @@ subprojects {
 
     if (name.startsWith("max-")) {
         apply(plugin = "maven-publish")
-        apply(plugin = "signing")
 
         extensions.configure<PublishingExtension> {
             publications {
                 create<MavenPublication>("mavenJava") {
                     from(components["java"])
+
                     pom {
                         name.set(project.name)
                         description.set("MAX Java Bot Framework module: ${project.name}")
-                        url.set("https://github.com/tardyon/max-bot-framework")
+                        url.set("https://github.com/tardyon-soft/maxlib")
+
                         licenses {
                             license {
                                 name.set("MIT License")
                                 url.set("https://opensource.org/licenses/MIT")
                             }
                         }
+
                         developers {
                             developer {
                                 id.set("tardyon")
-                                name.set("Tardyon Team")
+                                name.set("Sergej Gerasimov")
+                                email.set("tardyon@yandex.ru")
                             }
                         }
+
                         scm {
                             connection.set("scm:git:https://github.com/tardyon-soft/maxlib.git")
                             developerConnection.set("scm:git:ssh://git@github.com:tardyon-soft/maxlib.git")
@@ -67,52 +71,47 @@ subprojects {
                     }
                 }
             }
+
             repositories {
                 maven {
-                    name = "mavenCentral"
-                    url = uri(
-                        if (version.toString().endsWith("SNAPSHOT")) {
-                            "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                        } else {
-                            "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                        }
-                    )
-                    credentials {
-                        username = providers.environmentVariable("MAVEN_CENTRAL_USERNAME").orNull
-                        password = providers.environmentVariable("MAVEN_CENTRAL_PASSWORD").orNull
-                    }
+                    name = "staging"
+                    url = uri(layout.buildDirectory.dir("staging-deploy"))
                 }
-            }
-        }
-
-        extensions.configure<SigningExtension> {
-            val signingKey = providers.environmentVariable("MAVEN_GPG_PRIVATE_KEY").orNull
-            val signingPassphrase = providers.environmentVariable("MAVEN_GPG_PASSPHRASE").orNull
-            if (!signingKey.isNullOrBlank()) {
-                useInMemoryPgpKeys(signingKey, signingPassphrase)
-                sign(extensions.getByType<PublishingExtension>().publications)
             }
         }
     }
 }
 
-tasks.register("publishVanillaJavaToMavenCentral") {
-    group = "publishing"
-    description = "Publishes vanilla Java runtime modules to Maven Central (without Spring starter)."
-    dependsOn(
-        ":max-model:publishMavenJavaPublicationToMavenCentralRepository",
-        ":max-client-core:publishMavenJavaPublicationToMavenCentralRepository",
-        ":max-fsm:publishMavenJavaPublicationToMavenCentralRepository",
-        ":max-dispatcher:publishMavenJavaPublicationToMavenCentralRepository",
-        ":max-testkit:publishMavenJavaPublicationToMavenCentralRepository"
-    )
-}
+jreleaser {
+    signing {
+        pgp {
+            active = org.jreleaser.model.Active.ALWAYS
+            armored = true
+        }
+    }
 
-tasks.register("publishStarterToMavenCentral") {
-    group = "publishing"
-    description = "Publishes Spring Boot starter stack to Maven Central."
-    dependsOn(
-        "publishVanillaJavaToMavenCentral",
-        ":max-spring-boot-starter:publishMavenJavaPublicationToMavenCentralRepository"
-    )
+    deploy {
+        maven {
+            mavenCentral {
+                create("sonatype") {
+                    active = org.jreleaser.model.Active.RELEASE
+                    url = "https://central.sonatype.com/api/v1/publisher"
+                    stagingRepository("build/staging-deploy")
+                }
+            }
+
+            // Для SNAPSHOT можно отдельно включить это:
+            // nexus2 {
+            //     create("snapshot-deploy") {
+            //         active = org.jreleaser.model.Active.SNAPSHOT
+            //         snapshotUrl = "https://central.sonatype.com/repository/maven-snapshots/"
+            //         applyMavenCentralRules = true
+            //         snapshotSupported = true
+            //         closeRepository = true
+            //         releaseRepository = false
+            //         stagingRepository("build/staging-deploy")
+            //     }
+            // }
+        }
+    }
 }
