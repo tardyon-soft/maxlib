@@ -1,5 +1,11 @@
 image: eclipse-temurin:21-jdk
 
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+    - when: never
+
 stages:
   - build
   - test
@@ -24,6 +30,7 @@ build:
     - ./gradlew --no-daemon --stacktrace clean assemble
   rules:
     - if: $CI_COMMIT_BRANCH
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
 
 unit_tests:
   stage: test
@@ -39,15 +46,16 @@ unit_tests:
       - "**/build/reports/tests/test/**"
   rules:
     - if: $CI_COMMIT_BRANCH
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
 
 publish_maven_central:
   stage: publish
   needs: ["unit_tests"]
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
-  variables:
-    RELEASE_VERSION: "${CI_COMMIT_TAG#v}"
   script:
+    - export RELEASE_VERSION="${CI_COMMIT_TAG#v}"
+    - echo "Publishing version ${RELEASE_VERSION}"
     - test -n "$JRELEASER_MAVENCENTRAL_USERNAME" || (echo "JRELEASER_MAVENCENTRAL_USERNAME is required" && exit 1)
     - test -n "$JRELEASER_MAVENCENTRAL_PASSWORD" || (echo "JRELEASER_MAVENCENTRAL_PASSWORD is required" && exit 1)
     - test -n "$JRELEASER_GPG_PUBLIC_KEY" || (echo "JRELEASER_GPG_PUBLIC_KEY is required" && exit 1)
