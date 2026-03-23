@@ -75,7 +75,7 @@ subprojects {
             repositories {
                 maven {
                     name = "staging"
-                    url = uri(layout.buildDirectory.dir("staging-deploy"))
+                    url = uri(rootProject.layout.buildDirectory.dir("staging-deploy"))
                 }
             }
         }
@@ -99,19 +99,6 @@ jreleaser {
                     stagingRepository("build/staging-deploy")
                 }
             }
-
-            // Для SNAPSHOT можно отдельно включить это:
-            // nexus2 {
-            //     create("snapshot-deploy") {
-            //         active = org.jreleaser.model.Active.SNAPSHOT
-            //         snapshotUrl = "https://central.sonatype.com/repository/maven-snapshots/"
-            //         applyMavenCentralRules = true
-            //         snapshotSupported = true
-            //         closeRepository = true
-            //         releaseRepository = false
-            //         stagingRepository("build/staging-deploy")
-            //     }
-            // }
         }
     }
 }
