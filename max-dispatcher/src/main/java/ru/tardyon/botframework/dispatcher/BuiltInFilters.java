@@ -16,6 +16,7 @@ import ru.tardyon.botframework.model.UserId;
  * MVP built-in filters for Sprint 4 runtime layer.
  */
 public final class BuiltInFilters {
+    private static final int COMMAND_FILTER_PRIORITY = 100;
     public static final String COMMAND_KEY = "command";
     public static final String COMMAND_ARGS_KEY = "commandArgs";
     public static final String TEXT_SUFFIX_KEY = "textSuffix";
@@ -33,7 +34,17 @@ public final class BuiltInFilters {
      */
     public static Filter<Message> command(String command) {
         String normalized = normalizeCommand(command);
-        return message -> CompletableFuture.completedFuture(matchCommand(message, normalized));
+        return new Filter<>() {
+            @Override
+            public int priority() {
+                return COMMAND_FILTER_PRIORITY;
+            }
+
+            @Override
+            public java.util.concurrent.CompletionStage<FilterResult> test(Message message) {
+                return CompletableFuture.completedFuture(matchCommand(message, normalized));
+            }
+        };
     }
 
     /**

@@ -1,120 +1,111 @@
 # Demo Spring Boot Polling App
 
-Отдельное тестовое Spring Boot приложение внутри репозитория для ручной проверки MAX bot framework.
+Ручной стенд для проверки актуального API библиотеки в режиме `POLLING`.
 
-## Назначение
+## Что покрывает demo
 
-Этот demo показывает фактический текущий API framework без вымышленных слоёв:
-- Spring Boot starter в `POLLING` режиме;
-- `Dispatcher/Router` handlers;
-- annotation routes (`@Route`, `@Command`, `@Callback`, `@State`, `@UseFilters`, `@UseMiddleware`);
-- `@Route` auto-detect как Spring bean (без обязательного `@Component`);
-- built-in filters;
-- inline keyboard + callback handling;
-- screen API demo (`/screen`) с одним активным экраном и back stack;
-- chat action (`typing_on`);
-- FSM (`/form`) через `BuiltInFilters.state(...)` и `FSMContext`.
-- smoke bot команды для ручной проверки MAX API (`/qa_*`).
+- `Dispatcher/Router` и annotation routes.
+- `@Route` без `@Component` (авто-регистрация в Spring starter).
+- `@Screen`/`@Render`/`@OnAction`/`@OnText`.
+- FSM формы (`/form`, `/aform`) и screen stack (`/screen`, `/ascreen`).
+- App-mode UX (`/app`) с удалением пользовательских сообщений и обновлением интерфейса через callback.
+- Smoke-команды для проверки MAX API (`/qa*`).
 
-## Структура
+## Основные файлы
 
-- `src/main/java/.../DemoSpringPollingApplication.java` — main app + router handlers.
-- `src/main/java/.../AnnotatedMenuRoute.java` — demo route на annotation API для команд/callback/filter/middleware.
-- `src/main/java/.../AnnotatedFormRoute.java` — demo route на annotation API для FSM state flow.
-- `src/main/java/.../ApiSmokeRoute.java` — чат-команды smoke проверки API.
-- `src/main/java/.../ApiSmokeService.java` — шаги smoke run и сводный отчёт.
-- `src/main/resources/application.yml` — конфигурация через properties/env.
-- `src/test/java/.../DemoSpringPollingApplicationSmokeTest.java` — smoke test поднятия контекста.
+- `src/main/java/.../DemoSpringPollingApplication.java` — классический router API.
+- `src/main/java/.../AnnotatedMenuRoute.java` — команды/callback на аннотациях.
+- `src/main/java/.../AnnotatedFormRoute.java` — FSM на аннотациях.
+- `src/main/java/.../AppModeRoute.java` и `AppModeMiddleware.java` — app-like UX.
+- `src/main/java/.../AnnotatedScreenRoute.java` + `Annotated*Screen.java` — screen API через аннотации.
+- `src/main/java/.../ApiSmokeRoute.java` + `ApiSmokeService.java` — smoke API.
 
 ## Конфигурация
 
-Токен не захардкожен и берётся из env:
-
 ```bash
-export MAX_BOT_TOKEN=<your-max-bot-token>
+export MAX_BOT_TOKEN=<token>
 export DEMO_SMOKE_DESTRUCTIVE=false
-export DEMO_SMOKE_WEBHOOK_URL=https://example.com/max-webhook
+export DEMO_SMOKE_WEBHOOK_URL=
 ```
 
-`application.yml` использует:
+`application.yml`:
 
-- `max.bot.token: ${MAX_BOT_TOKEN:}`
-- `max.bot.mode: POLLING`
-- polling `limit/timeout/types`.
-- `demo.smoke.destructive` — включение потенциально разрушительных шагов (`DELETE /messages`, chat mutation methods).
-- `demo.smoke.webhook-url` — URL для тестов `POST/DELETE /subscriptions`.
+- `max.bot.mode=POLLING`
+- polling: `types`, `timeout`, `limit`
+- `demo.smoke.destructive`
+- `demo.smoke.webhook-url`
+
+`LongPollingRunnerConfig` вручную в demo не создается: его поднимает starter.
 
 ## Запуск
-
-Из корня репозитория:
 
 ```bash
 ./gradlew :demo-spring-polling:run
 ```
 
-### Запуск с Redis FSM
-
-Поднять Redis:
+### Redis профиль (FSM storage)
 
 ```bash
 docker compose -f demo-spring-polling/docker-compose.redis.yml up -d
-```
-
-Запустить demo с профилем `redis`:
-
-```bash
 SPRING_PROFILES_ACTIVE=redis ./gradlew :demo-spring-polling:run
 ```
 
-Профиль `redis` задаёт:
-- `max.bot.storage.type=REDIS`
-- `max.bot.storage.state-scope=USER_IN_CHAT`
-- `max.bot.storage.redis.key-prefix=demo:max:fsm`
-- `max.bot.storage.redis.ttl=12h`
-- `spring.data.redis.*` (host/port/database/password через env)
+Профиль `redis` включает `max.bot.storage.type=REDIS` и `spring.data.redis.*`.
 
-## Команды в demo
+## Команды
 
-- `/start` — приветствие и список команд.
-- `/menu` — сообщение с inline keyboard.
-- callback `menu:pay`, `menu:help` — ответ на callback и update текущего сообщения.
-- `/typing` — отправка chat action `typing_on`.
-- `/screen` — запуск screen-flow (home/profile/settings) с одним живым сообщением и кнопкой `Назад`.
-- `/form` — старт FSM flow (ожидание имени), затем сохранение имени и завершение.
-- любое другое сообщение — echo reply.
+Классический API:
 
-Аннотационный API (новый sugar):
-- `/astart` — приветствие для annotation routes.
-- `/amenu` — inline keyboard (callback `amenu:pay`, `amenu:help`).
-- callback `amenu:*` — обработка через `@Callback/@CallbackPrefix`.
-- `/aform` — FSM flow через `@State(...)`.
-- `/aecho <text>` — обработка через `@Message(text=..., startsWith=true)`.
+- `/start`
+- `/menu` + callbacks `menu:pay`, `menu:help`
+- `/typing`
+- `/form`
+- `/screen`
 
-Screen API callbacks:
-- `ui:act:*` — действия виджет-кнопок.
-- `ui:nav:back` — переход назад по стеку экранов.
+Аннотационный API:
+
+- `/astart`
+- `/amenu` + callbacks `amenu:pay`, `amenu:*`
+- `/aecho <text>`
+- `/aform`
+- `/ascreen`
+
+App mode:
+
+- `/app`
+- callbacks `app:*`
 
 Smoke API:
-- `/qa` — список smoke команд.
-- `/qa_run_all` — запуск последовательной проверки API с итоговым отчётом `pass/fail/skip`.
-- `/qa_callback` — отправляет кнопку, по нажатию проверяется callback flow + `POST /answers`.
-- `/qa_set_video <token>` — сохраняет `videoToken` для шага `GET /videos/{token}`.
 
-`/qa_run_all` покрывает:
-- `GET /me`, `GET /chats`, `GET /chats/{chatId}`
-- `POST/PUT/GET(/id)/GET(list)/DELETE /messages` (delete при `demo.smoke.destructive=true`)
-- `POST /chats/{chatId}/actions`
-- `GET /chats/{chatId}/members`, `GET /admins`, `GET /members/me`
-- `GET/PUT/DELETE /chats/{chatId}/pin`
-- `GET /updates`
-- `GET/POST/DELETE /subscriptions` (POST/DELETE при заполненном `demo.smoke.webhook-url`)
-- `POST /uploads?type=...`
-- `GET /videos/{videoToken}` (если заранее задан token)
+- `/qa`
+- `/qa_run_all`
+- `/qa_callback`
+- `/qa_set_video <token>`
 
-## Что осознанно не покрыто в этом demo
+## Важные замечания
 
-- webhook mode (в этом приложении проверяется именно polling как основной сценарий);
-- scenes/wizard UI.
-- destructive chat mutations по умолчанию отключены (`demo.smoke.destructive=false`).
+- Командные фильтры имеют повышенный приоритет, поэтому `/start`, `/screen`, `/form` и другие команды обрабатываются раньше generic текстовых/state обработчиков.
+- Screen state хранится в отдельном FSM namespace (`screen`) и не конфликтует с пользовательскими FSM стейтами.
+- Для media в экранах используйте только валидные MAX upload/file reference; произвольные URL могут давать `400`.
 
-Эти части уже есть в framework, но здесь намеренно оставлен минимальный ручной стенд для быстрой проверки базового runtime path.
+## Мини-примеры screen API
+
+Старт ручного screen-flow:
+
+```java
+router.message(BuiltInFilters.command("screen"), (message, ctx) ->
+        Screens.navigator(ctx, screenRegistry).start("home", Map.of())
+);
+```
+
+Старт аннотационного screen-flow:
+
+```java
+@Route(value = "annotated-screen-route", autoRegister = true)
+public final class AnnotatedScreenRoute {
+    @Command("ascreen")
+    public CompletionStage<Void> start(RuntimeContext context, ScreenRegistry screenRegistry) {
+        return Screens.navigator(context, screenRegistry).start("annotated.home", Map.of());
+    }
+}
+```

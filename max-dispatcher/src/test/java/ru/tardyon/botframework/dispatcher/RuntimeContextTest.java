@@ -139,6 +139,7 @@ class RuntimeContextTest {
         RuntimeContext context = new RuntimeContext(sampleUpdate());
 
         assertThrows(IllegalStateException.class, context::fsm);
+        assertThrows(IllegalStateException.class, () -> context.fsm("screen"));
     }
 
     @Test
@@ -148,6 +149,20 @@ class RuntimeContextTest {
 
         assertEquals("u-ctx-user", context.fsm().scope().userId().value());
         assertEquals("c-ctx-1", context.fsm().scope().chatId().value());
+    }
+
+    @Test
+    void runtimeFsmNamespacedContextIsIsolatedFromDefaultScope() {
+        RuntimeContext context = new RuntimeContext(sampleUpdate());
+        FSMRuntimeSupport.bootstrap(context, new MemoryStorage(), StateKeyStrategies.forScope(StateScope.USER_IN_CHAT));
+
+        context.fsm().setState("user.form").toCompletableFuture().join();
+        context.fsm("screen").setState("screen.home").toCompletableFuture().join();
+
+        assertEquals("user.form", context.fsm().currentState().toCompletableFuture().join().orElseThrow());
+        assertEquals("screen.home", context.fsm("screen").currentState().toCompletableFuture().join().orElseThrow());
+        assertTrue(context.fsm("screen").scope().userId().value().startsWith("screen::"));
+        assertTrue(context.fsm("screen").scope().chatId().value().startsWith("screen::"));
     }
 
     @Test

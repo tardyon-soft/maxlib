@@ -12,6 +12,13 @@ import java.util.function.Predicate;
  */
 @FunctionalInterface
 public interface Filter<TEvent> {
+    /**
+     * Priority used by observer registration order.
+     * Higher value means earlier execution.
+     */
+    default int priority() {
+        return 0;
+    }
 
     /**
      * Evaluates filter against one event.
@@ -34,6 +41,11 @@ public interface Filter<TEvent> {
     default Filter<TEvent> and(Filter<? super TEvent> other) {
         Objects.requireNonNull(other, "other");
         return new Filter<>() {
+            @Override
+            public int priority() {
+                return Math.max(Filter.this.priority(), other.priority());
+            }
+
             @Override
             public CompletionStage<FilterResult> test(TEvent event) {
                 return evaluate(event, null);
@@ -67,6 +79,11 @@ public interface Filter<TEvent> {
         Objects.requireNonNull(other, "other");
         return new Filter<>() {
             @Override
+            public int priority() {
+                return Math.max(Filter.this.priority(), other.priority());
+            }
+
+            @Override
             public CompletionStage<FilterResult> test(TEvent event) {
                 return evaluate(event, null);
             }
@@ -92,6 +109,11 @@ public interface Filter<TEvent> {
      */
     default Filter<TEvent> not() {
         return new Filter<>() {
+            @Override
+            public int priority() {
+                return Filter.this.priority();
+            }
+
             @Override
             public CompletionStage<FilterResult> test(TEvent event) {
                 return evaluate(event, null);

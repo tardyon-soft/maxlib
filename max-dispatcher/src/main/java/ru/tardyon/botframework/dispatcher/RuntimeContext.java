@@ -193,6 +193,16 @@ public final class RuntimeContext {
     }
 
     /**
+     * Returns namespaced runtime FSM context isolated from the default FSM scope.
+     */
+    public FSMContext fsm(String namespace) {
+        return FSMRuntimeSupport.resolveNamespaced(this, namespace)
+                .orElseThrow(() -> new IllegalStateException(
+                        "FSMContext is unavailable. Configure Dispatcher.withFsmStorage(...) and state scope strategy."
+                ));
+    }
+
+    /**
      * Returns runtime scene manager if scene runtime is configured on dispatcher.
      */
     public SceneManager scenes() {

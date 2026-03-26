@@ -19,7 +19,11 @@ public final class ScreenDemoSupport {
     }
 
     public static ScreenRegistry buildRegistry() {
-        return new InMemoryScreenRegistry()
+        return registerDefaults(new InMemoryScreenRegistry());
+    }
+
+    public static ScreenRegistry registerDefaults(ScreenRegistry registry) {
+        return registry
                 .register(new HomeScreen())
                 .register(new ProfileScreen())
                 .register(new SettingsScreen());

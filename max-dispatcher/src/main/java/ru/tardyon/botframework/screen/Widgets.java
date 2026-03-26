@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import ru.tardyon.botframework.message.MediaAttachment;
+import ru.tardyon.botframework.model.request.NewMessageAttachment;
 
 /**
  * Widget factory helpers.
@@ -31,6 +33,21 @@ public final class Widgets {
         return context -> CompletableFuture.completedFuture(WidgetRender.of(List.of(), List.of(List.copyOf(row))));
     }
 
+    public static Widget media(MediaAttachment attachment) {
+        Objects.requireNonNull(attachment, "attachment");
+        return attachment(attachment.toNewMessageAttachment());
+    }
+
+    public static Widget attachment(NewMessageAttachment attachment) {
+        Objects.requireNonNull(attachment, "attachment");
+        return context -> CompletableFuture.completedFuture(WidgetRender.of(List.of(), List.of(), List.of(attachment)));
+    }
+
+    public static Widget attachments(List<NewMessageAttachment> attachments) {
+        Objects.requireNonNull(attachments, "attachments");
+        return context -> CompletableFuture.completedFuture(WidgetRender.of(List.of(), List.of(), List.copyOf(attachments)));
+    }
+
     public static Widget section(String title, Widget... children) {
         Objects.requireNonNull(title, "title");
         Objects.requireNonNull(children, "children");
@@ -41,12 +58,14 @@ public final class Widgets {
             return renderedChildren.thenApply(renders -> {
                 ArrayList<String> lines = new ArrayList<>();
                 ArrayList<List<ScreenButton>> buttons = new ArrayList<>();
+                ArrayList<NewMessageAttachment> attachments = new ArrayList<>();
                 lines.add(title);
                 for (WidgetRender render : renders) {
                     lines.addAll(render.textLines());
                     buttons.addAll(render.buttons());
+                    attachments.addAll(render.attachments());
                 }
-                return WidgetRender.of(lines, buttons);
+                return WidgetRender.of(lines, buttons, attachments);
             });
         };
     }

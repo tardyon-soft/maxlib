@@ -2,16 +2,11 @@ package ru.tardyon.botframework.demo.springpolling;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import ru.tardyon.botframework.dispatcher.BuiltInFilters;
 import ru.tardyon.botframework.dispatcher.Router;
-import ru.tardyon.botframework.ingestion.LongPollingRunnerConfig;
-import ru.tardyon.botframework.ingestion.PollingFetchRequest;
 import ru.tardyon.botframework.message.Buttons;
 import ru.tardyon.botframework.message.Keyboards;
 import ru.tardyon.botframework.message.Messages;
@@ -19,29 +14,27 @@ import ru.tardyon.botframework.model.ChatAction;
 import ru.tardyon.botframework.screen.ScreenRegistry;
 import ru.tardyon.botframework.screen.ScreenRouter;
 import ru.tardyon.botframework.screen.Screens;
-import ru.tardyon.botframework.spring.properties.MaxBotProperties;
 
 /**
  * Manual Spring Boot demo app for polling-mode runtime verification.
  */
 @SpringBootApplication
 public class DemoSpringPollingApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(DemoSpringPollingApplication.class, args);
     }
 
     @Bean
-    Router demoRouter() {
+    Router demoRouter(ScreenRegistry screenRegistry) {
         Router router = new Router("demo-main");
-        ScreenRegistry screenRegistry = ScreenDemoSupport.buildRegistry();
+        ScreenDemoSupport.registerDefaults(screenRegistry);
         ScreenRouter.attach(router, screenRegistry);
 
         router.message(BuiltInFilters.command("start"), (message, ctx) -> {
             ctx.messaging().send(message.chat().id(), Messages.text(
                     "Привет! Классический API: /menu, /typing, /form. "
                             + "Аннотационный API: /astart, /amenu, /aform, /aecho <text>. "
-                            + "App Mode: /app (UX без истории сообщений). /screen - demo screen stack. "
+                            + "App Mode: /app (UX без истории сообщений). /screen и /ascreen - demo screen stack. "
                             + "Smoke API: /qa, /qa_run_all, /qa_callback, /qa_set_video <token>"
             ));
             return CompletableFuture.completedFuture(null);
@@ -112,31 +105,5 @@ public class DemoSpringPollingApplication {
         );
 
         return router;
-    }
-
-    @Bean
-    LongPollingRunnerConfig longPollingRunnerConfig(MaxBotProperties properties) {
-        Integer timeoutSeconds = null;
-        if (properties.getPolling().getTimeout() != null) {
-            timeoutSeconds = Math.toIntExact(properties.getPolling().getTimeout().toSeconds());
-        }
-        PollingFetchRequest request = new PollingFetchRequest(
-                null,
-                timeoutSeconds,
-                properties.getPolling().getLimit(),
-                properties.getPolling().getTypes()
-        );
-
-        ThreadFactory threadFactory = runnable -> {
-            Thread thread = new Thread(runnable, "demo-long-polling-runner");
-            thread.setDaemon(false);
-            return thread;
-        };
-        ExecutorService executor = Executors.newSingleThreadExecutor(threadFactory);
-
-        return LongPollingRunnerConfig.builder()
-                .request(request)
-                .executor(executor, true)
-                .build();
     }
 }

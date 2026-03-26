@@ -461,6 +461,38 @@ class DispatcherInvocationPipelineIntegrationTest {
     }
 
     @Test
+    void commandFilterHasPriorityOverStateFilterEvenWhenRegisteredLater() {
+        MemoryStorage storage = new MemoryStorage();
+        Dispatcher dispatcher = new Dispatcher()
+                .withFsmStorage(storage)
+                .withStateScope(StateScope.USER_IN_CHAT);
+        Router router = new Router("fsm-command-priority");
+        AtomicInteger stateCalls = new AtomicInteger();
+        AtomicInteger commandCalls = new AtomicInteger();
+        Update update = messageUpdate("/start");
+
+        storage.setState(ru.tardyon.botframework.fsm.StateKeyStrategies.userInChat().resolve(update), "checkout.email")
+                .toCompletableFuture()
+                .join();
+
+        router.message(BuiltInFilters.state("checkout.email"), message -> {
+            stateCalls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        router.message(BuiltInFilters.command("start"), message -> {
+            commandCalls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        dispatcher.includeRouter(router);
+
+        DispatchResult result = dispatcher.feedUpdate(update).toCompletableFuture().join();
+
+        assertEquals(DispatchStatus.HANDLED, result.status());
+        assertEquals(0, stateCalls.get());
+        assertEquals(1, commandCalls.get());
+    }
+
+    @Test
     void stateFilterWorksWithOuterMiddleware() {
         Dispatcher dispatcher = new Dispatcher()
                 .withFsmStorage(new MemoryStorage())

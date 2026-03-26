@@ -33,10 +33,17 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
 
     @Override
     public EventObserver<TEvent> register(Filter<TEvent> filter, EventHandler<TEvent> handler) {
-        registrations.add(new Registration<>(
-                Objects.requireNonNull(filter, "filter"),
-                Objects.requireNonNull(handler, "handler")
-        ));
+        Filter<TEvent> valueFilter = Objects.requireNonNull(filter, "filter");
+        EventHandler<TEvent> valueHandler = Objects.requireNonNull(handler, "handler");
+        Registration<TEvent> registration = new Registration<>(valueFilter, valueHandler, valueFilter.priority());
+        int insertionIndex = registrations.size();
+        for (int i = 0; i < registrations.size(); i++) {
+            if (registration.priority() > registrations.get(i).priority()) {
+                insertionIndex = i;
+                break;
+            }
+        }
+        registrations.add(insertionIndex, registration);
         return this;
     }
 
@@ -130,7 +137,7 @@ public final class DefaultEventObserver<TEvent> implements EventObserver<TEvent>
         return throwable;
     }
 
-    private record Registration<TEvent>(Filter<TEvent> filter, EventHandler<TEvent> handler) {
+    private record Registration<TEvent>(Filter<TEvent> filter, EventHandler<TEvent> handler, int priority) {
     }
 
     private record FilterEvaluationOutcome(FilterResult result, Throwable throwable) {

@@ -1,19 +1,20 @@
 # Sprint 7 Upload/Media Examples
 
-Минимальные и реалистичные примеры использования upload/media API на текущем runtime.
+Примеры upload/media API на runtime уровне.
 
-Файлы:
+## Файлы
+
 - `MediaFacadeExample.java`:
   - `InputFile.fromPath(...)` и `InputFile.fromBytes(...)`;
-  - `sendImage(...)` и `sendFile(...)`;
-  - `replyVideo(...)` и `replyAudio(...)`;
-  - builder + media attachment composition (`Messages.text(...).attachment(MediaAttachment...)`).
+  - `sendImage(...)`, `sendFile(...)`;
+  - `replyVideo(...)`, `replyAudio(...)`;
+  - message builder с media attachments.
 - `RuntimeMediaHandlersExample.java`:
-  - интеграция `Dispatcher.withBotClient(...).withUploadService(...)`;
+  - `Dispatcher.withBotClient(...).withUploadService(...)`;
   - `RuntimeContext` shortcuts (`replyImage`, `replyFile`, `sendVideo`, `sendAudio`);
-  - reflective handler parameter resolution `MediaMessagingFacade`.
+  - DI `MediaMessagingFacade`.
 
-Ограничения:
-- examples не показывают Spring starter;
-- examples не используют FSM/scenes;
-- examples не используют вымышленные storage adapters/hooks.
+## Актуальность
+
+- Для реального MAX окружения используйте только валидные upload/video tokens.
+- В screen API media тоже поддерживаются через widget attachments, но с тем же требованием к валидным reference.

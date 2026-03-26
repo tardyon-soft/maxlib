@@ -93,6 +93,9 @@ public final class StateKeyStrategies {
             if (callback != null && callback.from() != null) {
                 return callback.from().id();
             }
+            if (callback != null && callback.message() != null && callback.message().from() != null) {
+                return callback.message().from().id();
+            }
 
             return null;
         }

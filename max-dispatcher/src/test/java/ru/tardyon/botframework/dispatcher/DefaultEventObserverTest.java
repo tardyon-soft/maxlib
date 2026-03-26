@@ -130,4 +130,36 @@ class DefaultEventObserverTest {
         assertEquals(HandlerExecutionStatus.FAILED, result.status());
         assertSame(failure, result.errorOpt().orElseThrow());
     }
+
+    @Test
+    void notifyUsesHigherPriorityFilterBeforeEarlierRegistration() {
+        DefaultEventObserver<String> observer = new DefaultEventObserver<>(ObserverType.MESSAGE);
+        AtomicInteger first = new AtomicInteger();
+        AtomicInteger second = new AtomicInteger();
+
+        observer.register(Filter.of(event -> true), event -> {
+            first.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+        observer.register(new Filter<>() {
+            @Override
+            public int priority() {
+                return 100;
+            }
+
+            @Override
+            public java.util.concurrent.CompletionStage<FilterResult> test(String event) {
+                return CompletableFuture.completedFuture(FilterResult.matched());
+            }
+        }, event -> {
+            second.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
+
+        HandlerExecutionResult result = observer.notify("event").toCompletableFuture().join();
+
+        assertEquals(HandlerExecutionStatus.HANDLED, result.status());
+        assertEquals(0, first.get());
+        assertEquals(1, second.get());
+    }
 }

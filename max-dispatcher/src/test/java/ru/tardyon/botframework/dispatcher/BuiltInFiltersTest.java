@@ -226,6 +226,11 @@ class BuiltInFiltersTest {
         assertEquals(FilterStatus.NOT_MATCHED, result.status());
     }
 
+    @Test
+    void commandFilterHasHigherPriorityThanDefaultFilters() {
+        assertTrue(BuiltInFilters.command("start").priority() > Filter.any().priority());
+    }
+
     private static Message message(String text, ChatType chatType, User from, List<MessageAttachment> attachments) {
         return new Message(
                 new MessageId("m-1"),

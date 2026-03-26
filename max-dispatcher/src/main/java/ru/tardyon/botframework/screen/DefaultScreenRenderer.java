@@ -15,6 +15,7 @@ import ru.tardyon.botframework.model.ChatId;
 import ru.tardyon.botframework.model.Message;
 import ru.tardyon.botframework.model.MessageId;
 import ru.tardyon.botframework.model.Update;
+import ru.tardyon.botframework.model.request.NewMessageAttachment;
 
 /**
  * Default renderer that maps {@link ScreenModel} to one editable chat message.
@@ -30,21 +31,31 @@ public final class DefaultScreenRenderer implements ScreenRenderer {
         }
 
         ArrayList<List<ScreenButton>> buttonRows = new ArrayList<>();
+        ArrayList<NewMessageAttachment> attachments = new ArrayList<>();
         return renderWidgets(context, model.widgets()).thenApply(renders -> {
             for (WidgetRender render : renders) {
                 lines.addAll(render.textLines());
                 buttonRows.addAll(render.buttons());
+                attachments.addAll(render.attachments());
             }
             if (model.showBackButton() && context.session().canGoBack()) {
                 buttonRows.add(List.of(ScreenButton.of("Назад", "__nav_back")));
             }
-            return new RenderPayload(composeText(lines), buttonRows);
-        }).thenApply(payload -> sendOrEdit(context, payload.text(), payload.buttons()));
+            return new RenderPayload(composeText(lines), buttonRows, attachments);
+        }).thenApply(payload -> sendOrEdit(context, payload.text(), payload.buttons(), payload.attachments()));
     }
 
-    private RenderResult sendOrEdit(ScreenContext context, String text, List<List<ScreenButton>> buttons) {
+    private RenderResult sendOrEdit(
+            ScreenContext context,
+            String text,
+            List<List<ScreenButton>> buttons,
+            List<NewMessageAttachment> attachments
+    ) {
         ChatId chatId = currentChatId(context.runtime().update());
         MessageBuilder builder = Messages.text(text);
+        for (NewMessageAttachment attachment : attachments) {
+            builder = builder.attachment(attachment);
+        }
         if (!buttons.isEmpty()) {
             builder = builder.keyboard(Keyboards.inline(keyboard -> {
                 for (List<ScreenButton> row : buttons) {
@@ -76,6 +87,17 @@ public final class DefaultScreenRenderer implements ScreenRenderer {
             throw new IllegalStateException("Cannot resolve chat id for screen rendering");
         }
         Message sent = context.runtime().messaging().send(chatId, builder);
+        if (rootMessageId != null && !rootMessageId.isBlank() && !isUnknownMessageId(rootMessageId)
+                && sent.messageId() != null && !rootMessageId.equals(sent.messageId().value())) {
+            try {
+                boolean deleted = context.runtime().messaging().delete(new MessageId(rootMessageId));
+                if (!deleted) {
+                    log.debug("Screen fallback send: previous screen delete returned false (messageId={})", rootMessageId);
+                }
+            } catch (RuntimeException runtimeException) {
+                log.debug("Screen fallback send: failed to delete previous screen (messageId={})", rootMessageId, runtimeException);
+            }
+        }
         return new RenderResult(sent.messageId().value(), false);
     }
 
@@ -116,6 +138,10 @@ public final class DefaultScreenRenderer implements ScreenRenderer {
         return value.endsWith("-unknown");
     }
 
-    private record RenderPayload(String text, List<List<ScreenButton>> buttons) {
+    private record RenderPayload(
+            String text,
+            List<List<ScreenButton>> buttons,
+            List<NewMessageAttachment> attachments
+    ) {
     }
 }

@@ -1,12 +1,15 @@
 # Sprint 3 Runtime Examples
 
-Минимальные примеры runtime-слоя без filters/middleware/FSM.
+Минимальные примеры базового runtime слоя (`Dispatcher`/`Router`) без screen/FSM DSL.
 
-Файлы:
-- `DispatcherRouterExample.java` — создание `Dispatcher`/`Router`, регистрация `update/message/callback/error` handler-ов, `includeRouter`, `feedUpdate`.
-- `DispatcherIngestionIntegrationExample.java` — интеграция `Dispatcher` с ingestion layer:
-  - polling path (`DefaultLongPollingRunner` + `SdkPollingUpdateSource` + `Dispatcher`);
-  - webhook path (`DefaultWebhookReceiver` + `Dispatcher`).
+## Файлы
 
-Примеры отражают текущий low-level API Sprint 3 и не используют не реализованные runtime features.
+- `DispatcherRouterExample.java` — регистрация handlers (`update/message/callback/error`), `includeRouter`, `feedUpdate`.
+- `DispatcherIngestionIntegrationExample.java` — связка runtime с ingestion:
+  - polling: `DefaultLongPollingRunner` + `SdkPollingUpdateSource` + `Dispatcher`;
+  - webhook: `DefaultWebhookReceiver` + `Dispatcher`.
 
+## Актуальность
+
+- Примеры показывают фундаментальный API, который остается стабильным.
+- Аннотационный API и screen API в этих примерах намеренно не используются.

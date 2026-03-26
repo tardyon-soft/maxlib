@@ -2,41 +2,31 @@
 
 Java framework для разработки ботов на платформе MAX.
 
-README ниже ориентирован на использование библиотеки как опубликованных Maven-артефактов с вашим namespace:
+## Maven namespace
 
-- `groupId`: `ru.tardyon.maven`
+Используйте артефакты с `groupId`:
 
-Если у вас в репозитории артефакты публикуются под этим namespace, используйте координаты именно в таком виде.
+- `ru.tardyon.maven`
 
-## Что дает framework
+Пакеты в Java-коде остаются `ru.tardyon.botframework.*`.
 
-- typed MAX client (`max-client-core`, `max-model`);
-- runtime dispatcher/router (`max-dispatcher`);
-- FSM/scenes/wizard (`max-fsm`);
-- Spring Boot starter (`max-spring-boot-starter`);
-- testkit для unit/integration тестов (`max-testkit`).
+## Модули
 
-## Совместимость с docs-api MAX
+- `max-model` — типизированные модели MAX API.
+- `max-client-core` — HTTP/serialization client.
+- `max-dispatcher` — `Dispatcher`, `Router`, filters/middleware, annotation routes, screen API.
+- `max-fsm` — FSM storage/scope/state.
+- `max-spring-boot-starter` — Spring Boot auto-configuration (polling/webhook/dispatcher/storage).
+- `max-testkit` — тестовые утилиты.
+- `demo-spring-polling` — живое demo-приложение.
 
-- Сводная матрица endpoint coverage: [docs/max-api-coverage-matrix.md](docs/max-api-coverage-matrix.md)
-- Принцип совместимости:
-  - старые методы (`LEGACY`) сохраняются как синтаксический сахар/нормализованный API;
-  - новые методы `*Api` дают docs-совместимый transport-контракт (path/query/body/shape).
-
-## Требования
-
-- JDK 21+
-- Gradle 8+/9+ или Maven 3.9+
-
-## Установка зависимостей (namespace `ru.tardyon.maven`)
-
-### 1) Spring Boot проект (рекомендуется)
+## Установка
 
 Gradle:
 
 ```kotlin
 dependencies {
-    implementation("ru.tardyon.maven:max-spring-boot-starter:0.1.0")
+    implementation("ru.tardyon.maven:max-spring-boot-starter:<version>")
 }
 ```
 
@@ -46,43 +36,21 @@ Maven:
 <dependency>
   <groupId>ru.tardyon.maven</groupId>
   <artifactId>max-spring-boot-starter</artifactId>
-  <version>0.1.0</version>
+  <version>${maxlib.version}</version>
 </dependency>
 ```
 
-### 2) Vanilla Java runtime (без Spring)
-
-Gradle:
+Без Spring:
 
 ```kotlin
 dependencies {
-    implementation("ru.tardyon.maven:max-dispatcher:0.1.0")
-    implementation("ru.tardyon.maven:max-client-core:0.1.0")
-    implementation("ru.tardyon.maven:max-fsm:0.1.0")
+    implementation("ru.tardyon.maven:max-dispatcher:<version>")
+    implementation("ru.tardyon.maven:max-client-core:<version>")
+    implementation("ru.tardyon.maven:max-fsm:<version>")
 }
 ```
 
-Maven:
-
-```xml
-<dependency>
-  <groupId>ru.tardyon.maven</groupId>
-  <artifactId>max-dispatcher</artifactId>
-  <version>0.1.0</version>
-</dependency>
-<dependency>
-  <groupId>ru.tardyon.maven</groupId>
-  <artifactId>max-client-core</artifactId>
-  <version>0.1.0</version>
-</dependency>
-<dependency>
-  <groupId>ru.tardyon.maven</groupId>
-  <artifactId>max-fsm</artifactId>
-  <version>0.1.0</version>
-</dependency>
-```
-
-## Быстрый старт: Spring Boot (polling)
+## Spring Boot quick start (Polling)
 
 `application.yml`:
 
@@ -100,71 +68,53 @@ max:
         - message_callback
 ```
 
-Простой router-bean:
+Базовый router:
 
 ```java
-import java.util.concurrent.CompletableFuture;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
-import ru.tardyon.botframework.dispatcher.BuiltInFilters;
-import ru.tardyon.botframework.dispatcher.Router;
-import ru.tardyon.botframework.message.Messages;
-
-@SpringBootApplication
-public class BotApplication {
-    @Bean
-    Router botRouter() {
-        Router router = new Router("main");
-        router.message(BuiltInFilters.command("start"), (message, ctx) -> {
-            ctx.reply(Messages.text("Привет из MAX bot"));
-            return CompletableFuture.completedFuture(null);
-        });
-        return router;
-    }
+@Bean
+Router botRouter() {
+    Router router = new Router("main");
+    router.message(BuiltInFilters.command("start"), (message, ctx) -> {
+        ctx.reply(Messages.text("Привет из MAX bot"));
+        return CompletableFuture.completedFuture(null);
+    });
+    return router;
 }
 ```
 
-## Быстрый старт: аннотационный API (sugar поверх Router)
+`LongPollingRunnerConfig` теперь создается starter-ом автоматически, отдельный `@Bean` в приложении не нужен.
+
+## Аннотационный API (синтаксический sugar)
 
 ```java
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import ru.tardyon.botframework.dispatcher.RuntimeContext;
-import ru.tardyon.botframework.dispatcher.annotation.Callback;
-import ru.tardyon.botframework.dispatcher.annotation.CallbackPrefix;
-import ru.tardyon.botframework.dispatcher.annotation.Command;
-import ru.tardyon.botframework.dispatcher.annotation.Route;
-import ru.tardyon.botframework.message.Messages;
-
 @Route(value = "menu", autoRegister = true)
 public class MenuRoute {
-
     @Command("start")
-    public CompletionStage<Void> start(RuntimeContext ctx) {
+    public void start(RuntimeContext ctx) {
         ctx.reply(Messages.text("Откройте /menu"));
-        return CompletableFuture.completedFuture(null);
     }
 
     @Command("menu")
-    public void menu(RuntimeContext ctx) {
+    public CompletionStage<Void> menu(RuntimeContext ctx) {
         ctx.reply(Messages.text("Меню готово"));
+        return CompletableFuture.completedFuture(null);
     }
 
     @Callback("menu:pay")
-    public void pay(ru.tardyon.botframework.model.Callback callback, RuntimeContext ctx) {
+    public void pay(Callback callback, RuntimeContext ctx) {
         ctx.answerCallback("Оплата подтверждена");
     }
 
     @CallbackPrefix("menu:")
-    public void fallback(ru.tardyon.botframework.model.Callback callback, RuntimeContext ctx) {
-        ctx.answerCallback("Неизвестный пункт меню");
+    public void fallback(Callback callback, RuntimeContext ctx) {
+        ctx.answerCallback("Неизвестный пункт");
     }
 }
 ```
 
-Поддерживаемые аннотации:
+Поддерживаются:
 
-- `@Route(value, autoRegister=true|false)`
+- `@Route(value, autoRegister)`
 - `@Message(text, startsWith)`
 - `@Text(...)`
 - `@Command(...)`
@@ -176,86 +126,117 @@ public class MenuRoute {
 
 Важно:
 
-- Это дополнительный синтаксический слой.
-- Старый API через `Router`/`BuiltInFilters` работает без изменений.
-- В Spring starter `@Route` автоматически поднимается как bean (без обязательного `@Component`).
+- Это слой поверх существующего `Router` API.
+- Старый способ (`Router` + `BuiltInFilters`) полностью сохранен.
+- В Spring starter классы с `@Route` автоматически регистрируются как beans (без `@Component`).
 
-## Быстрый старт: vanilla Java (без Spring)
+## Handler сигнатуры
 
-```java
-import java.util.concurrent.CompletableFuture;
-import ru.tardyon.botframework.dispatcher.Dispatcher;
-import ru.tardyon.botframework.dispatcher.Router;
-import ru.tardyon.botframework.message.Messages;
+Поддерживаемые параметры: `RuntimeContext`, `Update`, `Message`, `Callback`, `User`, `Chat`, enrichment-значения, сервисы из `Dispatcher.registerService(...)`, FSM/scene/wizard зависимости.
 
-Dispatcher dispatcher = new Dispatcher()
-        .withBotClient(configuredMaxBotClient());
-
-Router router = new Router("main");
-router.message((message, ctx) -> {
-    ctx.reply(Messages.text("Привет, MAX!"));
-    return CompletableFuture.completedFuture(null);
-});
-
-dispatcher.includeRouter(router);
-```
-
-## Основные runtime-концепции
-
-### Dispatcher / Router
-
-- `Dispatcher` — корневой orchestration слой;
-- `Router` — модуль регистрации handlers;
-- поддерживается router tree через `includeRouter(...)`;
-- first-match routing + deterministic traversal.
-
-### Filters / Middleware
-
-Порядок pipeline:
-
-1. outer middleware
-2. filter evaluation
-3. inner middleware
-4. handler invocation
-
-Базовые фильтры:
-
-- `BuiltInFilters.command("start")`
-- `BuiltInFilters.textEquals(...)`
-- `BuiltInFilters.textStartsWith(...)`
-- `BuiltInFilters.callbackDataEquals(...)`
-- `BuiltInFilters.callbackDataStartsWith(...)`
-- `BuiltInFilters.state(...)`
-
-### DI и сигнатуры handler-ов
-
-Handler может получать:
-
-- `RuntimeContext`, `Update`, `Message`, `Callback`, `User`, `Chat`
-- filter/middleware enrichment данные
-- сервисы, зарегистрированные через `Dispatcher.registerService(...)`
-- FSM объекты (`FSMContext`, `SceneManager`, `WizardManager`)
-
-Допустимые возвращаемые типы handler-методов:
+Возвращаемый тип:
 
 - `void`
 - `CompletionStage<?>`
 
-## Spring режимы
+## Команды и приоритет
 
-### Polling
+`BuiltInFilters.command(...)` выполняется с повышенным приоритетом фильтра, чтобы команды обрабатывались раньше generic text/state handlers.
 
-- `max.bot.mode=POLLING`
-- starter поднимет `LongPollingRunner` и будет доставлять updates в `Dispatcher`
+## Screens API
 
-### Webhook
+Есть два способа:
 
-- `max.bot.mode=WEBHOOK`
-- starter поднимет webhook endpoint и тот же dispatcher pipeline
+- ручная регистрация `ScreenDefinition` в `ScreenRegistry`;
+- аннотации `@Screen`, `@Render`, `@OnAction`, `@OnText`.
 
-## Тестирование
+Для screen-flow используется отдельный FSM namespace `screen` (`context.fsm("screen")`), чтобы стейты экранов не конфликтовали с пользовательскими FSM стейтами.
 
-Для тестов используйте `max-testkit`:
+Виджеты поддерживают текст/кнопки и media attachments (`Widgets.media(...)`, `Widgets.attachment(...)`, `Widgets.attachments(...)`), но для MAX нужно передавать валидные upload/file reference.
+
+Пример запуска screen-flow из команды:
+
+```java
+router.message(BuiltInFilters.command("screen"), (message, ctx) ->
+        Screens.navigator(ctx, screenRegistry).start("home", Map.of())
+);
+```
+
+Пример ручного экрана:
+
+```java
+screenRegistry.register(new ScreenDefinition() {
+    @Override
+    public String id() {
+        return "home";
+    }
+
+    @Override
+    public CompletionStage<ScreenModel> render(ScreenContext context) {
+        return CompletableFuture.completedFuture(
+                ScreenModel.builder()
+                        .title("Главная")
+                        .widget(Widgets.text("Добро пожаловать"))
+                        .widget(Widgets.buttonRow(ScreenButton.of("Профиль", "open_profile")))
+                        .showBackButton(false)
+                        .build()
+        );
+    }
+
+    @Override
+    public CompletionStage<Void> onAction(ScreenContext context, String action, Map<String, String> args) {
+        if ("open_profile".equals(action)) {
+            return context.nav().push("profile", Map.of("name", "Гость"));
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+});
+```
+
+Пример аннотационного экрана:
+
+```java
+@Screen("profile")
+public final class ProfileScreen {
+    @Render
+    public ScreenModel render(ScreenContext ctx) {
+        String name = String.valueOf(ctx.params().getOrDefault("name", "Гость"));
+        return ScreenModel.builder()
+                .title("Профиль")
+                .widget(Widgets.text("Имя: " + name))
+                .showBackButton(true)
+                .build();
+    }
+
+    @OnText
+    public CompletionStage<Void> onText(ScreenContext ctx, String text) {
+        String next = text == null || text.isBlank() ? "Гость" : text.trim();
+        return ctx.nav().replace("profile", Map.of("name", next));
+    }
+}
+```
+
+## Storage
+
+Поддержка FSM storage:
+
+- `MEMORY` (по умолчанию)
+- `REDIS` (через `spring-boot-starter-data-redis` и `max.bot.storage.type=REDIS`)
+
+## MAX API docs compatibility
+
+- Матрица покрытия endpoint-ов: [docs/max-api-coverage-matrix.md](docs/max-api-coverage-matrix.md)
+- Новые `*Api` методы клиентского слоя повторяют transport shape docs-api.
+- Legacy-методы сохранены как совместимый sugar слой.
+
+## Документация и демо
+
+- Demo приложение: [demo-spring-polling/README.md](demo-spring-polling/README.md)
+- ADR: [docs/adr/README.md](docs/adr/README.md)
+
+## Тестирование (max-testkit)
+
+Полезные утилиты:
 
 - `DispatcherTestKit`
 - `UpdateFixtures`

@@ -48,6 +48,40 @@ class StateKeyStrategiesTest {
     }
 
     @Test
+    void resolvesUserFromCallbackSourceMessageWhenCallbackUserIsMissing() {
+        Message callbackMessage = new Message(
+                new MessageId("msg-cb-fallback"),
+                new Chat(new ChatId("c-9"), ChatType.PRIVATE, null, null, null),
+                new User(new UserId("u-9"), null, null, null, null, false, null),
+                "callback",
+                Instant.parse("2026-01-01T00:00:02Z"),
+                null,
+                null,
+                null
+        );
+        Callback callback = new Callback(
+                new CallbackId("cb-fallback"),
+                "action:fallback",
+                null,
+                callbackMessage,
+                Instant.parse("2026-01-01T00:00:03Z")
+        );
+        Update update = new Update(
+                new UpdateId("upd-cb-fallback"),
+                UpdateType.CALLBACK,
+                null,
+                callback,
+                null,
+                Instant.parse("2026-01-01T00:00:03Z")
+        );
+
+        StateKey key = StateKeyStrategies.userInChat().resolve(update);
+
+        assertEquals(new UserId("u-9"), key.userId());
+        assertEquals(new ChatId("c-9"), key.chatId());
+    }
+
+    @Test
     void failsWhenScopeDataCannotBeResolved() {
         Update update = new Update(
                 new UpdateId("upd-3"),

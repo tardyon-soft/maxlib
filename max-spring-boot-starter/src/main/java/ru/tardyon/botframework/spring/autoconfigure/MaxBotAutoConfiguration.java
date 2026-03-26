@@ -2,6 +2,9 @@ package ru.tardyon.botframework.spring.autoconfigure;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +52,9 @@ import ru.tardyon.botframework.spring.polling.SpringPollingBootstrap;
 import ru.tardyon.botframework.spring.polling.SpringPollingLifecycle;
 import ru.tardyon.botframework.spring.properties.MaxBotProperties;
 import ru.tardyon.botframework.spring.properties.MaxBotStorageType;
+import ru.tardyon.botframework.screen.AnnotatedScreenRegistrar;
+import ru.tardyon.botframework.screen.InMemoryScreenRegistry;
+import ru.tardyon.botframework.screen.ScreenRegistry;
 import ru.tardyon.botframework.spring.webhook.SpringWebhookAdapter;
 import ru.tardyon.botframework.spring.webhook.SpringWebhookController;
 import ru.tardyon.botframework.upload.UploadService;
@@ -69,6 +75,13 @@ public class MaxBotAutoConfiguration {
     @ConditionalOnProperty(name = "max.bot.route-component-scan.enabled", havingValue = "true", matchIfMissing = true)
     public static RouteComponentAutoRegistrar routeComponentAutoRegistrar() {
         return new RouteComponentAutoRegistrar();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "max.bot.route-component-scan.enabled", havingValue = "true", matchIfMissing = true)
+    public static ScreenComponentAutoRegistrar screenComponentAutoRegistrar() {
+        return new ScreenComponentAutoRegistrar();
     }
 
     @Bean
@@ -198,6 +211,12 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public ScreenRegistry screenRegistry() {
+        return new InMemoryScreenRegistry();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public MessagingFacade messagingFacade(
             MaxBotClient maxBotClient,
             ObjectProvider<MessageTarget.UserChatResolver> userChatResolverProvider
@@ -237,6 +256,7 @@ public class MaxBotAutoConfiguration {
             ObjectProvider<UploadService> uploadServiceProvider,
             ObjectProvider<SceneRegistry> sceneRegistryProvider,
             ObjectProvider<SceneStorage> sceneStorageProvider,
+            ObjectProvider<ScreenRegistry> screenRegistryProvider,
             ObjectProvider<Router> routerProvider
     ) {
         log.debug("Creating Dispatcher bean: mode={}, baseUrl={}", properties.getMode(), properties.getBaseUrl());
@@ -256,6 +276,10 @@ public class MaxBotAutoConfiguration {
         SceneStorage sceneStorage = sceneStorageProvider.getIfAvailable();
         if (sceneStorage != null) {
             dispatcher.withSceneStorage(sceneStorage);
+        }
+        ScreenRegistry screenRegistry = screenRegistryProvider.getIfAvailable();
+        if (screenRegistry != null) {
+            dispatcher.registerService(ScreenRegistry.class, screenRegistry);
         }
 
         List<Router> routers = routerProvider.orderedStream().toList();
@@ -302,6 +326,23 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public AnnotatedScreenRegistrar annotatedScreenRegistrar() {
+        return new AnnotatedScreenRegistrar();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public SpringAnnotatedScreenBootstrap springAnnotatedScreenBootstrap(
+            ScreenRegistry screenRegistry,
+            AnnotatedScreenRegistrar annotatedScreenRegistrar,
+            ObjectProvider<Object> beanProvider
+    ) {
+        log.debug("Creating SpringAnnotatedScreenBootstrap bean");
+        return new SpringAnnotatedScreenBootstrap(screenRegistry, annotatedScreenRegistrar, beanProvider);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public SpringPollingBootstrap springPollingBootstrap(ObjectProvider<LongPollingRunner> runnerProvider) {
         return new SpringPollingBootstrap(runnerProvider.getIfAvailable());
     }
@@ -327,8 +368,16 @@ public class MaxBotAutoConfiguration {
                 properties.getPolling().getLimit(),
                 properties.getPolling().getTypes()
         );
+        ThreadFactory threadFactory = runnable -> {
+            Thread thread = new Thread(runnable, "max-long-polling-runner");
+            thread.setDaemon(false);
+            return thread;
+        };
+        ExecutorService executor = Executors.newSingleThreadExecutor(threadFactory);
+
         return LongPollingRunnerConfig.builder()
                 .request(request)
+                .executor(executor, true)
                 .build();
     }
 

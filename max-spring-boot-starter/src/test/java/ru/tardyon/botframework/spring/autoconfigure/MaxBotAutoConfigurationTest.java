@@ -43,6 +43,11 @@ import ru.tardyon.botframework.model.User;
 import ru.tardyon.botframework.model.UserId;
 import ru.tardyon.botframework.message.MediaMessagingFacade;
 import ru.tardyon.botframework.message.MessagingFacade;
+import ru.tardyon.botframework.screen.ScreenContext;
+import ru.tardyon.botframework.screen.ScreenModel;
+import ru.tardyon.botframework.screen.ScreenRegistry;
+import ru.tardyon.botframework.screen.annotation.Render;
+import ru.tardyon.botframework.screen.annotation.Screen;
 import ru.tardyon.botframework.spring.polling.SpringPollingBootstrap;
 import ru.tardyon.botframework.spring.properties.MaxBotProperties;
 import ru.tardyon.botframework.spring.properties.MaxBotStorageType;
@@ -72,6 +77,7 @@ class MaxBotAutoConfigurationTest {
             assertThat(context).hasSingleBean(FSMStorage.class);
             assertThat(context).hasSingleBean(SceneRegistry.class);
             assertThat(context).hasSingleBean(SceneStorage.class);
+            assertThat(context).hasSingleBean(ScreenRegistry.class);
             assertThat(context).hasSingleBean(MessagingFacade.class);
             assertThat(context).hasSingleBean(CallbackFacade.class);
             assertThat(context).hasSingleBean(ChatActionsFacade.class);
@@ -214,6 +220,13 @@ class MaxBotAutoConfigurationTest {
                 });
     }
 
+    @Test
+    void autoRegistersAnnotatedScreenBeansIntoScreenRegistry() {
+        contextRunner
+                .withBean("sampleScreen", SampleAnnotatedScreen.class, SampleAnnotatedScreen::new)
+                .run(context -> assertTrue(context.getBean(ScreenRegistry.class).find("sample").isPresent()));
+    }
+
     private static Update sampleUpdate(String text) {
         return new Update(
                 new UpdateId("u-spring-1"),
@@ -232,5 +245,13 @@ class MaxBotAutoConfigurationTest {
                 null,
                 Instant.parse("2026-03-13T00:00:00Z")
         );
+    }
+
+    @Screen("sample")
+    static final class SampleAnnotatedScreen {
+        @Render
+        public ScreenModel render(ScreenContext context) {
+            return ScreenModel.builder().title("sample").build();
+        }
     }
 }

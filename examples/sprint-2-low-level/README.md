@@ -1,13 +1,14 @@
 # Sprint 2 Low-level Examples
 
-Эти примеры показывают transport-level использование Sprint 2 до появления Dispatcher.
+Transport-level примеры без runtime dispatcher слоя.
 
-## Files
+## Файлы
 
-- `LongPollingExample.java` — `MaxBotClient` + `SdkPollingUpdateSource` + `DefaultLongPollingRunner`
-- `WebhookHandlingExample.java` — `DefaultWebhookReceiver` + secret validation + result -> HTTP status mapping
+- `LongPollingExample.java` — `MaxBotClient` + `SdkPollingUpdateSource` + `DefaultLongPollingRunner`.
+- `WebhookHandlingExample.java` — `DefaultWebhookReceiver` + secret validation + mapping в HTTP status.
 
-## Notes
+## Актуальность
 
-- Это иллюстративные low-level examples, они не подключены как отдельный Gradle module.
-- Перед запуском polling примера задайте `MAX_BOT_TOKEN`.
+- Примеры остаются валидными как низкоуровневый путь интеграции.
+- Это не отдельный Gradle модуль, а reference snippets.
+- Для polling нужен `MAX_BOT_TOKEN`.
