@@ -53,7 +53,9 @@ class MaxBotPropertiesTest {
                         "max.bot.webhook.secret=secret-1",
                         "max.bot.webhook.max-in-flight=16",
                         "max.bot.storage.type=MEMORY",
-                        "max.bot.storage.state-scope=CHAT"
+                        "max.bot.storage.state-scope=CHAT",
+                        "max.bot.storage.redis.key-prefix=max:test:fsm",
+                        "max.bot.storage.redis.ttl=120s"
                 )
                 .run(context -> {
                     MaxBotProperties properties = context.getBean(MaxBotProperties.class);
@@ -73,6 +75,8 @@ class MaxBotPropertiesTest {
                     assertEquals(16, properties.getWebhook().getMaxInFlight());
                     assertEquals(MaxBotStorageType.MEMORY, properties.getStorage().getType());
                     assertEquals(StateScope.CHAT, properties.getStorage().getStateScope());
+                    assertEquals("max:test:fsm", properties.getStorage().getRedis().getKeyPrefix());
+                    assertEquals(java.time.Duration.ofSeconds(120), properties.getStorage().getRedis().getTtl());
                 });
     }
 

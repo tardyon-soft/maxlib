@@ -9,6 +9,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ApiMessageLink(
         @JsonProperty("type") String type,
-        @JsonProperty("message") ApiMessage message
+        @JsonProperty("sender") ApiUser sender,
+        @JsonProperty("chat_id") Long chatId,
+        @JsonProperty("message") ApiLinkedMessage message
 ) {
 }

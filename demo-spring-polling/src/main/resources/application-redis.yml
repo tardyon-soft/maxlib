@@ -1,0 +1,17 @@
+max:
+  bot:
+    storage:
+      type: REDIS
+      state-scope: USER_IN_CHAT
+      redis:
+        key-prefix: demo:max:fsm
+        ttl: 12h
+
+spring:
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      database: ${SPRING_DATA_REDIS_DATABASE:0}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+      timeout: 3s

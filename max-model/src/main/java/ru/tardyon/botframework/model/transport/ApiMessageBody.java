@@ -9,10 +9,14 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ApiMessageBody(
+        @JsonProperty("mid") String mid,
+        @JsonProperty("seq") Long seq,
         @JsonProperty("text") String text,
-        @JsonProperty("attachments") List<Object> attachments
+        @JsonProperty("attachments") List<Object> attachments,
+        @JsonProperty("markup") List<Object> markup
 ) {
     public ApiMessageBody {
         attachments = attachments == null ? List.of() : List.copyOf(attachments);
+        markup = markup == null ? List.of() : List.copyOf(markup);
     }
 }

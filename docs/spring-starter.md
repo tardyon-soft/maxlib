@@ -26,8 +26,13 @@
 
 `max.bot.storage.*`:
 
-- `type` (`MEMORY`)
+- `type` (`MEMORY | REDIS`)
 - `state-scope` (`USER | CHAT | USER_IN_CHAT`)
+
+`max.bot.storage.redis.*` (when `type=REDIS`):
+
+- `key-prefix` (default `max:bot:fsm`)
+- `ttl` (optional, example `120s`)
 
 `max.bot.route-component-scan.*`:
 

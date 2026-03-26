@@ -68,12 +68,15 @@ public final class MaxApiModelMapper {
         Objects.requireNonNull(source, "source");
         Chat chat = toNormalizedChat(source);
         MessageId replyTo = null;
-        if (source.link() != null && source.link().message() != null && source.link().message().messageId() != null) {
-            replyTo = new MessageId(source.link().message().messageId().toString());
+        if (source.link() != null && source.link().message() != null) {
+            String linkedMessageId = source.link().message().mid();
+            if (linkedMessageId != null && !linkedMessageId.isBlank()) {
+                replyTo = new MessageId(linkedMessageId);
+            }
         }
 
         return new Message(
-                new MessageId(stringId(source.messageId(), "msg")),
+                new MessageId(stringId(extractMessageId(source), "msg")),
                 chat,
                 source.sender() == null ? null : toNormalized(source.sender()),
                 source.body() == null ? null : source.body().text(),
@@ -89,7 +92,7 @@ public final class MaxApiModelMapper {
         Message callbackMessage = source.message() == null ? fallbackCallbackMessage(source) : toNormalized(source.message());
         return new Callback(
                 new CallbackId(stringId(source.callbackId(), "cb")),
-                source.data(),
+                source.payload(),
                 source.sender() == null ? null : toNormalized(source.sender()),
                 callbackMessage,
                 toInstant(source.timestamp())
@@ -112,9 +115,7 @@ public final class MaxApiModelMapper {
         }
 
         return new Update(
-                new UpdateId(source.updateId() == null
-                        ? syntheticUpdateId(source.updateType(), source.timestamp())
-                        : source.updateId().toString()),
+                new UpdateId(syntheticUpdateId(source)),
                 type,
                 message,
                 callback,
@@ -278,7 +279,16 @@ public final class MaxApiModelMapper {
         return Instant.ofEpochSecond(unixTime);
     }
 
-    private static String syntheticUpdateId(String type, Long timestamp) {
+    private static String syntheticUpdateId(ApiUpdate source) {
+        if (source.callback() != null && source.callback().callbackId() != null && !source.callback().callbackId().isBlank()) {
+            return "upd-cb-" + source.callback().callbackId();
+        }
+        String messageId = extractMessageId(source.message());
+        if (messageId != null && !messageId.isBlank()) {
+            return "upd-msg-" + messageId;
+        }
+        String type = source.updateType();
+        Long timestamp = source.timestamp();
         String normalizedType = type == null || type.isBlank() ? "unknown" : type;
         long ts = timestamp == null ? 0L : timestamp;
         return "upd-" + normalizedType + "-" + ts;
@@ -296,6 +306,16 @@ public final class MaxApiModelMapper {
             return value;
         }
         return prefix + "-unknown";
+    }
+
+    private static String extractMessageId(ApiMessage source) {
+        if (source == null) {
+            return null;
+        }
+        if (source.body() != null && source.body().mid() != null && !source.body().mid().isBlank()) {
+            return source.body().mid();
+        }
+        return source.messageId();
     }
 
     private static String displayName(ApiUser user) {

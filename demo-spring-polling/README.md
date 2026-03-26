@@ -11,6 +11,7 @@
 - `@Route` auto-detect как Spring bean (без обязательного `@Component`);
 - built-in filters;
 - inline keyboard + callback handling;
+- screen API demo (`/screen`) с одним активным экраном и back stack;
 - chat action (`typing_on`);
 - FSM (`/form`) через `BuiltInFilters.state(...)` и `FSMContext`.
 - smoke bot команды для ручной проверки MAX API (`/qa_*`).
@@ -51,12 +52,34 @@ export DEMO_SMOKE_WEBHOOK_URL=https://example.com/max-webhook
 ./gradlew :demo-spring-polling:run
 ```
 
+### Запуск с Redis FSM
+
+Поднять Redis:
+
+```bash
+docker compose -f demo-spring-polling/docker-compose.redis.yml up -d
+```
+
+Запустить demo с профилем `redis`:
+
+```bash
+SPRING_PROFILES_ACTIVE=redis ./gradlew :demo-spring-polling:run
+```
+
+Профиль `redis` задаёт:
+- `max.bot.storage.type=REDIS`
+- `max.bot.storage.state-scope=USER_IN_CHAT`
+- `max.bot.storage.redis.key-prefix=demo:max:fsm`
+- `max.bot.storage.redis.ttl=12h`
+- `spring.data.redis.*` (host/port/database/password через env)
+
 ## Команды в demo
 
 - `/start` — приветствие и список команд.
 - `/menu` — сообщение с inline keyboard.
 - callback `menu:pay`, `menu:help` — ответ на callback и update текущего сообщения.
 - `/typing` — отправка chat action `typing_on`.
+- `/screen` — запуск screen-flow (home/profile/settings) с одним живым сообщением и кнопкой `Назад`.
 - `/form` — старт FSM flow (ожидание имени), затем сохранение имени и завершение.
 - любое другое сообщение — echo reply.
 
@@ -66,6 +89,10 @@ export DEMO_SMOKE_WEBHOOK_URL=https://example.com/max-webhook
 - callback `amenu:*` — обработка через `@Callback/@CallbackPrefix`.
 - `/aform` — FSM flow через `@State(...)`.
 - `/aecho <text>` — обработка через `@Message(text=..., startsWith=true)`.
+
+Screen API callbacks:
+- `ui:act:*` — действия виджет-кнопок.
+- `ui:nav:back` — переход назад по стеку экранов.
 
 Smoke API:
 - `/qa` — список smoke команд.

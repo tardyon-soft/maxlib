@@ -1,25 +1,24 @@
 {
   "updates": [
     {
-      "updateId": "upd-1",
-      "type": "message",
+      "update_type": "message_created",
+      "timestamp": 1735689600,
       "message": {
-        "messageId": "m-1",
-        "chat": {
-          "id": "c-100",
-          "type": "group",
-          "title": "Team"
+        "recipient": {
+          "chat_id": 247923392,
+          "chat_type": "dialog"
         },
-        "from": {
-          "id": "u-1",
+        "sender": {
+          "user_id": 101,
+          "first_name": "Alice",
           "username": "alice",
-          "displayName": "Alice",
-          "bot": false
+          "is_bot": false
         },
-        "text": "hello",
-        "createdAt": "2026-01-01T00:00:00Z",
-        "entities": [],
-        "attachments": []
+        "timestamp": 1735689600,
+        "body": {
+          "mid": "m-1",
+          "text": "hello"
+        }
       }
     }
   ],

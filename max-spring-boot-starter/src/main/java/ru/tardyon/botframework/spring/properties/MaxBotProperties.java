@@ -167,6 +167,8 @@ public class MaxBotProperties {
 
         @NotNull
         private StateScope stateScope = StateScope.USER_IN_CHAT;
+        @Valid
+        private final Redis redis = new Redis();
 
         public MaxBotStorageType getType() {
             return type;
@@ -182,6 +184,42 @@ public class MaxBotProperties {
 
         public void setStateScope(StateScope stateScope) {
             this.stateScope = stateScope;
+        }
+
+        public Redis getRedis() {
+            return redis;
+        }
+    }
+
+    /**
+     * Redis-backed FSM storage properties (`max.bot.storage.redis.*`).
+     */
+    public static final class Redis {
+        /**
+         * Key prefix for all FSM entries.
+         */
+        @NotBlank
+        private String keyPrefix = "max:bot:fsm";
+
+        /**
+         * Optional TTL for FSM keys. If null, keys do not expire.
+         */
+        private Duration ttl;
+
+        public String getKeyPrefix() {
+            return keyPrefix;
+        }
+
+        public void setKeyPrefix(String keyPrefix) {
+            this.keyPrefix = keyPrefix;
+        }
+
+        public Duration getTtl() {
+            return ttl;
+        }
+
+        public void setTtl(Duration ttl) {
+            this.ttl = ttl;
         }
     }
 }

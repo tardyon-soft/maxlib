@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ApiUpdate(
-        @JsonProperty("update_id") Long updateId,
         @JsonProperty("update_type") String updateType,
         @JsonProperty("timestamp") Long timestamp,
         @JsonProperty("message") ApiMessage message,

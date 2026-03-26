@@ -16,6 +16,9 @@ import ru.tardyon.botframework.message.Buttons;
 import ru.tardyon.botframework.message.Keyboards;
 import ru.tardyon.botframework.message.Messages;
 import ru.tardyon.botframework.model.ChatAction;
+import ru.tardyon.botframework.screen.ScreenRegistry;
+import ru.tardyon.botframework.screen.ScreenRouter;
+import ru.tardyon.botframework.screen.Screens;
 import ru.tardyon.botframework.spring.properties.MaxBotProperties;
 
 /**
@@ -31,18 +34,25 @@ public class DemoSpringPollingApplication {
     @Bean
     Router demoRouter() {
         Router router = new Router("demo-main");
+        ScreenRegistry screenRegistry = ScreenDemoSupport.buildRegistry();
+        ScreenRouter.attach(router, screenRegistry);
 
         router.message(BuiltInFilters.command("start"), (message, ctx) -> {
-            ctx.reply(Messages.text(
+            ctx.messaging().send(message.chat().id(), Messages.text(
                     "Привет! Классический API: /menu, /typing, /form. "
                             + "Аннотационный API: /astart, /amenu, /aform, /aecho <text>. "
+                            + "App Mode: /app (UX без истории сообщений). /screen - demo screen stack. "
                             + "Smoke API: /qa, /qa_run_all, /qa_callback, /qa_set_video <token>"
             ));
             return CompletableFuture.completedFuture(null);
         });
 
+        router.message(BuiltInFilters.command("screen"), (message, ctx) ->
+                Screens.navigator(ctx, screenRegistry).start("home", Map.of())
+        );
+
         router.message(BuiltInFilters.command("menu"), (message, ctx) -> {
-            ctx.reply(
+            ctx.messaging().send(message.chat().id(),
                     Messages.text("Выберите действие")
                             .keyboard(Keyboards.inline(k -> k.row(
                                     Buttons.callback("Оплатить", "menu:pay"),
@@ -71,13 +81,13 @@ public class DemoSpringPollingApplication {
 
         router.message(BuiltInFilters.command("typing"), (message, ctx) -> {
             ctx.chatAction(ChatAction.TYPING);
-            ctx.reply(Messages.text("Отправлен chat action: typing"));
+            ctx.messaging().send(message.chat().id(), Messages.text("Отправлен chat action: typing"));
             return CompletableFuture.completedFuture(null);
         });
 
         router.message(BuiltInFilters.command("form"), (message, ctx) ->
                 ctx.fsm().setState("demo.form.name")
-                        .thenAccept(ignored -> ctx.reply(Messages.text("Введите ваше имя:")))
+                        .thenAccept(ignored -> ctx.messaging().send(message.chat().id(), Messages.text("Введите ваше имя:")))
         );
 
         router.message(BuiltInFilters.state("demo.form.name"), (message, ctx) -> {
@@ -87,12 +97,18 @@ public class DemoSpringPollingApplication {
 
             return ctx.fsm().updateData(Map.of("name", name))
                     .thenCompose(updated -> ctx.fsm().setState("demo.form.done"))
-                    .thenAccept(ignored -> ctx.reply(Messages.text("Спасибо, " + name + "! Форма сохранена.")));
+                    .thenAccept(ignored -> ctx.messaging().send(
+                            message.chat().id(),
+                            Messages.text("Спасибо, " + name + "! Форма сохранена.")
+                    ));
         });
 
         router.message(BuiltInFilters.state("demo.form.done"), (message, ctx) ->
                 ctx.fsm().clear().thenAccept(ignored ->
-                        ctx.reply(Messages.text("Форма уже заполнена. Для нового ввода снова используйте /form")))
+                        ctx.messaging().send(
+                                message.chat().id(),
+                                Messages.text("Форма уже заполнена. Для нового ввода снова используйте /form")
+                        ))
         );
 
         return router;

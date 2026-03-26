@@ -11,8 +11,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import ru.tardyon.botframework.client.MaxApiClientConfig;
 import ru.tardyon.botframework.client.MaxBotClient;
 import ru.tardyon.botframework.client.MaxRequest;
@@ -44,6 +46,7 @@ import ru.tardyon.botframework.message.MessagingFacade;
 import ru.tardyon.botframework.spring.polling.SpringPollingBootstrap;
 import ru.tardyon.botframework.spring.properties.MaxBotProperties;
 import ru.tardyon.botframework.spring.properties.MaxBotStorageType;
+import ru.tardyon.botframework.spring.storage.RedisFSMStorage;
 import ru.tardyon.botframework.spring.webhook.SpringWebhookAdapter;
 import ru.tardyon.botframework.upload.InputFile;
 import ru.tardyon.botframework.upload.UploadRequest;
@@ -197,6 +200,18 @@ class MaxBotAutoConfigurationTest {
                     );
                 })
                 .run(context -> assertThat(context).hasSingleBean(SpringWebhookAdapter.class))  ;
+    }
+
+    @Test
+    void createsRedisFsmStorageWhenConfigured() {
+        contextRunner
+                .withPropertyValues("max.bot.storage.type=REDIS")
+                .withBean(RedisConnectionFactory.class, () -> Mockito.mock(RedisConnectionFactory.class))
+                .run(context -> {
+                    assertThat(context).hasSingleBean(FSMStorage.class);
+                    assertTrue(context.getBean(FSMStorage.class) instanceof RedisFSMStorage);
+                    assertEquals(MaxBotStorageType.REDIS, context.getBean(MaxBotProperties.class).getStorage().getType());
+                });
     }
 
     private static Update sampleUpdate(String text) {

@@ -162,11 +162,9 @@ class DefaultWebhookReceiverTest {
     private static String validTransportPayload() {
         return """
                 {
-                  "update_id": 4001,
                   "update_type": "message_created",
                   "timestamp": 1735689600,
                   "message": {
-                    "message_id": 3001,
                     "sender": {
                       "user_id": 1001,
                       "first_name": "Alice",
@@ -179,6 +177,7 @@ class DefaultWebhookReceiverTest {
                     },
                     "timestamp": 1735689600,
                     "body": {
+                      "mid": "3001",
                       "text": "hello"
                     }
                   }

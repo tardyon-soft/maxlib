@@ -142,6 +142,17 @@ class MessagingFacadeTest {
         verify(client).deleteMessage(new MessageId("m-other"));
     }
 
+    @Test
+    void deleteSkipsSyntheticUnknownMessageId() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        MessagingFacade facade = new MessagingFacade(client);
+
+        boolean deleted = facade.delete(new MessageId("msg-unknown"));
+
+        assertEquals(false, deleted);
+        verify(client, never()).deleteMessage(any(MessageId.class));
+    }
+
     private static Message sampleMessage(String messageId, String text) {
         return new Message(
                 new MessageId(messageId),

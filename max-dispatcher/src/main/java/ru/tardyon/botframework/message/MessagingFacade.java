@@ -68,7 +68,11 @@ public final class MessagingFacade {
     }
 
     public boolean delete(MessageId messageId) {
-        return client.deleteMessage(Objects.requireNonNull(messageId, "messageId"));
+        MessageId value = Objects.requireNonNull(messageId, "messageId");
+        if (isSyntheticUnknownMessageId(value)) {
+            return false;
+        }
+        return client.deleteMessage(value);
     }
 
     private static boolean isSyntheticUnknownMessageId(MessageId messageId) {

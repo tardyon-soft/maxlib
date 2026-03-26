@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ApiCallback(
         @JsonProperty("callback_id") String callbackId,
-        @JsonProperty("data") @JsonAlias({"payload", "callback_data"}) String data,
+        @JsonProperty("payload") @JsonAlias({"data", "callback_data"}) String payload,
         @JsonProperty("sender") @JsonAlias({"user", "from"}) ApiUser sender,
         @JsonProperty("message") ApiMessage message,
         @JsonProperty("message_id") String messageId,

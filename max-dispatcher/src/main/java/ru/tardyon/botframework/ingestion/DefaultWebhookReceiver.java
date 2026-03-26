@@ -137,7 +137,7 @@ public final class DefaultWebhookReceiver implements WebhookReceiver {
     private static boolean isMeaningfulApiUpdate(ApiUpdate update) {
         return update != null
                 && (update.updateType() != null
-                || update.updateId() != null
+                || update.timestamp() != null
                 || hasMeaningfulApiMessage(update.message())
                 || hasMeaningfulApiCallback(update.callback()));
     }
@@ -158,6 +158,6 @@ public final class DefaultWebhookReceiver implements WebhookReceiver {
                 || callback.timestamp() != null
                 || callback.sender() != null
                 || callback.message() != null
-                || callback.data() != null);
+                || callback.payload() != null);
     }
 }

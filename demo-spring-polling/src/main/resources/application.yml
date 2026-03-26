@@ -17,4 +17,4 @@ demo:
 
 logging:
   level:
-    ru.tardyon.botframework: INFO
+    ru.tardyon.botframework: DEBUG

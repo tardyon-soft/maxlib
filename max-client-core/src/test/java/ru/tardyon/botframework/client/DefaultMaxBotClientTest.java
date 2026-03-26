@@ -212,11 +212,10 @@ class DefaultMaxBotClientTest {
                 .setHeader("Content-Type", "application/json")
                 .setBody("""
                         {
-                          "mid": "m-raw-1",
                           "timestamp": 1735689600,
                           "recipient": {"chat_id": 247923392, "chat_type": "dialog"},
                           "sender": {"user_id": 1001, "first_name": "Alice", "is_bot": false},
-                          "body": {"text": "hello raw"}
+                          "body": {"mid": "m-raw-1", "text": "hello raw"}
                         }
                         """));
 
@@ -774,7 +773,7 @@ class DefaultMaxBotClientTest {
         assertThat(recorded.getPath()).contains("types=message_created%2Cmessage_callback");
         assertThat(response.marker()).isEqualTo(101L);
         assertThat(response.updates()).hasSize(1);
-        assertThat(response.updates().getFirst().updateId().value()).isEqualTo("upd-1");
+        assertThat(response.updates().getFirst().updateId().value()).isEqualTo("upd-msg-m-1");
     }
 
     @Test

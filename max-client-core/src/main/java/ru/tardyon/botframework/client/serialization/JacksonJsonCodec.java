@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.tardyon.botframework.client.error.MaxSerializationException;
 import ru.tardyon.botframework.model.Message;
 import ru.tardyon.botframework.model.mapping.MaxApiModelMapper;
+import ru.tardyon.botframework.model.response.GetUpdatesResponse;
 import ru.tardyon.botframework.model.response.MessageResponse;
 import ru.tardyon.botframework.model.response.MessagesResponse;
+import ru.tardyon.botframework.model.transport.ApiGetUpdatesResponse;
 import ru.tardyon.botframework.model.transport.ApiMessage;
 
 /**
@@ -30,6 +32,10 @@ public final class JacksonJsonCodec implements JsonCodec {
                 return fallback;
             }
             fallback = tryReadMessagesResponseFallback(source, targetType);
+            if (fallback != null) {
+                return fallback;
+            }
+            fallback = tryReadGetUpdatesResponseFallback(source, targetType);
             if (fallback != null) {
                 return fallback;
             }
@@ -97,6 +103,51 @@ public final class JacksonJsonCodec implements JsonCodec {
             return (T) new MessagesResponse(messages);
         } catch (Exception ignored) {
             return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T tryReadGetUpdatesResponseFallback(String source, Class<T> targetType) {
+        if (targetType != GetUpdatesResponse.class) {
+            return null;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(source);
+            JsonNode updatesNode = root.get("updates");
+            if (updatesNode == null || !updatesNode.isArray()) {
+                return null;
+            }
+
+            java.util.ArrayList<ru.tardyon.botframework.model.Update> updates = new java.util.ArrayList<>();
+            for (JsonNode node : updatesNode) {
+                ru.tardyon.botframework.model.Update normalized = tryTreeToValue(node, ru.tardyon.botframework.model.Update.class);
+                if (normalized != null) {
+                    updates.add(normalized);
+                    continue;
+                }
+                var apiUpdate = tryTreeToValue(node, ru.tardyon.botframework.model.transport.ApiUpdate.class);
+                if (apiUpdate != null) {
+                    updates.add(MaxApiModelMapper.toNormalized(apiUpdate));
+                }
+            }
+
+            Long marker = null;
+            JsonNode markerNode = root.get("marker");
+            if (markerNode != null && markerNode.isNumber()) {
+                marker = markerNode.longValue();
+            }
+
+            return (T) new GetUpdatesResponse(updates, marker);
+        } catch (Exception ignored) {
+            try {
+                ApiGetUpdatesResponse api = objectMapper.readValue(source, ApiGetUpdatesResponse.class);
+                return (T) new GetUpdatesResponse(
+                        api.updates().stream().map(MaxApiModelMapper::toNormalized).toList(),
+                        api.marker()
+                );
+            } catch (Exception alsoIgnored) {
+                return null;
+            }
         }
     }
 

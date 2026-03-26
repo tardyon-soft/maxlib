@@ -68,12 +68,50 @@ class MaxApiModelMapperTest {
     }
 
     @Test
+    void mapsReplyToFromLinkMessageMid() throws IOException {
+        ApiMessage api = objectMapper.readValue("""
+                {
+                  "sender": {
+                    "user_id": 1001,
+                    "first_name": "Alice",
+                    "username": "alice",
+                    "is_bot": false
+                  },
+                  "recipient": {
+                    "chat_id": 2001,
+                    "chat_type": "chat"
+                  },
+                  "timestamp": 1735689600,
+                  "link": {
+                    "type": "forward",
+                    "chat_id": 2001,
+                    "message": {
+                      "mid": "3000",
+                      "seq": 1,
+                      "text": "source"
+                    }
+                  },
+                  "body": {
+                    "mid": "3001",
+                    "text": "hello"
+                  }
+                }
+                """, ApiMessage.class);
+
+        var message = MaxApiModelMapper.toNormalized(api);
+
+        assertThat(message.messageId().value()).isEqualTo("3001");
+        assertThat(message.replyToMessageId()).isNotNull();
+        assertThat(message.replyToMessageId().value()).isEqualTo("3000");
+    }
+
+    @Test
     void mapsApiUpdateToNormalizedUpdate() throws IOException {
         ApiUpdate api = readFixture("update-message.json", ApiUpdate.class);
 
         var update = MaxApiModelMapper.toNormalized(api);
 
-        assertThat(update.updateId().value()).isEqualTo("4001");
+        assertThat(update.updateId().value()).isEqualTo("upd-msg-3001");
         assertThat(update.type()).isEqualTo(UpdateType.MESSAGE);
         assertThat(update.message()).isNotNull();
         assertThat(update.message().messageId().value()).isEqualTo("3001");
@@ -98,7 +136,6 @@ class MaxApiModelMapperTest {
     void mapsCallbackUsingPayloadAndUserAliases() throws IOException {
         ApiUpdate api = objectMapper.readValue("""
                 {
-                  "update_id": 5001,
                   "update_type": "message_callback",
                   "timestamp": 1735689600,
                   "callback": {
@@ -128,15 +165,13 @@ class MaxApiModelMapperTest {
     void mapsCallbackMessageFromUpdateMessageWhenCallbackMessageMissing() throws IOException {
         ApiUpdate api = objectMapper.readValue("""
                 {
-                  "update_id": 5002,
                   "update_type": "message_callback",
                   "timestamp": 1735689600,
                   "message": {
                     "timestamp": 1735689600,
-                    "body": {"text": "Menu"},
+                    "body": {"mid": "9001", "text": "Menu"},
                     "recipient": {"chat_id": 247923392, "chat_type": "dialog"},
-                    "sender": {"user_id": 1001, "first_name": "Alice", "is_bot": false},
-                    "message_id": 9001
+                    "sender": {"user_id": 1001, "first_name": "Alice", "is_bot": false}
                   },
                   "callback": {
                     "callback_id": "cb-token-2",
@@ -164,7 +199,6 @@ class MaxApiModelMapperTest {
     void mapsCallbackMessageFromChatIdAndMessageIdFallbackShape() throws IOException {
         ApiUpdate api = objectMapper.readValue("""
                 {
-                  "update_id": 5003,
                   "update_type": "message_callback",
                   "timestamp": 1735689600,
                   "callback": {

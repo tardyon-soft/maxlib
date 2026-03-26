@@ -66,7 +66,6 @@ class SdkPollingUpdateSourceTest {
         PollingFetchRequest request = new PollingFetchRequest(1L, 10, 10, List.of(UpdateEventType.MESSAGE_CREATED));
 
         ApiUpdate apiUpdate = new ApiUpdate(
-                55L,
                 "message_created",
                 1735689600L,
                 new ApiMessage(
@@ -75,7 +74,7 @@ class SdkPollingUpdateSourceTest {
                         new ApiRecipient(10L, null, "chat"),
                         1735689600L,
                         null,
-                        new ApiMessageBody("hello", List.of()),
+                        new ApiMessageBody("101", null, "hello", List.of(), List.of()),
                         null,
                         null
                 ),
@@ -88,7 +87,7 @@ class SdkPollingUpdateSourceTest {
         PollingBatch batch = source.poll(request);
 
         assertEquals(1, batch.updates().size());
-        assertEquals("55", batch.updates().getFirst().updateId().value());
+        assertEquals("upd-msg-101", batch.updates().getFirst().updateId().value());
         assertEquals(UpdateType.MESSAGE, batch.updates().getFirst().type());
         assertEquals(2L, batch.nextMarker());
     }

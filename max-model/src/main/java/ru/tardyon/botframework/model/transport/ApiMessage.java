@@ -1,7 +1,6 @@
 package ru.tardyon.botframework.model.transport;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -9,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ApiMessage(
-        @JsonProperty("message_id") @JsonAlias("mid") String messageId,
+        @JsonProperty("message_id") String messageId,
         @JsonProperty("sender") ApiUser sender,
         @JsonProperty("recipient") ApiRecipient recipient,
         @JsonProperty("timestamp") Long timestamp,

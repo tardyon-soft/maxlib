@@ -114,11 +114,74 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public FSMStorage fsmStorage(MaxBotProperties properties) {
+    public FSMStorage fsmStorage(
+            MaxBotProperties properties,
+            ApplicationContext applicationContext,
+            JsonCodec jsonCodec
+    ) {
         if (properties.getStorage().getType() == MaxBotStorageType.MEMORY) {
             return new MemoryStorage();
         }
+        if (properties.getStorage().getType() == MaxBotStorageType.REDIS) {
+            return createRedisStorageReflective(applicationContext, jsonCodec, properties);
+        }
         throw new IllegalStateException("Unsupported storage type: " + properties.getStorage().getType());
+    }
+
+    private static FSMStorage createRedisStorageReflective(
+            ApplicationContext applicationContext,
+            JsonCodec jsonCodec,
+            MaxBotProperties properties
+    ) {
+        try {
+            ClassLoader classLoader = MaxBotAutoConfiguration.class.getClassLoader();
+            Class<?> connectionFactoryClass = Class.forName(
+                    "org.springframework.data.redis.connection.RedisConnectionFactory",
+                    true,
+                    classLoader
+            );
+            Class<?> templateClass = Class.forName(
+                    "org.springframework.data.redis.core.StringRedisTemplate",
+                    true,
+                    classLoader
+            );
+            Class<?> storageClass = Class.forName(
+                    "ru.tardyon.botframework.spring.storage.RedisFSMStorage",
+                    true,
+                    classLoader
+            );
+
+            Object template = applicationContext.getBeanProvider(templateClass).getIfAvailable();
+            if (template == null) {
+                Object factory = applicationContext.getBeanProvider(connectionFactoryClass).getIfAvailable();
+                if (factory == null) {
+                    throw new IllegalStateException(
+                            "Redis storage is configured but RedisConnectionFactory is missing. "
+                                    + "Add spring-data-redis starter and redis connection properties."
+                    );
+                }
+                template = templateClass.getConstructor(connectionFactoryClass).newInstance(factory);
+            }
+
+            return (FSMStorage) storageClass
+                    .getConstructor(templateClass, JsonCodec.class, String.class, Duration.class)
+                    .newInstance(
+                            template,
+                            jsonCodec,
+                            properties.getStorage().getRedis().getKeyPrefix(),
+                            properties.getStorage().getRedis().getTtl()
+                    );
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(
+                    "Redis storage is configured but spring-data-redis is not on classpath. "
+                            + "Add dependency: org.springframework.boot:spring-boot-starter-data-redis",
+                    e
+            );
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to initialize Redis FSM storage", e);
+        }
     }
 
     @Bean

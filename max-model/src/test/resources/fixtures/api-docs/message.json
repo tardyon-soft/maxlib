@@ -1,5 +1,4 @@
 {
-  "message_id": 3001,
   "sender": {
     "user_id": 1001,
     "first_name": "Alice",
@@ -12,6 +11,7 @@
   },
   "timestamp": 1735689600,
   "body": {
+    "mid": "3001",
     "text": "hello"
   }
 }
