@@ -54,9 +54,15 @@ import ru.tardyon.botframework.spring.properties.MaxBotProperties;
 import ru.tardyon.botframework.spring.properties.MaxBotStorageType;
 import ru.tardyon.botframework.screen.AnnotatedScreenRegistrar;
 import ru.tardyon.botframework.screen.InMemoryScreenRegistry;
+import ru.tardyon.botframework.screen.LegacyStringScreenActionCodec;
+import ru.tardyon.botframework.screen.ScreenActionCodec;
 import ru.tardyon.botframework.screen.ScreenRegistry;
+import ru.tardyon.botframework.screen.TypedV1ScreenActionCodec;
+import ru.tardyon.botframework.screen.WidgetActionDispatcher;
+import ru.tardyon.botframework.screen.WidgetViewResolver;
 import ru.tardyon.botframework.spring.webhook.SpringWebhookAdapter;
 import ru.tardyon.botframework.spring.webhook.SpringWebhookController;
+import ru.tardyon.botframework.spring.widget.AnnotatedWidgetRegistry;
 import ru.tardyon.botframework.upload.UploadService;
 import ru.tardyon.botframework.message.MediaMessagingFacade;
 import ru.tardyon.botframework.message.MessageTarget;
@@ -217,6 +223,15 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public ScreenActionCodec screenActionCodec(MaxBotProperties properties) {
+        return switch (properties.getScreen().getCallback().getCodec().getMode()) {
+            case LEGACY_STRING -> new LegacyStringScreenActionCodec();
+            case TYPED_V1 -> new TypedV1ScreenActionCodec();
+        };
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public MessagingFacade messagingFacade(
             MaxBotClient maxBotClient,
             ObjectProvider<MessageTarget.UserChatResolver> userChatResolverProvider
@@ -257,6 +272,9 @@ public class MaxBotAutoConfiguration {
             ObjectProvider<SceneRegistry> sceneRegistryProvider,
             ObjectProvider<SceneStorage> sceneStorageProvider,
             ObjectProvider<ScreenRegistry> screenRegistryProvider,
+            ObjectProvider<ScreenActionCodec> screenActionCodecProvider,
+            ObjectProvider<WidgetViewResolver> widgetViewResolverProvider,
+            ObjectProvider<WidgetActionDispatcher> widgetActionDispatcherProvider,
             ObjectProvider<Router> routerProvider
     ) {
         log.debug("Creating Dispatcher bean: mode={}, baseUrl={}", properties.getMode(), properties.getBaseUrl());
@@ -280,6 +298,18 @@ public class MaxBotAutoConfiguration {
         ScreenRegistry screenRegistry = screenRegistryProvider.getIfAvailable();
         if (screenRegistry != null) {
             dispatcher.registerService(ScreenRegistry.class, screenRegistry);
+        }
+        ScreenActionCodec screenActionCodec = screenActionCodecProvider.getIfAvailable();
+        if (screenActionCodec != null) {
+            dispatcher.registerService(ScreenActionCodec.class, screenActionCodec);
+        }
+        WidgetViewResolver widgetViewResolver = widgetViewResolverProvider.getIfAvailable();
+        if (widgetViewResolver != null) {
+            dispatcher.registerService(WidgetViewResolver.class, widgetViewResolver);
+        }
+        WidgetActionDispatcher widgetActionDispatcher = widgetActionDispatcherProvider.getIfAvailable();
+        if (widgetActionDispatcher != null) {
+            dispatcher.registerService(WidgetActionDispatcher.class, widgetActionDispatcher);
         }
 
         List<Router> routers = routerProvider.orderedStream().toList();
@@ -332,13 +362,40 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public SpringScreenControllerRegistrar springScreenControllerRegistrar() {
+        return new SpringScreenControllerRegistrar();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public AnnotatedWidgetRegistry annotatedWidgetRegistry() {
+        return new AnnotatedWidgetRegistry();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public SpringAnnotatedScreenBootstrap springAnnotatedScreenBootstrap(
             ScreenRegistry screenRegistry,
             AnnotatedScreenRegistrar annotatedScreenRegistrar,
+            SpringScreenControllerRegistrar springScreenControllerRegistrar,
             ObjectProvider<Object> beanProvider
     ) {
         log.debug("Creating SpringAnnotatedScreenBootstrap bean");
-        return new SpringAnnotatedScreenBootstrap(screenRegistry, annotatedScreenRegistrar, beanProvider);
+        return new SpringAnnotatedScreenBootstrap(
+                screenRegistry,
+                annotatedScreenRegistrar,
+                springScreenControllerRegistrar,
+                beanProvider
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public SpringAnnotatedWidgetBootstrap springAnnotatedWidgetBootstrap(
+            AnnotatedWidgetRegistry annotatedWidgetRegistry,
+            ObjectProvider<Object> beanProvider
+    ) {
+        return new SpringAnnotatedWidgetBootstrap(annotatedWidgetRegistry, beanProvider);
     }
 
     @Bean

@@ -12,6 +12,7 @@ import org.springframework.util.ClassUtils;
 import ru.tardyon.botframework.screen.AnnotatedScreenRegistrar;
 import ru.tardyon.botframework.screen.ScreenRegistry;
 import ru.tardyon.botframework.screen.annotation.Screen;
+import ru.tardyon.botframework.spring.screen.annotation.ScreenController;
 
 /**
  * Auto-registers {@code @Screen(autoRegister = true)} beans into {@link ScreenRegistry}.
@@ -20,15 +21,18 @@ final class SpringAnnotatedScreenBootstrap implements SmartInitializingSingleton
     private static final Logger log = LoggerFactory.getLogger(SpringAnnotatedScreenBootstrap.class);
     private final ScreenRegistry screenRegistry;
     private final AnnotatedScreenRegistrar registrar;
+    private final SpringScreenControllerRegistrar controllerRegistrar;
     private final ObjectProvider<Object> beanProvider;
 
     SpringAnnotatedScreenBootstrap(
             ScreenRegistry screenRegistry,
             AnnotatedScreenRegistrar registrar,
+            SpringScreenControllerRegistrar controllerRegistrar,
             ObjectProvider<Object> beanProvider
     ) {
         this.screenRegistry = screenRegistry;
         this.registrar = registrar;
+        this.controllerRegistrar = controllerRegistrar;
         this.beanProvider = beanProvider;
     }
 
@@ -43,6 +47,12 @@ final class SpringAnnotatedScreenBootstrap implements SmartInitializingSingleton
             Class<?> userClass = ClassUtils.getUserClass(bean);
             Screen screen = AnnotatedElementUtils.findMergedAnnotation(userClass, Screen.class);
             if (screen == null || !screen.autoRegister()) {
+                ScreenController screenController = AnnotatedElementUtils.findMergedAnnotation(userClass, ScreenController.class);
+                if (screenController == null || !screenController.autoRegister()) {
+                    return;
+                }
+                log.debug("Auto-registering screen controller bean: type={}", userClass.getName());
+                controllerRegistrar.register(bean).forEach(screenRegistry::register);
                 return;
             }
             log.debug("Auto-registering annotated screen bean: type={}, screen={}", userClass.getName(), screen.value());
@@ -51,4 +61,3 @@ final class SpringAnnotatedScreenBootstrap implements SmartInitializingSingleton
         log.debug("Annotated screen auto-registration completed");
     }
 }
-

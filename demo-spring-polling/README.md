@@ -7,7 +7,10 @@
 - `Dispatcher/Router` и annotation routes.
 - `@Route` без `@Component` (авто-регистрация в Spring starter).
 - `@Screen`/`@Render`/`@OnAction`/`@OnText`.
+- `@ScreenController`/`@ScreenView`/`@OnScreenAction`/`@OnScreenText`.
+- `@WidgetController`/`@Widget`/`@OnWidgetAction` (widget annotation layer).
 - FSM формы (`/form`, `/aform`) и screen stack (`/screen`, `/ascreen`).
+- Form/Wizard engine в screen namespace (`/form_channel`, `/form_schedule`) с переходами `next/back/cancel/submit`.
 - App-mode UX (`/app`) с удалением пользовательских сообщений и обновлением интерфейса через callback.
 - Smoke-команды для проверки MAX API (`/qa*`).
 
@@ -18,6 +21,8 @@
 - `src/main/java/.../AnnotatedFormRoute.java` — FSM на аннотациях.
 - `src/main/java/.../AppModeRoute.java` и `AppModeMiddleware.java` — app-like UX.
 - `src/main/java/.../AnnotatedScreenRoute.java` + `Annotated*Screen.java` — screen API через аннотации.
+- `src/main/java/.../FacadeScreenController.java` — screen controller facade API.
+- `src/main/java/.../DemoCounterWidgetController.java` — widget controller facade API (`Widgets.ref("demo.counter")`).
 - `src/main/java/.../ApiSmokeRoute.java` + `ApiSmokeService.java` — smoke API.
 
 ## Конфигурация
@@ -60,6 +65,8 @@ SPRING_PROFILES_ACTIVE=redis ./gradlew :demo-spring-polling:run
 - `/menu` + callbacks `menu:pay`, `menu:help`
 - `/typing`
 - `/form`
+- `/form_channel`
+- `/form_schedule`
 - `/screen`
 
 Аннотационный API:
@@ -69,6 +76,7 @@ SPRING_PROFILES_ACTIVE=redis ./gradlew :demo-spring-polling:run
 - `/aecho <text>`
 - `/aform`
 - `/ascreen`
+- `/cscreen`
 
 App mode:
 
@@ -86,6 +94,7 @@ Smoke API:
 
 - Командные фильтры имеют повышенный приоритет, поэтому `/start`, `/screen`, `/form` и другие команды обрабатываются раньше generic текстовых/state обработчиков.
 - Screen state хранится в отдельном FSM namespace (`screen`) и не конфликтует с пользовательскими FSM стейтами.
+- Form engine demo (`/form_channel`, `/form_schedule`) хранит состояние в `screen` namespace через `FsmFormStateStorage`.
 - Для media в экранах используйте только валидные MAX upload/file reference; произвольные URL могут давать `400`.
 
 ## Мини-примеры screen API
@@ -109,3 +118,17 @@ public final class AnnotatedScreenRoute {
     }
 }
 ```
+
+Старт screen controller facade flow:
+
+```java
+@Command("cscreen")
+public CompletionStage<Void> startFacade(RuntimeContext context, ScreenRegistry screenRegistry) {
+    return Screens.navigator(context, screenRegistry).start("facade.home", Map.of());
+}
+```
+
+Эквивалентность старого и нового API:
+
+- Старый API: `@Screen + @Render + @OnAction + @OnText`
+- Новый facade: `@ScreenController + @ScreenView + @OnScreenAction + @OnScreenText`

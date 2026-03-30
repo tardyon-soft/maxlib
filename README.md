@@ -216,6 +216,15 @@ public final class ProfileScreen {
 }
 ```
 
+Дополнительные гайды по screen-слою:
+
+- [docs/screen-facade-guide.md](docs/screen-facade-guide.md)
+- [docs/widget-layer-guide.md](docs/widget-layer-guide.md)
+- [docs/form-engine-guide.md](docs/form-engine-guide.md)
+- [docs/screen-callback-codec-modes.md](docs/screen-callback-codec-modes.md)
+- [docs/screen-e2e-scenario.md](docs/screen-e2e-scenario.md)
+- [docs/screen-migration-notes.md](docs/screen-migration-notes.md)
+
 ## Storage
 
 Поддержка FSM storage:
@@ -239,7 +248,10 @@ public final class ProfileScreen {
 Полезные утилиты:
 
 - `DispatcherTestKit`
+- `ScreenTestKit`
+- `ScreenFlowProbe`
 - `UpdateFixtures`
+- `ScreenFixtures`
 - `RecordingMaxBotClient`
 
 Пример:
@@ -289,3 +301,9 @@ var probe = kit.feedAndCapture(ru.tardyon.botframework.testkit.UpdateFixtures.me
 - [docs/runtime-contract.md](docs/runtime-contract.md)
 - [docs/spring-starter.md](docs/spring-starter.md)
 - [docs/testkit.md](docs/testkit.md)
+- [docs/screen-facade-guide.md](docs/screen-facade-guide.md)
+- [docs/widget-layer-guide.md](docs/widget-layer-guide.md)
+- [docs/form-engine-guide.md](docs/form-engine-guide.md)
+- [docs/screen-callback-codec-modes.md](docs/screen-callback-codec-modes.md)
+- [docs/screen-e2e-scenario.md](docs/screen-e2e-scenario.md)
+- [docs/screen-migration-notes.md](docs/screen-migration-notes.md)

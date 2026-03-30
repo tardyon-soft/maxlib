@@ -34,9 +34,19 @@ public record ScreenModel(
             return this;
         }
 
+        public Builder widgetView(WidgetView widgetView) {
+            return widget(Objects.requireNonNull(widgetView, "widgetView").asWidget());
+        }
+
         public Builder widgets(List<Widget> values) {
             Objects.requireNonNull(values, "values");
             values.forEach(this::widget);
+            return this;
+        }
+
+        public Builder widgetViews(List<WidgetView> values) {
+            Objects.requireNonNull(values, "values");
+            values.forEach(this::widgetView);
             return this;
         }
 

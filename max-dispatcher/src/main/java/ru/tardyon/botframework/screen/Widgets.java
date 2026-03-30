@@ -2,6 +2,7 @@ package ru.tardyon.botframework.screen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -46,6 +47,44 @@ public final class Widgets {
     public static Widget attachments(List<NewMessageAttachment> attachments) {
         Objects.requireNonNull(attachments, "attachments");
         return context -> CompletableFuture.completedFuture(WidgetRender.of(List.of(), List.of(), List.copyOf(attachments)));
+    }
+
+    public static Widget view(WidgetView widgetView) {
+        Objects.requireNonNull(widgetView, "widgetView");
+        return widgetView.asWidget();
+    }
+
+    public static Widget ref(String widgetId) {
+        return ref(widgetId, Map.of());
+    }
+
+    public static Widget ref(String widgetId, Map<String, Object> params) {
+        Objects.requireNonNull(widgetId, "widgetId");
+        Objects.requireNonNull(params, "params");
+        if (widgetId.isBlank()) {
+            throw new IllegalArgumentException("widgetId must not be blank");
+        }
+        return context -> {
+            var resolverOpt = context.runtime().dataValue(WidgetRuntimeSupport.WIDGET_VIEW_RESOLVER_KEY);
+            if (resolverOpt.isEmpty()) {
+                return CompletableFuture.completedFuture(
+                        WidgetRender.of(
+                                List.of("Widget resolver is not configured: " + widgetId),
+                                List.of()
+                        )
+                );
+            }
+            WidgetContext widgetContext = new WidgetContext(
+                    context,
+                    widgetId,
+                    params,
+                    context.runtime().update().message(),
+                    context.runtime().update().callback()
+            );
+            return resolverOpt.orElseThrow()
+                    .resolve(widgetContext, params)
+                    .thenApply(view -> WidgetRender.of(view.textLines(), view.buttons(), view.attachments()));
+        };
     }
 
     public static Widget section(String title, Widget... children) {

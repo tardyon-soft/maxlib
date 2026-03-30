@@ -18,5 +18,9 @@ public final class AnnotatedScreenRoute {
     public CompletionStage<Void> start(RuntimeContext context, ScreenRegistry screenRegistry) {
         return Screens.navigator(context, screenRegistry).start("annotated.home", Map.of());
     }
-}
 
+    @Command("cscreen")
+    public CompletionStage<Void> startFacade(RuntimeContext context, ScreenRegistry screenRegistry) {
+        return Screens.navigator(context, screenRegistry).start("facade.home", Map.of());
+    }
+}

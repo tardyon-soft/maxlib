@@ -11,6 +11,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 import ru.tardyon.botframework.fsm.StateScope;
 import ru.tardyon.botframework.model.UpdateEventType;
+import ru.tardyon.botframework.screen.ScreenActionCodecMode;
 
 /**
  * Spring Boot configuration properties for MAX bot runtime starter.
@@ -35,6 +36,8 @@ public class MaxBotProperties {
 
     @Valid
     private final Storage storage = new Storage();
+    @Valid
+    private final Screen screen = new Screen();
 
     public String getToken() {
         return token;
@@ -70,6 +73,10 @@ public class MaxBotProperties {
 
     public Storage getStorage() {
         return storage;
+    }
+
+    public Screen getScreen() {
+        return screen;
     }
 
     /**
@@ -220,6 +227,46 @@ public class MaxBotProperties {
 
         public void setTtl(Duration ttl) {
             this.ttl = ttl;
+        }
+    }
+
+    /**
+     * Screen runtime properties (`max.bot.screen.*`).
+     */
+    public static final class Screen {
+        @Valid
+        private final Callback callback = new Callback();
+
+        public Callback getCallback() {
+            return callback;
+        }
+    }
+
+    /**
+     * Screen callback properties (`max.bot.screen.callback.*`).
+     */
+    public static final class Callback {
+        @Valid
+        private final Codec codec = new Codec();
+
+        public Codec getCodec() {
+            return codec;
+        }
+    }
+
+    /**
+     * Screen callback codec properties (`max.bot.screen.callback.codec.*`).
+     */
+    public static final class Codec {
+        @NotNull
+        private ScreenActionCodecMode mode = ScreenActionCodecMode.LEGACY_STRING;
+
+        public ScreenActionCodecMode getMode() {
+            return mode;
+        }
+
+        public void setMode(ScreenActionCodecMode mode) {
+            this.mode = mode;
         }
     }
 }

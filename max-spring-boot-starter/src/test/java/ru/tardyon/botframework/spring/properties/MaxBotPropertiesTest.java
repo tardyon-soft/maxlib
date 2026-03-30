@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import ru.tardyon.botframework.fsm.StateScope;
 import ru.tardyon.botframework.model.UpdateEventType;
+import ru.tardyon.botframework.screen.ScreenActionCodecMode;
 import ru.tardyon.botframework.spring.autoconfigure.MaxBotAutoConfiguration;
 
 class MaxBotPropertiesTest {
@@ -33,6 +34,7 @@ class MaxBotPropertiesTest {
                     assertEquals("/webhook/max", properties.getWebhook().getPath());
                     assertEquals(MaxBotStorageType.MEMORY, properties.getStorage().getType());
                     assertEquals(StateScope.USER_IN_CHAT, properties.getStorage().getStateScope());
+                    assertEquals(ScreenActionCodecMode.LEGACY_STRING, properties.getScreen().getCallback().getCodec().getMode());
                 });
     }
 
@@ -55,7 +57,8 @@ class MaxBotPropertiesTest {
                         "max.bot.storage.type=MEMORY",
                         "max.bot.storage.state-scope=CHAT",
                         "max.bot.storage.redis.key-prefix=max:test:fsm",
-                        "max.bot.storage.redis.ttl=120s"
+                        "max.bot.storage.redis.ttl=120s",
+                        "max.bot.screen.callback.codec.mode=TYPED_V1"
                 )
                 .run(context -> {
                     MaxBotProperties properties = context.getBean(MaxBotProperties.class);
@@ -77,6 +80,7 @@ class MaxBotPropertiesTest {
                     assertEquals(StateScope.CHAT, properties.getStorage().getStateScope());
                     assertEquals("max:test:fsm", properties.getStorage().getRedis().getKeyPrefix());
                     assertEquals(java.time.Duration.ofSeconds(120), properties.getStorage().getRedis().getTtl());
+                    assertEquals(ScreenActionCodecMode.TYPED_V1, properties.getScreen().getCallback().getCodec().getMode());
                 });
     }
 

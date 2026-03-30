@@ -1,6 +1,6 @@
 max:
   bot:
-    token: ${MAX_BOT_TOKEN:}
+    token: ${MAX_BOT_TOKEN:f9LHodD0cOKN2WkqfrOp7i-9uAvPJDR7EgIrvls3_42PZT2tmEr6y1Iy_FimIY8fB91O80j8Ei4H10rsjSDS}
     mode: POLLING
     polling:
       enabled: true

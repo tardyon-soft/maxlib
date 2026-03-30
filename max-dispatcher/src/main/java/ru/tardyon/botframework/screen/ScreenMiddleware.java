@@ -12,14 +12,20 @@ import ru.tardyon.botframework.dispatcher.RuntimeContext;
  */
 public final class ScreenMiddleware implements InnerMiddleware {
     private final ScreenRegistry registry;
+    private final ScreenActionCodec actionCodec;
 
     public ScreenMiddleware(ScreenRegistry registry) {
+        this(registry, new LegacyStringScreenActionCodec());
+    }
+
+    public ScreenMiddleware(ScreenRegistry registry, ScreenActionCodec actionCodec) {
         this.registry = Objects.requireNonNull(registry, "registry");
+        this.actionCodec = Objects.requireNonNull(actionCodec, "actionCodec");
     }
 
     @Override
     public CompletionStage<DispatchResult> invoke(RuntimeContext context, MiddlewareNext next) {
-        return ScreenRouter.middlewareHandler(context, registry)
+        return ScreenRouter.middlewareHandler(context, registry, actionCodec)
                 .thenCompose(result -> result.isHandled() ? java.util.concurrent.CompletableFuture.completedFuture(result) : next.proceed());
     }
 }

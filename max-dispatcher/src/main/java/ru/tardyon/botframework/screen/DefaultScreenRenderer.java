@@ -22,6 +22,15 @@ import ru.tardyon.botframework.model.request.NewMessageAttachment;
  */
 public final class DefaultScreenRenderer implements ScreenRenderer {
     private static final Logger log = LoggerFactory.getLogger(DefaultScreenRenderer.class);
+    private final ScreenCallbackCodec callbackCodec;
+
+    public DefaultScreenRenderer() {
+        this(new LegacyStringScreenActionCodec());
+    }
+
+    public DefaultScreenRenderer(ScreenActionCodec actionCodec) {
+        this.callbackCodec = new ScreenCallbackCodec(actionCodec);
+    }
 
     @Override
     public CompletionStage<RenderResult> render(ScreenContext context, ScreenModel model) {
@@ -62,8 +71,8 @@ public final class DefaultScreenRenderer implements ScreenRenderer {
                     ArrayList<InlineKeyboardButton> mapped = new ArrayList<>();
                     for (ScreenButton button : row) {
                         String payload = "__nav_back".equals(button.action())
-                                ? ScreenCallbackCodec.navBack()
-                                : ScreenCallbackCodec.action(button.action(), button.args());
+                                ? callbackCodec.navBack()
+                                : callbackCodec.action(button.action(), button.args());
                         mapped.add(Buttons.callback(button.text(), payload));
                     }
                     keyboard.row(mapped);

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.tardyon.botframework.dispatcher.Dispatcher;
 import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.screen.ScreenRegistry;
 
 @SpringBootTest(
         classes = DemoSpringPollingApplication.class,
@@ -24,9 +25,14 @@ class DemoSpringPollingApplicationSmokeTest {
     @Autowired
     private Router demoRouter;
 
+    @Autowired
+    private ScreenRegistry screenRegistry;
+
     @Test
     void contextLoads() {
         assertNotNull(dispatcher);
         assertNotNull(demoRouter);
+        assertNotNull(screenRegistry);
+        assertNotNull(screenRegistry.find("facade.home").orElse(null));
     }
 }

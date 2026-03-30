@@ -1,81 +1,65 @@
 package ru.tardyon.botframework.screen;
 
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.StringJoiner;
 
 final class ScreenCallbackCodec {
-    private ScreenCallbackCodec() {
+    private static final String NAV_BACK = "ui:nav:back";
+    private static final String NAV_HOME = "ui:nav:home";
+    private static final String NAV_REFRESH = "ui:nav:refresh";
+
+    private final ScreenActionCodec primaryActionCodec;
+    private final ScreenActionCodec fallbackActionCodec;
+
+    ScreenCallbackCodec(ScreenActionCodec primaryActionCodec) {
+        this(primaryActionCodec, new LegacyStringScreenActionCodec());
     }
 
-    static String navBack() {
-        return "ui:nav:back";
+    ScreenCallbackCodec(ScreenActionCodec primaryActionCodec, ScreenActionCodec fallbackActionCodec) {
+        this.primaryActionCodec = Objects.requireNonNull(primaryActionCodec, "primaryActionCodec");
+        this.fallbackActionCodec = Objects.requireNonNull(fallbackActionCodec, "fallbackActionCodec");
     }
 
-    static String action(String action, Map<String, String> args) {
-        String base = "ui:act:" + action;
-        if (args == null || args.isEmpty()) {
-            return base;
-        }
-        StringJoiner joiner = new StringJoiner("&");
-        args.forEach((k, v) -> joiner.add(encode(k) + "=" + encode(v)));
-        return base + "?" + joiner;
+    static ScreenCallbackCodec legacy() {
+        return new ScreenCallbackCodec(new LegacyStringScreenActionCodec());
     }
 
-    static Optional<ParsedScreenCallback> parse(String data) {
+    String navBack() {
+        return NAV_BACK;
+    }
+
+    String action(String action, Map<String, String> args) {
+        return primaryActionCodec.encode(action, args);
+    }
+
+    Optional<ParsedScreenCallback> parse(String data) {
         if (data == null || data.isBlank() || !data.startsWith("ui:")) {
             return Optional.empty();
         }
-        if ("ui:nav:back".equals(data)) {
+        if (NAV_BACK.equals(data)) {
             return Optional.of(new ParsedScreenCallback(ParsedScreenCallback.Kind.NAV_BACK, null, Map.of()));
         }
-        if ("ui:nav:home".equals(data)) {
+        if (NAV_HOME.equals(data)) {
             return Optional.of(new ParsedScreenCallback(ParsedScreenCallback.Kind.NAV_HOME, null, Map.of()));
         }
-        if ("ui:nav:refresh".equals(data)) {
+        if (NAV_REFRESH.equals(data)) {
             return Optional.of(new ParsedScreenCallback(ParsedScreenCallback.Kind.NAV_REFRESH, null, Map.of()));
         }
-        if (!data.startsWith("ui:act:")) {
-            return Optional.of(new ParsedScreenCallback(ParsedScreenCallback.Kind.UNKNOWN, null, Map.of()));
+
+        Optional<DecodedAction<Map<String, String>>> decoded = primaryActionCodec.decode(data);
+        if (decoded.isEmpty() && primaryActionCodec.mode() != fallbackActionCodec.mode()) {
+            decoded = fallbackActionCodec.decode(data);
         }
-
-        String raw = data.substring("ui:act:".length());
-        int queryIndex = raw.indexOf('?');
-        String action = queryIndex < 0 ? raw : raw.substring(0, queryIndex);
-        if (action.isBlank()) {
-            return Optional.of(new ParsedScreenCallback(ParsedScreenCallback.Kind.UNKNOWN, null, Map.of()));
+        if (decoded.isPresent()) {
+            DecodedAction<Map<String, String>> action = decoded.orElseThrow();
+            return Optional.of(new ParsedScreenCallback(
+                    ParsedScreenCallback.Kind.ACTION,
+                    action.action(),
+                    action.payload()
+            ));
         }
-
-        Map<String, String> args = new LinkedHashMap<>();
-        if (queryIndex >= 0 && queryIndex + 1 < raw.length()) {
-            String query = raw.substring(queryIndex + 1);
-            for (String pair : query.split("&")) {
-                if (pair.isBlank()) {
-                    continue;
-                }
-                int eqIndex = pair.indexOf('=');
-                if (eqIndex < 0) {
-                    args.put(decode(pair), "");
-                    continue;
-                }
-                String key = decode(pair.substring(0, eqIndex));
-                String value = decode(pair.substring(eqIndex + 1));
-                args.put(key, value);
-            }
-        }
-        return Optional.of(new ParsedScreenCallback(ParsedScreenCallback.Kind.ACTION, action, Map.copyOf(args)));
-    }
-
-    private static String encode(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
-    }
-
-    private static String decode(String value) {
-        return URLDecoder.decode(value, StandardCharsets.UTF_8);
+        return Optional.of(new ParsedScreenCallback(ParsedScreenCallback.Kind.UNKNOWN, null, Map.of()));
     }
 
     record ParsedScreenCallback(Kind kind, String action, Map<String, String> args) {

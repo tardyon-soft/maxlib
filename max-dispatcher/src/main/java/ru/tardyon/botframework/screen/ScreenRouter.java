@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import ru.tardyon.botframework.dispatcher.DispatchResult;
 import ru.tardyon.botframework.dispatcher.Filter;
 import ru.tardyon.botframework.dispatcher.FilterResult;
+import ru.tardyon.botframework.dispatcher.RuntimeDataKey;
 import ru.tardyon.botframework.dispatcher.Router;
 import ru.tardyon.botframework.model.Message;
 
@@ -16,11 +17,17 @@ import ru.tardyon.botframework.model.Message;
  */
 public final class ScreenRouter {
     private static final Logger log = LoggerFactory.getLogger(ScreenRouter.class);
+    private static final RuntimeDataKey<ScreenActionCodec> SCREEN_ACTION_CODEC_KEY =
+            RuntimeDataKey.application("service:" + ScreenActionCodec.class.getName(), ScreenActionCodec.class);
 
     private ScreenRouter() {
     }
 
     public static Router attach(Router router, ScreenRegistry registry) {
+        return attach(router, registry, null);
+    }
+
+    public static Router attach(Router router, ScreenRegistry registry, ScreenActionCodec actionCodec) {
         Objects.requireNonNull(router, "router");
         Objects.requireNonNull(registry, "registry");
 
@@ -30,7 +37,12 @@ public final class ScreenRouter {
                                 ? FilterResult.matched()
                                 : FilterResult.notMatched()
                 ),
-                (callback, context) -> handleCallback(context, registry, callback.data()).thenApply(ignored -> null)
+                (callback, context) -> handleCallback(
+                        context,
+                        registry,
+                        callback.data(),
+                        resolveCallbackCodec(context, actionCodec)
+                ).thenApply(ignored -> null)
         );
 
         router.message(activeScreenTextFilter(registry), (message, context) ->
@@ -43,9 +55,18 @@ public final class ScreenRouter {
             ru.tardyon.botframework.dispatcher.RuntimeContext context,
             ScreenRegistry registry
     ) {
+        return middlewareHandler(context, registry, null);
+    }
+
+    public static CompletionStage<DispatchResult> middlewareHandler(
+            ru.tardyon.botframework.dispatcher.RuntimeContext context,
+            ScreenRegistry registry,
+            ScreenActionCodec actionCodec
+    ) {
+        ScreenCallbackCodec callbackCodec = resolveCallbackCodec(context, actionCodec);
         if (context.update().callback() != null && context.update().callback().data() != null
                 && context.update().callback().data().startsWith("ui:")) {
-            return handleCallback(context, registry, context.update().callback().data())
+            return handleCallback(context, registry, context.update().callback().data(), callbackCodec)
                     .thenApply(ignored -> DispatchResult.handled());
         }
         if (context.update().message() != null && context.update().message().text() != null) {
@@ -67,7 +88,8 @@ public final class ScreenRouter {
     private static CompletionStage<Void> handleCallback(
             ru.tardyon.botframework.dispatcher.RuntimeContext context,
             ScreenRegistry registry,
-            String callbackData
+            String callbackData,
+            ScreenCallbackCodec callbackCodec
     ) {
         ScreenNavigator navigator;
         try {
@@ -77,7 +99,7 @@ public final class ScreenRouter {
             return CompletableFuture.completedFuture(null);
         }
         DefaultScreenNavigator defaultNavigator = (DefaultScreenNavigator) navigator;
-        var parsed = ScreenCallbackCodec.parse(callbackData);
+        var parsed = callbackCodec.parse(callbackData);
         if (parsed.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
@@ -91,6 +113,16 @@ public final class ScreenRouter {
             case ACTION -> defaultNavigator.handleAction(callback.action(), callback.args());
             case UNKNOWN -> CompletableFuture.completedFuture(null);
         };
+    }
+
+    private static ScreenCallbackCodec resolveCallbackCodec(
+            ru.tardyon.botframework.dispatcher.RuntimeContext context,
+            ScreenActionCodec configured
+    ) {
+        ScreenActionCodec resolved = configured != null
+                ? configured
+                : context.dataValue(SCREEN_ACTION_CODEC_KEY).orElseGet(LegacyStringScreenActionCodec::new);
+        return new ScreenCallbackCodec(resolved);
     }
 
     private static CompletionStage<Void> handleText(

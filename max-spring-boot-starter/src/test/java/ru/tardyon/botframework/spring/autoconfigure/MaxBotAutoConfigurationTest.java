@@ -45,9 +45,18 @@ import ru.tardyon.botframework.message.MediaMessagingFacade;
 import ru.tardyon.botframework.message.MessagingFacade;
 import ru.tardyon.botframework.screen.ScreenContext;
 import ru.tardyon.botframework.screen.ScreenModel;
+import ru.tardyon.botframework.screen.ScreenActionCodec;
 import ru.tardyon.botframework.screen.ScreenRegistry;
+import ru.tardyon.botframework.screen.WidgetActionDispatcher;
+import ru.tardyon.botframework.screen.WidgetViewResolver;
+import ru.tardyon.botframework.screen.LegacyStringScreenActionCodec;
+import ru.tardyon.botframework.screen.TypedV1ScreenActionCodec;
 import ru.tardyon.botframework.screen.annotation.Render;
 import ru.tardyon.botframework.screen.annotation.Screen;
+import ru.tardyon.botframework.spring.screen.annotation.OnScreenAction;
+import ru.tardyon.botframework.spring.screen.annotation.OnScreenText;
+import ru.tardyon.botframework.spring.screen.annotation.ScreenController;
+import ru.tardyon.botframework.spring.screen.annotation.ScreenView;
 import ru.tardyon.botframework.spring.polling.SpringPollingBootstrap;
 import ru.tardyon.botframework.spring.properties.MaxBotProperties;
 import ru.tardyon.botframework.spring.properties.MaxBotStorageType;
@@ -78,6 +87,9 @@ class MaxBotAutoConfigurationTest {
             assertThat(context).hasSingleBean(SceneRegistry.class);
             assertThat(context).hasSingleBean(SceneStorage.class);
             assertThat(context).hasSingleBean(ScreenRegistry.class);
+            assertThat(context).hasSingleBean(ScreenActionCodec.class);
+            assertThat(context).hasSingleBean(WidgetViewResolver.class);
+            assertThat(context).hasSingleBean(WidgetActionDispatcher.class);
             assertThat(context).hasSingleBean(MessagingFacade.class);
             assertThat(context).hasSingleBean(CallbackFacade.class);
             assertThat(context).hasSingleBean(ChatActionsFacade.class);
@@ -91,6 +103,7 @@ class MaxBotAutoConfigurationTest {
             assertTrue(context.getBean(FSMStorage.class) instanceof MemoryStorage);
             assertTrue(context.getBean(SceneRegistry.class) instanceof InMemorySceneRegistry);
             assertTrue(context.getBean(SceneStorage.class) instanceof MemorySceneStorage);
+            assertTrue(context.getBean(ScreenActionCodec.class) instanceof LegacyStringScreenActionCodec);
         });
     }
 
@@ -227,6 +240,39 @@ class MaxBotAutoConfigurationTest {
                 .run(context -> assertTrue(context.getBean(ScreenRegistry.class).find("sample").isPresent()));
     }
 
+    @Test
+    void autoRegistersScreenControllerFacadeBeansIntoScreenRegistry() {
+        contextRunner
+                .withBean("sampleScreenController", SampleScreenController.class, SampleScreenController::new)
+                .run(context -> {
+                    ScreenRegistry screenRegistry = context.getBean(ScreenRegistry.class);
+                    assertTrue(screenRegistry.find("controller.home").isPresent());
+                    assertTrue(screenRegistry.find("controller.profile").isPresent());
+                });
+    }
+
+    @Test
+    void failsStartupWhenScreenControllerSignaturesAreInvalid() {
+        @ScreenController
+        class InvalidLocalScreenController {
+            @ScreenView(screen = "bad")
+            public String invalidView() {
+                return "bad";
+            }
+        }
+
+        contextRunner
+                .withBean("invalidScreenController", InvalidLocalScreenController.class, InvalidLocalScreenController::new)
+                .run(context -> assertNotNull(context.getStartupFailure()));
+    }
+
+    @Test
+    void usesTypedV1ScreenActionCodecWhenConfigured() {
+        contextRunner
+                .withPropertyValues("max.bot.screen.callback.codec.mode=TYPED_V1")
+                .run(context -> assertTrue(context.getBean(ScreenActionCodec.class) instanceof TypedV1ScreenActionCodec));
+    }
+
     private static Update sampleUpdate(String text) {
         return new Update(
                 new UpdateId("u-spring-1"),
@@ -254,4 +300,28 @@ class MaxBotAutoConfigurationTest {
             return ScreenModel.builder().title("sample").build();
         }
     }
+
+    @ScreenController
+    static final class SampleScreenController {
+        @ScreenView(screen = "controller.home")
+        public ScreenModel home() {
+            return ScreenModel.builder().title("home").build();
+        }
+
+        @OnScreenText(screen = "controller.home")
+        public void onText(String text) {
+            // no-op
+        }
+
+        @OnScreenAction(screen = "controller.home", action = "go")
+        public java.util.concurrent.CompletionStage<Void> onAction(java.util.Map<String, String> args) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @ScreenView(screen = "controller.profile")
+        public ScreenModel profile(ScreenContext context) {
+            return ScreenModel.builder().title("profile").build();
+        }
+    }
+
 }

@@ -127,6 +127,10 @@ public final class DefaultScreenNavigator implements ScreenNavigator {
 
     CompletionStage<Void> handleAction(String action, Map<String, String> args) {
         log.debug("Screen action requested: action={}, args={}", action, args);
+        WidgetRuntimeSupport.ParsedWidgetAction widgetAction = WidgetRuntimeSupport.parseAction(action);
+        if (widgetAction != null) {
+            return handleWidgetAction(widgetAction, args);
+        }
         return session().thenCompose(current -> {
             log.debug("Screen session before action: stackSize={}, rootMessageId={}", current.stack().size(), current.rootMessageId());
             return current.top()
@@ -144,6 +148,28 @@ public final class DefaultScreenNavigator implements ScreenNavigator {
                         .onText(screenContext(current, top.params()), text)
                         .thenCompose(ignored -> rerender()))
                 .orElseGet(() -> CompletableFuture.completedFuture(null)));
+    }
+
+    private CompletionStage<Void> handleWidgetAction(WidgetRuntimeSupport.ParsedWidgetAction widgetAction, Map<String, String> args) {
+        var dispatcherOpt = runtime.dataValue(WidgetRuntimeSupport.WIDGET_ACTION_DISPATCHER_KEY);
+        if (dispatcherOpt.isEmpty()) {
+            log.debug("Widget action skipped: no WidgetActionDispatcher configured, widget={}, action={}",
+                    widgetAction.widgetId(), widgetAction.action());
+            return CompletableFuture.completedFuture(null);
+        }
+        return session().thenCompose(current -> {
+            Map<String, Object> params = current.top().map(ScreenStackEntry::params).orElse(Map.of());
+            WidgetContext context = new WidgetContext(
+                    screenContext(current, params),
+                    widgetAction.widgetId(),
+                    params,
+                    runtime.update().message(),
+                    runtime.update().callback()
+            );
+            return dispatcherOpt.orElseThrow()
+                    .dispatch(context, widgetAction.action(), Map.copyOf(args))
+                    .thenCompose(effect -> effect == WidgetEffect.RERENDER ? rerender() : CompletableFuture.completedFuture(null));
+        });
     }
 
     CompletionStage<Boolean> hasActiveScreen() {

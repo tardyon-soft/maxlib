@@ -23,9 +23,12 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.util.ClassUtils;
 import ru.tardyon.botframework.screen.annotation.Screen;
+import ru.tardyon.botframework.spring.screen.annotation.ScreenController;
+import ru.tardyon.botframework.spring.widget.annotation.WidgetController;
 
 /**
- * Registers {@link Screen}-annotated classes as Spring beans even without {@code @Component}.
+ * Registers {@link Screen} / {@link ScreenController} / {@link WidgetController}
+ * annotated classes as Spring beans even without {@code @Component}.
  */
 final class ScreenComponentAutoRegistrar implements BeanDefinitionRegistryPostProcessor, BeanFactoryAware, ResourceLoaderAware, EnvironmentAware {
     private static final Logger log = LoggerFactory.getLogger(ScreenComponentAutoRegistrar.class);
@@ -52,6 +55,8 @@ final class ScreenComponentAutoRegistrar implements BeanDefinitionRegistryPostPr
             scanner.setResourceLoader(resourceLoader);
         }
         scanner.addIncludeFilter(new AnnotationTypeFilter(Screen.class));
+        scanner.addIncludeFilter(new AnnotationTypeFilter(ScreenController.class));
+        scanner.addIncludeFilter(new AnnotationTypeFilter(WidgetController.class));
 
         for (String basePackage : basePackages) {
             for (BeanDefinition candidate : scanner.findCandidateComponents(basePackage)) {
@@ -119,4 +124,3 @@ final class ScreenComponentAutoRegistrar implements BeanDefinitionRegistryPostPr
         this.environment = environment;
     }
 }
-
