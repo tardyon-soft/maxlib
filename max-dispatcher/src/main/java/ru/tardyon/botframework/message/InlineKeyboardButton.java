@@ -10,6 +10,7 @@ public record InlineKeyboardButton(
         Kind kind,
         String text,
         String callbackData,
+        String clipboardPayload,
         String url,
         String openApp,
         String message
@@ -23,6 +24,7 @@ public record InlineKeyboardButton(
 
         switch (kind) {
             case CALLBACK -> requireNonBlank(callbackData, "callbackData");
+            case CLIPBOARD -> requireNonBlank(clipboardPayload, "clipboardPayload");
             case LINK -> {
                 requireNonBlank(url, "url");
                 if (url.length() > InlineKeyboardConstraints.MAX_LINK_URL_LENGTH) {
@@ -41,12 +43,13 @@ public record InlineKeyboardButton(
 
     InlineKeyboardButtonRequest toRequest() {
         return switch (kind) {
-            case CALLBACK -> new InlineKeyboardButtonRequest(text, callbackData, null, null, null, null, null);
-            case LINK -> new InlineKeyboardButtonRequest(text, null, url, null, null, null, null);
-            case REQUEST_CONTACT -> new InlineKeyboardButtonRequest(text, null, null, true, null, null, null);
-            case REQUEST_GEO_LOCATION -> new InlineKeyboardButtonRequest(text, null, null, null, true, null, null);
-            case OPEN_APP -> new InlineKeyboardButtonRequest(text, null, null, null, null, openApp, null);
-            case MESSAGE -> new InlineKeyboardButtonRequest(text, null, null, null, null, null, message);
+            case CALLBACK -> new InlineKeyboardButtonRequest(text, callbackData, null, null, null, null, null, null);
+            case CLIPBOARD -> new InlineKeyboardButtonRequest(text, null, clipboardPayload, null, null, null, null, null);
+            case LINK -> new InlineKeyboardButtonRequest(text, null, null, url, null, null, null, null);
+            case REQUEST_CONTACT -> new InlineKeyboardButtonRequest(text, null, null, null, true, null, null, null);
+            case REQUEST_GEO_LOCATION -> new InlineKeyboardButtonRequest(text, null, null, null, null, true, null, null);
+            case OPEN_APP -> new InlineKeyboardButtonRequest(text, null, null, null, null, null, openApp, null);
+            case MESSAGE -> new InlineKeyboardButtonRequest(text, null, null, null, null, null, null, message);
         };
     }
 
@@ -59,6 +62,7 @@ public record InlineKeyboardButton(
 
     public enum Kind {
         CALLBACK,
+        CLIPBOARD,
         LINK,
         REQUEST_CONTACT,
         REQUEST_GEO_LOCATION,

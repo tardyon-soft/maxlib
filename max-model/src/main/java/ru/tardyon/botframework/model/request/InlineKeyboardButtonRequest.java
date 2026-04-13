@@ -8,6 +8,7 @@ import java.util.Objects;
 public record InlineKeyboardButtonRequest(
         String text,
         String callbackData,
+        String clipboardPayload,
         String url,
         Boolean requestContact,
         Boolean requestGeoLocation,
@@ -21,6 +22,7 @@ public record InlineKeyboardButtonRequest(
         }
 
         boolean hasCallback = callbackData != null && !callbackData.isBlank();
+        boolean hasClipboard = clipboardPayload != null && !clipboardPayload.isBlank();
         boolean hasUrl = url != null && !url.isBlank();
         boolean hasRequestContact = Boolean.TRUE.equals(requestContact);
         boolean hasRequestGeoLocation = Boolean.TRUE.equals(requestGeoLocation);
@@ -29,6 +31,7 @@ public record InlineKeyboardButtonRequest(
 
         int actionCount = 0;
         actionCount += hasCallback ? 1 : 0;
+        actionCount += hasClipboard ? 1 : 0;
         actionCount += hasUrl ? 1 : 0;
         actionCount += hasRequestContact ? 1 : 0;
         actionCount += hasRequestGeoLocation ? 1 : 0;

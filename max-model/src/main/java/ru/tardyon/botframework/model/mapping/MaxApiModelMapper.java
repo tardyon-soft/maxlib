@@ -178,8 +178,13 @@ public final class MaxApiModelMapper {
 
     private static ApiInlineKeyboardButton mapInlineButton(InlineKeyboardButtonRequest button) {
         String type;
-        if (button.callbackData() != null && !button.callbackData().isBlank()) {
+        String payload = null;
+        if (button.clipboardPayload() != null && !button.clipboardPayload().isBlank()) {
+            type = "clipboard";
+            payload = button.clipboardPayload();
+        } else if (button.callbackData() != null && !button.callbackData().isBlank()) {
             type = "callback";
+            payload = button.callbackData();
         } else if (button.url() != null && !button.url().isBlank()) {
             type = "link";
         } else if (Boolean.TRUE.equals(button.requestContact())) {
@@ -194,7 +199,7 @@ public final class MaxApiModelMapper {
         return new ApiInlineKeyboardButton(
                 type,
                 button.text(),
-                button.callbackData(),
+                payload,
                 button.url(),
                 button.openApp(),
                 button.message(),

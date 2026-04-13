@@ -101,6 +101,7 @@ public class DemoSpringPollingApplication {
                             + "Аннотационный API: /astart, /amenu, /aform, /aecho <text>. "
                             + "App Mode: /app (UX без истории сообщений). "
                             + "/screen и /ascreen - demo screen stack. /cscreen - screen controller facade demo. "
+                            + "Channel post demo: /post_help, /clipboard_demo, /post_channel <chat_id> [upload_ref]. "
                             + "Smoke API: /qa, /qa_run_all, /qa_callback, /qa_set_video <token>"
             ));
             return CompletableFuture.completedFuture(null);

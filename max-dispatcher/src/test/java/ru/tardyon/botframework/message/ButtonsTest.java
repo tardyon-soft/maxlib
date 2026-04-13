@@ -24,6 +24,14 @@ class ButtonsTest {
     }
 
     @Test
+    void createsClipboardButton() {
+        InlineKeyboardButton button = Buttons.clipboard("Copy", "invoice-123456");
+
+        assertEquals(InlineKeyboardButton.Kind.CLIPBOARD, button.kind());
+        assertEquals("invoice-123456", button.clipboardPayload());
+    }
+
+    @Test
     void createsRequestContactButton() {
         InlineKeyboardButton button = Buttons.requestContact("Contact");
 
@@ -56,6 +64,7 @@ class ButtonsTest {
     @Test
     void validatesRequiredPayloadForTypedButtons() {
         assertThrows(IllegalArgumentException.class, () -> Buttons.callback("Pay", " "));
+        assertThrows(IllegalArgumentException.class, () -> Buttons.clipboard("Copy", " "));
         assertThrows(IllegalArgumentException.class, () -> Buttons.link("Site", " "));
         assertThrows(IllegalArgumentException.class, () -> Buttons.openApp("Open", " "));
         assertThrows(IllegalArgumentException.class, () -> Buttons.message("Send", " "));

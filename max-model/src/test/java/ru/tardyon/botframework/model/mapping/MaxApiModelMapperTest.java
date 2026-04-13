@@ -10,12 +10,16 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import ru.tardyon.botframework.model.ChatType;
 import ru.tardyon.botframework.model.TextFormat;
 import ru.tardyon.botframework.model.UpdateType;
+import ru.tardyon.botframework.model.request.InlineKeyboardAttachment;
+import ru.tardyon.botframework.model.request.InlineKeyboardButtonRequest;
 import ru.tardyon.botframework.model.request.NewMessageBody;
+import ru.tardyon.botframework.model.request.NewMessageAttachment;
 import ru.tardyon.botframework.model.transport.ApiChat;
 import ru.tardyon.botframework.model.transport.ApiMessage;
 import ru.tardyon.botframework.model.transport.ApiNewMessageBody;
@@ -130,6 +134,24 @@ class MaxApiModelMapperTest {
         assertThat(mappedBack.text()).isEqualTo("Hello, MAX");
         assertThat(mappedBack.format()).isEqualTo(TextFormat.MARKDOWN);
         assertThat(mappedBack.notifyValue()).isTrue();
+    }
+
+    @Test
+    void mapsClipboardInlineButtonToApiPayload() throws IOException {
+        NewMessageBody normalized = new NewMessageBody(
+                "Copy demo",
+                TextFormat.MARKDOWN,
+                List.of(NewMessageAttachment.inlineKeyboard(new InlineKeyboardAttachment(List.of(
+                        List.of(new InlineKeyboardButtonRequest("Copy", null, "PROMO-2026", null, null, null, null, null))
+                ))))
+        );
+
+        var mapped = MaxApiModelMapper.toApiOutgoing(normalized, true, null);
+        String json = objectMapper.writeValueAsString(mapped);
+
+        assertThat(json).contains("\"type\":\"clipboard\"");
+        assertThat(json).contains("\"payload\":\"PROMO-2026\"");
+        assertThat(json).contains("\"type\":\"inline_keyboard\"");
     }
 
     @Test
