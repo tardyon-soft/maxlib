@@ -264,7 +264,7 @@ class DefaultMaxBotClientTest {
 
         NewMessageAttachment inlineKeyboard = NewMessageAttachment.inlineKeyboard(
                 new InlineKeyboardAttachment(List.of(
-                        List.of(new InlineKeyboardButtonRequest("Pay", "menu:pay", null, null, null, null, null))
+                        List.of(new InlineKeyboardButtonRequest("Pay", "menu:pay", null, null, null, null, null, null))
                 ))
         );
         Message message = client.sendMessage(new SendMessageRequest(
