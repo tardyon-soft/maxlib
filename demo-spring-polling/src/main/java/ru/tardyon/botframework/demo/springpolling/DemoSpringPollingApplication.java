@@ -40,7 +40,7 @@ public class DemoSpringPollingApplication {
     }
 
     @Bean
-    Router demoRouter(ScreenRegistry screenRegistry) {
+    Router demoRouterMax(ScreenRegistry screenRegistry) {
         FormEngine formEngine = new FormEngine(new FsmFormStateStorage());
         FormDefinition channelForm = FormDefinition.of(
                 "demo.channel.form",

@@ -79,20 +79,20 @@ public class MaxBotAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "max.bot.route-component-scan.enabled", havingValue = "true", matchIfMissing = true)
-    public static RouteComponentAutoRegistrar routeComponentAutoRegistrar() {
+    public static RouteComponentAutoRegistrar routeComponentAutoRegistrarMax() {
         return new RouteComponentAutoRegistrar();
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "max.bot.route-component-scan.enabled", havingValue = "true", matchIfMissing = true)
-    public static ScreenComponentAutoRegistrar screenComponentAutoRegistrar() {
+    public static ScreenComponentAutoRegistrar screenComponentAutoRegistrarMax() {
         return new ScreenComponentAutoRegistrar();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public MaxApiClientConfig maxApiClientConfig(MaxBotProperties properties) {
+    public MaxApiClientConfig maxApiClientConfigMax(MaxBotProperties properties) {
         return MaxApiClientConfig.builder()
                 .token(properties.getToken())
                 .baseUrl(properties.getBaseUrl())
@@ -101,7 +101,7 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OkHttpClient okHttpClient(MaxApiClientConfig config) {
+    public OkHttpClient okHttpClientMax(MaxApiClientConfig config) {
         return new OkHttpClient.Builder()
                 .connectTimeout(config.connectTimeout())
                 .readTimeout(config.readTimeout())
@@ -111,19 +111,19 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MaxHttpClient maxHttpClient(MaxApiClientConfig config, OkHttpClient okHttpClient) {
+    public MaxHttpClient maxHttpClientMax(MaxApiClientConfig config, OkHttpClient okHttpClient) {
         return new OkHttpMaxHttpClient(config.baseUri(), okHttpClient);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public JsonCodec maxJsonCodec() {
+    public JsonCodec maxJsonCodecMax() {
         return new JacksonJsonCodec();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public MaxBotClient maxBotClient(
+    public MaxBotClient maxBotClientMax(
             MaxApiClientConfig config,
             MaxHttpClient maxHttpClient,
             JsonCodec jsonCodec
@@ -133,7 +133,7 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public FSMStorage fsmStorage(
+    public FSMStorage fsmStorageMax(
             MaxBotProperties properties,
             ApplicationContext applicationContext,
             JsonCodec jsonCodec
@@ -205,25 +205,25 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public SceneRegistry sceneRegistry() {
+    public SceneRegistry sceneRegistryMax() {
         return new InMemorySceneRegistry();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public SceneStorage sceneStorage() {
+    public SceneStorage sceneStorageMax() {
         return new MemorySceneStorage();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ScreenRegistry screenRegistry() {
+    public ScreenRegistry screenRegistryMax() {
         return new InMemoryScreenRegistry();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ScreenActionCodec screenActionCodec(MaxBotProperties properties) {
+    public ScreenActionCodec screenActionCodecMax(MaxBotProperties properties) {
         return switch (properties.getScreen().getCallback().getCodec().getMode()) {
             case LEGACY_STRING -> new LegacyStringScreenActionCodec();
             case TYPED_V1 -> new TypedV1ScreenActionCodec();
@@ -232,7 +232,7 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MessagingFacade messagingFacade(
+    public MessagingFacade messagingFacadeMax(
             MaxBotClient maxBotClient,
             ObjectProvider<MessageTarget.UserChatResolver> userChatResolverProvider
     ) {
@@ -245,26 +245,26 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public CallbackFacade callbackFacade(MaxBotClient maxBotClient) {
+    public CallbackFacade callbackFacadeMax(MaxBotClient maxBotClient) {
         return new CallbackFacade(maxBotClient);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ChatActionsFacade chatActionsFacade(MaxBotClient maxBotClient) {
+    public ChatActionsFacade chatActionsFacadeMax(MaxBotClient maxBotClient) {
         return new ChatActionsFacade(maxBotClient);
     }
 
     @Bean
     @ConditionalOnBean(UploadService.class)
     @ConditionalOnMissingBean
-    public MediaMessagingFacade mediaMessagingFacade(UploadService uploadService, MessagingFacade messagingFacade) {
+    public MediaMessagingFacade mediaMessagingFacadeMax(UploadService uploadService, MessagingFacade messagingFacade) {
         return new MediaMessagingFacade(uploadService, messagingFacade);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public Dispatcher dispatcher(
+    public Dispatcher dispatcherMax(
             MaxBotProperties properties,
             MaxBotClient maxBotClient,
             FSMStorage fsmStorage,
@@ -323,7 +323,7 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AnnotatedRouteRegistrar annotatedRouteRegistrar(ApplicationContext applicationContext) {
+    public AnnotatedRouteRegistrar annotatedRouteRegistrarMax(ApplicationContext applicationContext) {
         log.debug("Creating AnnotatedRouteRegistrar bean");
         return new AnnotatedRouteRegistrar(new AnnotatedRouteRegistrar.ComponentResolver() {
             @Override
@@ -345,7 +345,7 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public SpringAnnotatedRouteBootstrap springAnnotatedRouteBootstrap(
+    public SpringAnnotatedRouteBootstrap springAnnotatedRouteBootstrapMax(
             Dispatcher dispatcher,
             AnnotatedRouteRegistrar annotatedRouteRegistrar,
             ObjectProvider<Object> beanProvider
@@ -356,25 +356,25 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AnnotatedScreenRegistrar annotatedScreenRegistrar() {
+    public AnnotatedScreenRegistrar annotatedScreenRegistrarMax() {
         return new AnnotatedScreenRegistrar();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public SpringScreenControllerRegistrar springScreenControllerRegistrar() {
+    public SpringScreenControllerRegistrar springScreenControllerRegistrarMax() {
         return new SpringScreenControllerRegistrar();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public AnnotatedWidgetRegistry annotatedWidgetRegistry() {
+    public AnnotatedWidgetRegistry annotatedWidgetRegistryMax() {
         return new AnnotatedWidgetRegistry();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public SpringAnnotatedScreenBootstrap springAnnotatedScreenBootstrap(
+    public SpringAnnotatedScreenBootstrap springAnnotatedScreenBootstrapMax(
             ScreenRegistry screenRegistry,
             AnnotatedScreenRegistrar annotatedScreenRegistrar,
             SpringScreenControllerRegistrar springScreenControllerRegistrar,
@@ -391,7 +391,7 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public SpringAnnotatedWidgetBootstrap springAnnotatedWidgetBootstrap(
+    public SpringAnnotatedWidgetBootstrap springAnnotatedWidgetBootstrapMax(
             AnnotatedWidgetRegistry annotatedWidgetRegistry,
             ObjectProvider<Object> beanProvider
     ) {
@@ -400,21 +400,21 @@ public class MaxBotAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public SpringPollingBootstrap springPollingBootstrap(ObjectProvider<LongPollingRunner> runnerProvider) {
+    public SpringPollingBootstrap springPollingBootstrapMax(ObjectProvider<LongPollingRunner> runnerProvider) {
         return new SpringPollingBootstrap(runnerProvider.getIfAvailable());
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'POLLING' && '${max.bot.polling.enabled:true}' == 'true'")
-    public PollingUpdateSource pollingUpdateSource(MaxBotClient maxBotClient) {
+    public PollingUpdateSource pollingUpdateSourceMax(MaxBotClient maxBotClient) {
         return new SdkPollingUpdateSource(maxBotClient);
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'POLLING' && '${max.bot.polling.enabled:true}' == 'true'")
-    public LongPollingRunnerConfig longPollingRunnerConfig(MaxBotProperties properties) {
+    public LongPollingRunnerConfig longPollingRunnerConfigMax(MaxBotProperties properties) {
         Integer timeoutSeconds = null;
         if (properties.getPolling().getTimeout() != null) {
             timeoutSeconds = Math.toIntExact(properties.getPolling().getTimeout().toSeconds());
@@ -441,7 +441,7 @@ public class MaxBotAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'POLLING' && '${max.bot.polling.enabled:true}' == 'true'")
-    public LongPollingRunner longPollingRunner(
+    public LongPollingRunner longPollingRunnerMax(
             PollingUpdateSource source,
             Dispatcher dispatcher,
             LongPollingRunnerConfig config
@@ -453,21 +453,21 @@ public class MaxBotAutoConfiguration {
     @ConditionalOnBean(LongPollingRunner.class)
     @ConditionalOnMissingBean
     @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'POLLING' && '${max.bot.polling.enabled:true}' == 'true'")
-    public SpringPollingLifecycle springPollingLifecycle(LongPollingRunner longPollingRunner) {
+    public SpringPollingLifecycle springPollingLifecycleMax(LongPollingRunner longPollingRunner) {
         return new SpringPollingLifecycle(longPollingRunner);
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'WEBHOOK' || '${max.bot.webhook.enabled:false}' == 'true'")
-    public WebhookSecretValidator webhookSecretValidator(MaxBotProperties properties) {
+    public WebhookSecretValidator webhookSecretValidatorMax(MaxBotProperties properties) {
         return new DefaultWebhookSecretValidator(properties.getWebhook().getSecret());
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'WEBHOOK' || '${max.bot.webhook.enabled:false}' == 'true'")
-    public WebhookReceiverConfig webhookReceiverConfig(MaxBotProperties properties) {
+    public WebhookReceiverConfig webhookReceiverConfigMax(MaxBotProperties properties) {
         Integer maxInFlight = properties.getWebhook().getMaxInFlight();
         if (maxInFlight == null) {
             return WebhookReceiverConfig.defaults();
@@ -478,7 +478,7 @@ public class MaxBotAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'WEBHOOK' || '${max.bot.webhook.enabled:false}' == 'true'")
-    public WebhookReceiver webhookReceiver(
+    public WebhookReceiver webhookReceiverMax(
             WebhookSecretValidator secretValidator,
             JsonCodec jsonCodec,
             Dispatcher dispatcher,
@@ -491,7 +491,7 @@ public class MaxBotAutoConfiguration {
     @ConditionalOnBean(WebhookReceiver.class)
     @ConditionalOnMissingBean
     @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'WEBHOOK' || '${max.bot.webhook.enabled:false}' == 'true'")
-    public SpringWebhookAdapter springWebhookAdapter(WebhookReceiver webhookReceiver) {
+    public SpringWebhookAdapter springWebhookAdapterMax(WebhookReceiver webhookReceiver) {
         return new SpringWebhookAdapter(webhookReceiver);
     }
 
@@ -501,7 +501,7 @@ public class MaxBotAutoConfiguration {
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     @ConditionalOnExpression("'${max.bot.mode:POLLING}' == 'WEBHOOK' || '${max.bot.webhook.enabled:false}' == 'true'")
     @ConditionalOnMissingBean
-    public SpringWebhookController springWebhookController(SpringWebhookAdapter springWebhookAdapter) {
+    public SpringWebhookController springWebhookControllerMax(SpringWebhookAdapter springWebhookAdapter) {
         return new SpringWebhookController(springWebhookAdapter);
     }
 }
