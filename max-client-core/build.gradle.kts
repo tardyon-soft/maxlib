@@ -2,7 +2,7 @@ description = "Low-level MAX API client abstractions and transport contracts"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 

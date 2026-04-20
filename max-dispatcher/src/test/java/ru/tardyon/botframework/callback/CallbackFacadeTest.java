@@ -119,7 +119,7 @@ class CallbackFacadeTest {
         assertTrue(result);
         ArgumentCaptor<AnswerCallbackRequest> captor = ArgumentCaptor.forClass(AnswerCallbackRequest.class);
         verify(client, times(2)).answerCallback(captor.capture());
-        assertEquals(Boolean.TRUE, captor.getAllValues().getFirst().sendNotification());
+        assertEquals(Boolean.TRUE, captor.getAllValues().get(0).sendNotification());
         assertEquals(Boolean.FALSE, captor.getAllValues().get(1).sendNotification());
         assertEquals("Done", captor.getAllValues().get(1).text());
     }

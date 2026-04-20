@@ -24,7 +24,7 @@ public record WebhookRequest(
     public Optional<String> header(String name) {
         Objects.requireNonNull(name, "name");
         return Optional.ofNullable(headers.get(name.toLowerCase(Locale.ROOT)))
-                .flatMap(values -> values.isEmpty() ? Optional.empty() : Optional.ofNullable(values.getFirst()));
+                .flatMap(values -> values.isEmpty() ? Optional.empty() : Optional.ofNullable(values.get(0)));
     }
 
     @Override

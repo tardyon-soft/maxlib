@@ -69,7 +69,7 @@ public final class ApiSmokeService {
             if (chats.chats().isEmpty()) {
                 return "chats=0";
             }
-            ApiChat first = chats.chats().getFirst();
+            ApiChat first = chats.chats().get(0);
             state.lastChatId = first.chatId();
             return "chats=" + chats.chats().size() + ", first_chat_id=" + first.chatId();
         }));
@@ -276,10 +276,10 @@ public final class ApiSmokeService {
             return state.lastChatId;
         }
         ApiChatsResponse chats = client.getChatsApi(GetChatsApiRequest.defaults());
-        if (chats.chats().isEmpty() || chats.chats().getFirst().chatId() == null) {
+        if (chats.chats().isEmpty() || chats.chats().get(0).chatId() == null) {
             return null;
         }
-        state.lastChatId = chats.chats().getFirst().chatId();
+        state.lastChatId = chats.chats().get(0).chatId();
         return state.lastChatId;
     }
 

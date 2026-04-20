@@ -96,8 +96,8 @@ class MessageBuilderTest {
         NewMessageBody body = builder.toNewMessageBody();
 
         assertEquals(1, body.attachments().size());
-        assertEquals(MessageAttachmentType.FILE, body.attachments().getFirst().type());
-        assertEquals("upload-ref-1", body.attachments().getFirst().input().uploadRef());
+        assertEquals(MessageAttachmentType.FILE, body.attachments().get(0).type());
+        assertEquals("upload-ref-1", body.attachments().get(0).input().uploadRef());
     }
 
     @Test
@@ -112,10 +112,10 @@ class MessageBuilderTest {
         NewMessageBody body = builder.toNewMessageBody();
         assertEquals("hello", body.text());
         assertEquals(1, body.attachments().size());
-        assertEquals(MessageAttachmentType.INLINE_KEYBOARD, body.attachments().getFirst().type());
-        assertEquals(1, body.attachments().getFirst().inlineKeyboard().rows().size());
-        assertEquals("pay:1", body.attachments().getFirst().inlineKeyboard().rows().getFirst().getFirst().callbackData());
-        assertEquals("https://example.com", body.attachments().getFirst().inlineKeyboard().rows().getFirst().get(1).url());
+        assertEquals(MessageAttachmentType.INLINE_KEYBOARD, body.attachments().get(0).type());
+        assertEquals(1, body.attachments().get(0).inlineKeyboard().rows().size());
+        assertEquals("pay:1", body.attachments().get(0).inlineKeyboard().rows().get(0).get(0).callbackData());
+        assertEquals("https://example.com", body.attachments().get(0).inlineKeyboard().rows().get(0).get(1).url());
     }
 
     @Test
@@ -210,8 +210,8 @@ class MessageBuilderTest {
 
         assertEquals("hello", body.text());
         assertEquals(2, body.attachments().size());
-        assertEquals(MessageAttachmentType.PHOTO, body.attachments().getFirst().type());
-        assertEquals("ref-media-1", body.attachments().getFirst().input().uploadRef());
+        assertEquals(MessageAttachmentType.PHOTO, body.attachments().get(0).type());
+        assertEquals("ref-media-1", body.attachments().get(0).input().uploadRef());
         assertEquals(MessageAttachmentType.INLINE_KEYBOARD, body.attachments().get(1).type());
     }
 }

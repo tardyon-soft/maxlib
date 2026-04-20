@@ -48,7 +48,7 @@ class UpdateFixturesTest {
         List<ru.tardyon.botframework.model.Update> flow = UpdateFixtures.statefulMessages("u-1", "c-1", "one", "two", "three");
 
         assertEquals(3, flow.size());
-        assertEquals("u-1", flow.getFirst().message().from().id().value());
+        assertEquals("u-1", flow.get(0).message().from().id().value());
         assertEquals("u-1", flow.get(1).message().from().id().value());
         assertEquals("c-1", flow.get(2).message().chat().id().value());
         assertEquals("three", flow.get(2).message().text());

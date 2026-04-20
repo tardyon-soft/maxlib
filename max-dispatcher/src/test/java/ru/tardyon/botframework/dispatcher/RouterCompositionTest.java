@@ -17,7 +17,7 @@ class RouterCompositionTest {
         parent.includeRouter(child);
 
         assertEquals(1, parent.children().size());
-        assertEquals("child", parent.children().getFirst().name());
+        assertEquals("child", parent.children().get(0).name());
         assertTrue(child.parent().isPresent());
         assertEquals("parent", child.parent().orElseThrow().name());
     }
@@ -31,8 +31,8 @@ class RouterCompositionTest {
         root.includeRouter(feature);
         feature.includeRouter(nested);
 
-        assertEquals("feature", root.children().getFirst().name());
-        assertEquals("nested", feature.children().getFirst().name());
+        assertEquals("feature", root.children().get(0).name());
+        assertEquals("nested", feature.children().get(0).name());
         assertEquals("feature", nested.parent().orElseThrow().name());
     }
 

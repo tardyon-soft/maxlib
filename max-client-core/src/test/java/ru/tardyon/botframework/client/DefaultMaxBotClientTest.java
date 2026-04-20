@@ -368,7 +368,7 @@ class DefaultMaxBotClientTest {
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).isEqualTo("/messages?chat_id=c-100");
         assertThat(messages).hasSize(2);
-        assertThat(messages.getFirst().messageId().value()).isEqualTo("m-1");
+        assertThat(messages.get(0).messageId().value()).isEqualTo("m-1");
     }
 
     @Test
@@ -438,7 +438,7 @@ class DefaultMaxBotClientTest {
         assertThat(recorded.getPath()).contains("count=20");
         assertThat(response.marker()).isEqualTo(200L);
         assertThat(response.chats()).hasSize(1);
-        assertThat(response.chats().getFirst().chatId()).isEqualTo(100L);
+        assertThat(response.chats().get(0).chatId()).isEqualTo(100L);
     }
 
     @Test
@@ -773,7 +773,7 @@ class DefaultMaxBotClientTest {
         assertThat(recorded.getPath()).contains("types=message_created%2Cmessage_callback");
         assertThat(response.marker()).isEqualTo(101L);
         assertThat(response.updates()).hasSize(1);
-        assertThat(response.updates().getFirst().updateId().value()).isEqualTo("upd-msg-m-1");
+        assertThat(response.updates().get(0).updateId().value()).isEqualTo("upd-msg-m-1");
     }
 
     @Test
@@ -786,8 +786,8 @@ class DefaultMaxBotClientTest {
         assertThat(recorded.getMethod()).isEqualTo("GET");
         assertThat(recorded.getPath()).isEqualTo("/subscriptions");
         assertThat(subscriptions).hasSize(1);
-        assertThat(subscriptions.getFirst().url()).isEqualTo("https://example.com/webhook");
-        assertThat(subscriptions.getFirst().updateTypes())
+        assertThat(subscriptions.get(0).url()).isEqualTo("https://example.com/webhook");
+        assertThat(subscriptions.get(0).updateTypes())
                 .containsExactly(UpdateEventType.MESSAGE_CREATED, UpdateEventType.MESSAGE_CALLBACK);
     }
 

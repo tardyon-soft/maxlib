@@ -46,9 +46,9 @@ class AnnotatedWidgetRegistryTest {
 
         WidgetContext context = widgetContext("demo.widget");
         WidgetView view = registry.resolve(context, Map.of("key", "value")).toCompletableFuture().join();
-        assertEquals("Demo Widget", view.textLines().getFirst());
+        assertEquals("Demo Widget", view.textLines().get(0));
         assertEquals(1, view.buttons().size());
-        assertNotNull(view.buttons().getFirst().getFirst().action());
+        assertNotNull(view.buttons().get(0).get(0).action());
 
         WidgetEffect effect = registry.dispatch(context, "increment", Map.of("delta", "1")).toCompletableFuture().join();
         assertEquals(WidgetEffect.RERENDER, effect);

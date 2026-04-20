@@ -45,7 +45,7 @@ class WidgetControllerFacadeWiringIntegrationTest {
     void widgetControllerFacadeIsAutoRegisteredIntoRuntimeResolver() {
         WidgetContext context = new WidgetContext(testScreenContext(), "autodetected.widget", Map.of(), null, null);
         var view = widgetViewResolver.resolve(context, Map.of()).toCompletableFuture().join();
-        assertEquals("autodetected widget", view.textLines().getFirst());
+        assertEquals("autodetected widget", view.textLines().get(0));
     }
 
     @Configuration

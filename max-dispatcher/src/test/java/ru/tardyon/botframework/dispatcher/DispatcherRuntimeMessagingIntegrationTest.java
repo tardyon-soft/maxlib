@@ -205,10 +205,10 @@ class DispatcherRuntimeMessagingIntegrationTest {
         ArgumentCaptor<SendMessageRequest> requestCaptor = ArgumentCaptor.forClass(SendMessageRequest.class);
         verify(client, org.mockito.Mockito.times(2)).sendMessage(requestCaptor.capture());
         List<SendMessageRequest> requests = requestCaptor.getAllValues();
-        assertEquals("m-media-in", requests.getFirst().replyToMessageId().value());
-        assertEquals("ref-image", requests.getFirst().body().attachments().getFirst().input().uploadRef());
+        assertEquals("m-media-in", requests.get(0).replyToMessageId().value());
+        assertEquals("ref-image", requests.get(0).body().attachments().get(0).input().uploadRef());
         assertEquals("m-media-in", requests.get(1).replyToMessageId().value());
-        assertEquals("ref-file", requests.get(1).body().attachments().getFirst().input().uploadRef());
+        assertEquals("ref-file", requests.get(1).body().attachments().get(0).input().uploadRef());
     }
 
     @Test
@@ -247,9 +247,9 @@ class DispatcherRuntimeMessagingIntegrationTest {
         ArgumentCaptor<SendMessageRequest> requestCaptor = ArgumentCaptor.forClass(SendMessageRequest.class);
         verify(client, org.mockito.Mockito.times(2)).sendMessage(requestCaptor.capture());
         List<SendMessageRequest> requests = requestCaptor.getAllValues();
-        assertEquals("video-token-1", requests.getFirst().body().attachments().getFirst().input().uploadRef());
-        assertEquals("audio-token-1", requests.get(1).body().attachments().getFirst().input().uploadRef());
-        assertEquals("chat-1", requests.getFirst().chatId().value());
+        assertEquals("video-token-1", requests.get(0).body().attachments().get(0).input().uploadRef());
+        assertEquals("audio-token-1", requests.get(1).body().attachments().get(0).input().uploadRef());
+        assertEquals("chat-1", requests.get(0).chatId().value());
         assertEquals("chat-1", requests.get(1).chatId().value());
     }
 
@@ -313,7 +313,7 @@ class DispatcherRuntimeMessagingIntegrationTest {
         verify(client).sendMessage(requestCaptor.capture());
         SendMessageRequest request = requestCaptor.getValue();
         assertEquals("with-media", request.body().text());
-        assertEquals("ref-composed", request.body().attachments().getFirst().input().uploadRef());
+        assertEquals("ref-composed", request.body().attachments().get(0).input().uploadRef());
     }
 
     private static Update messageUpdate(String messageId, String text) {

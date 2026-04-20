@@ -13,7 +13,7 @@ public interface Wizard extends Scene {
 
     default Optional<WizardStep> firstStep() {
         List<WizardStep> steps = steps();
-        return steps.isEmpty() ? Optional.empty() : Optional.of(steps.getFirst());
+        return steps.isEmpty() ? Optional.empty() : Optional.of(steps.get(0));
     }
 
     default Optional<WizardStep> stepAt(int index) {

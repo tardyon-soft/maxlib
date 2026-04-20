@@ -201,7 +201,7 @@ public final class DefaultMaxBotClient implements MaxBotClient {
             if (entry.getKey() != null && entry.getKey().toLowerCase(Locale.ROOT).equals(headerName.toLowerCase(Locale.ROOT))) {
                 List<String> values = entry.getValue();
                 if (values != null && !values.isEmpty()) {
-                    return values.getFirst();
+                    return values.get(0);
                 }
             }
         }

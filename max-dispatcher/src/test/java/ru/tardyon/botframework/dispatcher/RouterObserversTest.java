@@ -38,13 +38,13 @@ class RouterObserversTest {
 
         assertSame(router, returned);
         assertEquals(1, router.updates().handlers().size());
-        assertSame(updateHandler, router.updates().handlers().getFirst());
+        assertSame(updateHandler, router.updates().handlers().get(0));
         assertEquals(1, router.messages().handlers().size());
-        assertSame(messageHandler, router.messages().handlers().getFirst());
+        assertSame(messageHandler, router.messages().handlers().get(0));
         assertEquals(1, router.callbacks().handlers().size());
-        assertSame(callbackHandler, router.callbacks().handlers().getFirst());
+        assertSame(callbackHandler, router.callbacks().handlers().get(0));
         assertEquals(1, router.errors().handlers().size());
-        assertSame(errorHandler, router.errors().handlers().getFirst());
+        assertSame(errorHandler, router.errors().handlers().get(0));
     }
 
     @Test
@@ -56,7 +56,7 @@ class RouterObserversTest {
 
         assertSame(router, returned);
         assertEquals(1, router.messages().handlers().size());
-        assertSame(messageHandler, router.messages().handlers().getFirst());
+        assertSame(messageHandler, router.messages().handlers().get(0));
     }
 
     @Test
@@ -68,7 +68,7 @@ class RouterObserversTest {
 
         assertSame(router, returned);
         assertEquals(1, router.messages().handlers().size());
-        assertSame(messageHandler, router.messages().handlers().getFirst());
+        assertSame(messageHandler, router.messages().handlers().get(0));
     }
 
     @Test
@@ -80,7 +80,7 @@ class RouterObserversTest {
 
         assertSame(router, returned);
         assertEquals(1, router.innerMiddlewares().size());
-        assertSame(middleware, router.innerMiddlewares().getFirst());
+        assertSame(middleware, router.innerMiddlewares().get(0));
     }
 
     @Test

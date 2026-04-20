@@ -36,7 +36,7 @@ class DispatcherTest {
         dispatcher.includeRouter(router);
 
         assertEquals(1, dispatcher.routers().size());
-        assertEquals("main", dispatcher.routers().getFirst().name());
+        assertEquals("main", dispatcher.routers().get(0).name());
     }
 
     @Test

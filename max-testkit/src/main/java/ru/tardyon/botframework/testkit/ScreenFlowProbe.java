@@ -40,7 +40,7 @@ public final class ScreenFlowProbe {
     }
 
     public Step lastStep() {
-        return steps.getLast();
+        return steps.get(steps.size() - 1);
     }
 
     public ScreenFlowProbe assertLastHandled() {
@@ -115,11 +115,14 @@ public final class ScreenFlowProbe {
     }
 
     private static void collectFromBody(Object body, ArrayList<String> payloads) {
-        NewMessageBody messageBody = switch (body) {
-            case SendMessageRequest send -> send.body();
-            case EditMessageRequest edit -> edit.body();
-            default -> null;
-        };
+        NewMessageBody messageBody;
+        if (body instanceof SendMessageRequest send) {
+            messageBody = send.body();
+        } else if (body instanceof EditMessageRequest edit) {
+            messageBody = edit.body();
+        } else {
+            messageBody = null;
+        }
         if (messageBody == null) {
             collectFromApiOutgoingBody(body, payloads);
             return;

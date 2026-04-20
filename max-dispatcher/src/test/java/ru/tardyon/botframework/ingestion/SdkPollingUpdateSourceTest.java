@@ -54,7 +54,7 @@ class SdkPollingUpdateSourceTest {
         PollingBatch batch = source.poll(request);
 
         assertEquals(1, batch.updates().size());
-        assertSame(update, batch.updates().getFirst());
+        assertSame(update, batch.updates().get(0));
         assertEquals(11L, batch.nextMarker());
         verify(client).getUpdates(new GetUpdatesRequest(10L, 10, 100, List.of(UpdateEventType.MESSAGE_CALLBACK)));
     }
@@ -87,8 +87,8 @@ class SdkPollingUpdateSourceTest {
         PollingBatch batch = source.poll(request);
 
         assertEquals(1, batch.updates().size());
-        assertEquals("upd-msg-101", batch.updates().getFirst().updateId().value());
-        assertEquals(UpdateType.MESSAGE, batch.updates().getFirst().type());
+        assertEquals("upd-msg-101", batch.updates().get(0).updateId().value());
+        assertEquals(UpdateType.MESSAGE, batch.updates().get(0).type());
         assertEquals(2L, batch.nextMarker());
     }
 

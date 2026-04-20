@@ -31,8 +31,8 @@ class RecordingMaxBotClientTest {
 
         assertEquals("chat-1", message.chat().id().value());
         assertEquals(1, client.calls().size());
-        assertEquals("/messages", client.calls().getFirst().path());
-        assertFalse(client.calls().getFirst().body().isEmpty());
+        assertEquals("/messages", client.calls().get(0).path());
+        assertFalse(client.calls().get(0).body().isEmpty());
     }
 
     @Test

@@ -62,7 +62,7 @@ class WidgetsRefTest {
 
         CompletionStage<WidgetRender> stage = Widgets.ref("demo.widget").render(screenContext);
         WidgetRender render = stage.toCompletableFuture().join();
-        assertEquals("resolved:demo.widget", render.textLines().getFirst());
+        assertEquals("resolved:demo.widget", render.textLines().get(0));
     }
 
     private static Update sampleUpdate() {

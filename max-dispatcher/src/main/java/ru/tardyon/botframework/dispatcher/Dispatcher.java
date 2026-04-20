@@ -528,7 +528,7 @@ public final class Dispatcher implements UpdateConsumer {
         Router router = rootRouters.stream()
                 .filter(candidate -> !candidate.errors().handlers().isEmpty())
                 .findFirst()
-                .orElse(rootRouters.getFirst());
+                .orElse(rootRouters.get(0));
         return handleFailure(router, update, error, type);
     }
 

@@ -17,9 +17,9 @@ class KeyboardBuilderTest {
         ));
 
         assertEquals(1, keyboard.rows().size());
-        assertEquals(1, keyboard.rows().getFirst().size());
-        assertEquals(InlineKeyboardButton.Kind.CALLBACK, keyboard.rows().getFirst().getFirst().kind());
-        assertEquals("pay:1", keyboard.rows().getFirst().getFirst().callbackData());
+        assertEquals(1, keyboard.rows().get(0).size());
+        assertEquals(InlineKeyboardButton.Kind.CALLBACK, keyboard.rows().get(0).get(0).kind());
+        assertEquals("pay:1", keyboard.rows().get(0).get(0).callbackData());
     }
 
     @Test
@@ -30,9 +30,9 @@ class KeyboardBuilderTest {
         );
 
         assertEquals(2, keyboard.rows().size());
-        assertEquals(2, keyboard.rows().getFirst().size());
+        assertEquals(2, keyboard.rows().get(0).size());
         assertEquals(1, keyboard.rows().get(1).size());
-        assertEquals(InlineKeyboardButton.Kind.LINK, keyboard.rows().get(1).getFirst().kind());
+        assertEquals(InlineKeyboardButton.Kind.LINK, keyboard.rows().get(1).get(0).kind());
     }
 
     @Test
@@ -45,11 +45,11 @@ class KeyboardBuilderTest {
 
         var body = builder.toNewMessageBody();
         assertEquals(1, body.attachments().size());
-        var keyboardAttachment = body.attachments().getFirst();
+        var keyboardAttachment = body.attachments().get(0);
         assertEquals(MessageAttachmentType.INLINE_KEYBOARD, keyboardAttachment.type());
         assertEquals(2, keyboardAttachment.inlineKeyboard().rows().size());
-        assertEquals("buy:1", keyboardAttachment.inlineKeyboard().rows().getFirst().getFirst().callbackData());
-        assertEquals("https://example.com", keyboardAttachment.inlineKeyboard().rows().get(1).getFirst().url());
+        assertEquals("buy:1", keyboardAttachment.inlineKeyboard().rows().get(0).get(0).callbackData());
+        assertEquals("https://example.com", keyboardAttachment.inlineKeyboard().rows().get(1).get(0).url());
     }
 
     @Test
@@ -58,8 +58,8 @@ class KeyboardBuilderTest {
                 .keyboard(k -> k.row(Buttons.requestContact("Share contact")));
 
         var button = builder.toNewMessageBody()
-                .attachments().getFirst()
-                .inlineKeyboard().rows().getFirst().getFirst();
+                .attachments().get(0)
+                .inlineKeyboard().rows().get(0).get(0);
         assertEquals(Boolean.TRUE, button.requestContact());
     }
 
@@ -69,8 +69,8 @@ class KeyboardBuilderTest {
                 .keyboard(k -> k.row(Buttons.requestGeoLocation("Share location")));
 
         var button = builder.toNewMessageBody()
-                .attachments().getFirst()
-                .inlineKeyboard().rows().getFirst().getFirst();
+                .attachments().get(0)
+                .inlineKeyboard().rows().get(0).get(0);
         assertEquals(Boolean.TRUE, button.requestGeoLocation());
     }
 
@@ -80,8 +80,8 @@ class KeyboardBuilderTest {
                 .keyboard(k -> k.row(Buttons.openApp("Open app", "app:orders")));
 
         var button = builder.toNewMessageBody()
-                .attachments().getFirst()
-                .inlineKeyboard().rows().getFirst().getFirst();
+                .attachments().get(0)
+                .inlineKeyboard().rows().get(0).get(0);
         assertEquals("app:orders", button.openApp());
     }
 
@@ -91,8 +91,8 @@ class KeyboardBuilderTest {
                 .keyboard(k -> k.row(Buttons.message("Send", "hello-from-button")));
 
         var button = builder.toNewMessageBody()
-                .attachments().getFirst()
-                .inlineKeyboard().rows().getFirst().getFirst();
+                .attachments().get(0)
+                .inlineKeyboard().rows().get(0).get(0);
         assertEquals("hello-from-button", button.message());
     }
 

@@ -56,7 +56,7 @@ class DispatcherTestKitTest {
         assertEquals(1, probe.sideEffects().size());
         assertTrue(probe.hasCall("/messages"));
         assertEquals(1, probe.callsTo("/messages").size());
-        assertFalse(probe.callsTo("/messages").getFirst().body().isEmpty());
+        assertFalse(probe.callsTo("/messages").get(0).body().isEmpty());
     }
 
     @Test
@@ -145,7 +145,7 @@ class DispatcherTestKitTest {
         var results = kit.feedAll(UpdateFixtures.statefulMessages("u-1", "c-1", "start", "next"));
 
         assertEquals(2, results.size());
-        assertEquals(DispatchStatus.HANDLED, results.getFirst().status());
+        assertEquals(DispatchStatus.HANDLED, results.get(0).status());
         assertEquals(DispatchStatus.HANDLED, results.get(1).status());
         assertEquals("form.done", state.get());
     }

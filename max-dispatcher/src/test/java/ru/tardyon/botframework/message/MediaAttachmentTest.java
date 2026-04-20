@@ -129,7 +129,7 @@ class MediaAttachmentTest {
                 .toNewMessageBody();
 
         assertEquals(1, body.attachments().size());
-        assertEquals(MessageAttachmentType.PHOTO, body.attachments().getFirst().type());
-        assertEquals("ref-bld", body.attachments().getFirst().input().uploadRef());
+        assertEquals(MessageAttachmentType.PHOTO, body.attachments().get(0).type());
+        assertEquals("ref-bld", body.attachments().get(0).input().uploadRef());
     }
 }

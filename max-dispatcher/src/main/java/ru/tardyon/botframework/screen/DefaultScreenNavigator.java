@@ -98,7 +98,7 @@ public final class DefaultScreenNavigator implements ScreenNavigator {
                 return CompletableFuture.completedFuture(false);
             }
             ArrayList<ScreenStackEntry> stack = new ArrayList<>(current.stack());
-            stack.removeLast();
+            stack.remove(stack.size() - 1);
             ScreenSession next = new ScreenSession(current.scopeId(), stack, current.rootMessageId(), now());
             return renderAndStore(next).thenApply(ignored -> true);
         });

@@ -57,8 +57,8 @@ class MediaMessagingFacadeTest {
         SendMessageRequest request = sendCaptor.getValue();
         assertEquals("chat-1", request.chatId().value());
         assertEquals(1, request.body().attachments().size());
-        assertEquals(MessageAttachmentType.PHOTO, request.body().attachments().getFirst().type());
-        assertEquals("ref-image", request.body().attachments().getFirst().input().uploadRef());
+        assertEquals(MessageAttachmentType.PHOTO, request.body().attachments().get(0).type());
+        assertEquals("ref-image", request.body().attachments().get(0).input().uploadRef());
     }
 
     @Test
@@ -89,9 +89,9 @@ class MediaMessagingFacadeTest {
 
         assertEquals(source.chat().id().value(), request.chatId().value());
         assertEquals(source.messageId().value(), request.replyToMessageId().value());
-        assertEquals(MessageAttachmentType.VIDEO, request.body().attachments().getFirst().type());
-        assertEquals("video-token-1", request.body().attachments().getFirst().input().uploadRef());
-        assertEquals("clip", request.body().attachments().getFirst().caption());
+        assertEquals(MessageAttachmentType.VIDEO, request.body().attachments().get(0).type());
+        assertEquals("video-token-1", request.body().attachments().get(0).input().uploadRef());
+        assertEquals("clip", request.body().attachments().get(0).caption());
     }
 
     @Test
@@ -120,10 +120,10 @@ class MediaMessagingFacadeTest {
         verify(client, org.mockito.Mockito.times(2)).sendMessage(sendCaptor.capture());
         List<SendMessageRequest> requests = sendCaptor.getAllValues();
 
-        assertEquals(MessageAttachmentType.FILE, requests.getFirst().body().attachments().getFirst().type());
-        assertEquals("ref-file", requests.getFirst().body().attachments().getFirst().input().uploadRef());
-        assertEquals(MessageAttachmentType.AUDIO, requests.get(1).body().attachments().getFirst().type());
-        assertEquals("audio-token-1", requests.get(1).body().attachments().getFirst().input().uploadRef());
+        assertEquals(MessageAttachmentType.FILE, requests.get(0).body().attachments().get(0).type());
+        assertEquals("ref-file", requests.get(0).body().attachments().get(0).input().uploadRef());
+        assertEquals(MessageAttachmentType.AUDIO, requests.get(1).body().attachments().get(0).type());
+        assertEquals("audio-token-1", requests.get(1).body().attachments().get(0).input().uploadRef());
     }
 
     private static UploadResult uploadResult(String ref, UploadMediaKind kind, String contentType, long size) {

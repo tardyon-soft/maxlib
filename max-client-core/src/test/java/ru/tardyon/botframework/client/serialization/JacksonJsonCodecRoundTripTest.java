@@ -83,8 +83,8 @@ class JacksonJsonCodecRoundTripTest {
         MessagesResponse response = jsonCodec.read(json, MessagesResponse.class);
 
         assertThat(response.messages()).hasSize(1);
-        assertThat(response.messages().getFirst().messageId().value()).isEqualTo("m-raw-1");
-        assertThat(response.messages().getFirst().chat().id().value()).isEqualTo("247923392");
+        assertThat(response.messages().get(0).messageId().value()).isEqualTo("m-raw-1");
+        assertThat(response.messages().get(0).chat().id().value()).isEqualTo("247923392");
     }
 
     private record SampleDto(String id, String optionalComment, Instant createdAt) {

@@ -28,7 +28,7 @@ public record ScreenSession(
         if (stack.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(stack.getLast());
+        return Optional.of(stack.get(stack.size() - 1));
     }
 
     public boolean canGoBack() {
