@@ -34,6 +34,7 @@ class MaxBotPropertiesTest {
                     assertEquals("/webhook/max", properties.getWebhook().getPath());
                     assertEquals(MaxBotStorageType.MEMORY, properties.getStorage().getType());
                     assertEquals(StateScope.USER_IN_CHAT, properties.getStorage().getStateScope());
+                    assertEquals("max.screen", properties.getScreen().getNamespace());
                     assertEquals(ScreenActionCodecMode.LEGACY_STRING, properties.getScreen().getCallback().getCodec().getMode());
                 });
     }
@@ -58,6 +59,7 @@ class MaxBotPropertiesTest {
                         "max.bot.storage.state-scope=CHAT",
                         "max.bot.storage.redis.key-prefix=max:test:fsm",
                         "max.bot.storage.redis.ttl=120s",
+                        "max.bot.screen.namespace=custom.screen",
                         "max.bot.screen.callback.codec.mode=TYPED_V1"
                 )
                 .run(context -> {
@@ -80,6 +82,7 @@ class MaxBotPropertiesTest {
                     assertEquals(StateScope.CHAT, properties.getStorage().getStateScope());
                     assertEquals("max:test:fsm", properties.getStorage().getRedis().getKeyPrefix());
                     assertEquals(java.time.Duration.ofSeconds(120), properties.getStorage().getRedis().getTtl());
+                    assertEquals("custom.screen", properties.getScreen().getNamespace());
                     assertEquals(ScreenActionCodecMode.TYPED_V1, properties.getScreen().getCallback().getCodec().getMode());
                 });
     }

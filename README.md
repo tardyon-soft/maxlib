@@ -150,7 +150,8 @@ public class MenuRoute {
 - ручная регистрация `ScreenDefinition` в `ScreenRegistry`;
 - аннотации `@Screen`, `@Render`, `@OnAction`, `@OnText`.
 
-Для screen-flow используется отдельный FSM namespace `screen` (`context.fsm("screen")`), чтобы стейты экранов не конфликтовали с пользовательскими FSM стейтами.
+Для screen-flow используется отдельный FSM namespace, чтобы стейты экранов не конфликтовали с пользовательскими FSM стейтами.
+В Spring starter namespace настраивается через `max.bot.screen.namespace` (по умолчанию `max.screen`).
 
 Виджеты поддерживают текст/кнопки и media attachments (`Widgets.media(...)`, `Widgets.attachment(...)`, `Widgets.attachments(...)`), но для MAX нужно передавать валидные upload/file reference.
 

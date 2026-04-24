@@ -4,14 +4,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.net.SocketTimeoutException;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import ru.tardyon.botframework.client.MaxBotClient;
 import ru.tardyon.botframework.client.error.MaxApiException;
+import ru.tardyon.botframework.client.error.MaxTransportException;
 import ru.tardyon.botframework.model.Update;
 import ru.tardyon.botframework.model.UpdateEventType;
 import ru.tardyon.botframework.model.UpdateId;
@@ -104,6 +107,40 @@ class SdkPollingUpdateSourceTest {
         MaxApiException actual = assertThrows(MaxApiException.class, () -> source.poll(request));
 
         assertSame(expected, actual);
+    }
+
+    @Test
+    void pollTreatsApiTransportTimeoutAsEmptyBatch() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        SdkPollingUpdateSource source = new SdkPollingUpdateSource(client);
+        PollingFetchRequest request = new PollingFetchRequest(50L, 30, 100, List.of());
+        when(client.getUpdatesApi(new GetUpdatesRequest(50L, 30, 100, List.of())))
+                .thenThrow(new MaxTransportException("transport timeout", new SocketTimeoutException("Read timed out")));
+
+        PollingBatch batch = source.poll(request);
+
+        assertEquals(0, batch.updates().size());
+        assertEquals(50L, batch.nextMarker());
+        verify(client).getUpdatesApi(new GetUpdatesRequest(50L, 30, 100, List.of()));
+        verifyNoMoreInteractions(client);
+    }
+
+    @Test
+    void pollTreatsLegacyTransportTimeoutAsEmptyBatch() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        SdkPollingUpdateSource source = new SdkPollingUpdateSource(client);
+        PollingFetchRequest request = new PollingFetchRequest(60L, 30, 100, List.of());
+        when(client.getUpdatesApi(new GetUpdatesRequest(60L, 30, 100, List.of())))
+                .thenReturn(new ApiGetUpdatesResponse(List.of(), 60L));
+        when(client.getUpdates(new GetUpdatesRequest(60L, 30, 100, List.of())))
+                .thenThrow(new MaxTransportException("Read timeout", new RuntimeException("timeout waiting for response")));
+
+        PollingBatch batch = source.poll(request);
+
+        assertEquals(0, batch.updates().size());
+        assertEquals(60L, batch.nextMarker());
+        verify(client).getUpdatesApi(new GetUpdatesRequest(60L, 30, 100, List.of()));
+        verify(client).getUpdates(new GetUpdatesRequest(60L, 30, 100, List.of()));
     }
 
     private static Update sampleUpdate(String updateId) {

@@ -44,6 +44,10 @@
   - `LEGACY_STRING` — legacy payload format (`ui:act:<action>?k=v`)
   - `TYPED_V1` — typed v1 payload format with backward-compatible fallback parsing of legacy callbacks.
 
+`max.bot.screen.*`:
+
+- `namespace` (default `max.screen`) — FSM namespace для screen state.
+
 ## Auto-configured beans
 
 - `MaxBotClient` stack

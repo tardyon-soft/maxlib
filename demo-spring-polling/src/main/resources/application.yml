@@ -1,6 +1,6 @@
 max:
   bot:
-    token: ${MAX_BOT_TOKEN}
+    token: ${BOT_TOKEN}
     mode: POLLING
     polling:
       enabled: true

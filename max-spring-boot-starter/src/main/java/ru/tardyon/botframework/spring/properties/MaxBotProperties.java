@@ -234,8 +234,18 @@ public class MaxBotProperties {
      * Screen runtime properties (`max.bot.screen.*`).
      */
     public static final class Screen {
+        @NotBlank
+        private String namespace = "max.screen";
         @Valid
         private final Callback callback = new Callback();
+
+        public String getNamespace() {
+            return namespace;
+        }
+
+        public void setNamespace(String namespace) {
+            this.namespace = namespace;
+        }
 
         public Callback getCallback() {
             return callback;
