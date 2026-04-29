@@ -12,7 +12,7 @@ public record ApiChat(
         @JsonProperty("type") String type,
         @JsonProperty("status") String status,
         @JsonProperty("title") String title,
-        @JsonProperty("icon") Object icon,
+        @JsonProperty("icon") ApiImage icon,
         @JsonProperty("last_event_time") Long lastEventTime,
         @JsonProperty("participants_count") Integer participantsCount,
         @JsonProperty("owner_id") Long ownerId,

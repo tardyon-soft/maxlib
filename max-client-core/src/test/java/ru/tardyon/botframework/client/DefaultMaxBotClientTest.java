@@ -47,6 +47,7 @@ import ru.tardyon.botframework.model.request.InlineKeyboardAttachment;
 import ru.tardyon.botframework.model.request.InlineKeyboardButtonRequest;
 import ru.tardyon.botframework.model.request.NewMessageBody;
 import ru.tardyon.botframework.model.request.NewMessageAttachment;
+import ru.tardyon.botframework.model.request.PhotoAttachmentRequestPayload;
 import ru.tardyon.botframework.model.request.PrepareUploadApiRequest;
 import ru.tardyon.botframework.model.request.SendMessageRequest;
 import ru.tardyon.botframework.model.request.SendMessageApiRequest;
@@ -452,6 +453,9 @@ class DefaultMaxBotClientTest {
                           "type": "chat",
                           "status": "active",
                           "title": "Team Alpha",
+                          "icon": {
+                            "url": "https://example.com/chat.png"
+                          },
                           "last_event_time": 1700000000,
                           "participants_count": 10,
                           "is_public": false
@@ -466,6 +470,7 @@ class DefaultMaxBotClientTest {
         assertThat(chat.chatId()).isEqualTo(100L);
         assertThat(chat.type()).isEqualTo("chat");
         assertThat(chat.title()).isEqualTo("Team Alpha");
+        assertThat(chat.icon().url()).isEqualTo("https://example.com/chat.png");
     }
 
     @Test
@@ -706,7 +711,15 @@ class DefaultMaxBotClientTest {
                         """));
         http.enqueueJsonFixture("operation-success-response.json");
 
-        ApiChat patched = client.patchChatApi(100L, new UpdateChatApiRequest(Map.of(), "New Title", true, false));
+        ApiChat patched = client.patchChatApi(
+                100L,
+                new UpdateChatApiRequest(
+                        PhotoAttachmentRequestPayload.url("https://example.com/icon.png"),
+                        "New Title",
+                        "m-1",
+                        false
+                )
+        );
         boolean deleted = client.deleteChatApi(100L);
 
         RecordedRequest patch = http.takeRequest();
