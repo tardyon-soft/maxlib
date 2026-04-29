@@ -72,6 +72,7 @@ class SdkPollingUpdateSourceTest {
         ApiUpdate apiUpdate = new ApiUpdate(
                 "message_created",
                 1735689600L,
+                null,
                 new ApiMessage(
                         "101",
                         new ApiUser(7L, "Alice", null, "alice", false, null, "Alice"),
@@ -82,6 +83,8 @@ class SdkPollingUpdateSourceTest {
                         null,
                         null
                 ),
+                null,
+                null,
                 null,
                 null,
                 "ru-RU"
@@ -108,12 +111,15 @@ class SdkPollingUpdateSourceTest {
                 1735689600L,
                 null,
                 null,
+                null,
                 new ApiChatMember(
                         7L,
                         100L,
                         "admin",
                         new ApiUser(7L, "Helper", null, "helper_bot", true, null, "Helper")
                 ),
+                null,
+                null,
                 "ru-RU"
         );
         when(client.getUpdatesApi(new GetUpdatesRequest(1L, 10, 10, List.of(UpdateEventType.CHAT_MEMBER))))
@@ -125,6 +131,36 @@ class SdkPollingUpdateSourceTest {
         assertEquals(UpdateType.CHAT_MEMBER, batch.updates().get(0).type());
         assertEquals("7", batch.updates().get(0).chatMember().user().id().value());
         assertEquals("100", batch.updates().get(0).chatMember().chat().id().value());
+        assertEquals(2L, batch.nextMarker());
+    }
+
+    @Test
+    void pollMapsTransportBotAddedUpdates() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        SdkPollingUpdateSource source = new SdkPollingUpdateSource(client);
+        PollingFetchRequest request = new PollingFetchRequest(1L, 10, 10, List.of(UpdateEventType.BOT_ADDED));
+
+        ApiUpdate apiUpdate = new ApiUpdate(
+                "bot_added",
+                1735689600L,
+                100L,
+                null,
+                null,
+                null,
+                new ApiUser(7L, "Alice", null, "alice", false, null, "Alice"),
+                true,
+                "ru-RU"
+        );
+        when(client.getUpdatesApi(new GetUpdatesRequest(1L, 10, 10, List.of(UpdateEventType.BOT_ADDED))))
+                .thenReturn(new ApiGetUpdatesResponse(List.of(apiUpdate), 2L));
+
+        PollingBatch batch = source.poll(request);
+
+        assertEquals(1, batch.updates().size());
+        assertEquals(UpdateType.BOT_ADDED, batch.updates().get(0).type());
+        assertEquals("100", batch.updates().get(0).chatId().value());
+        assertEquals("7", batch.updates().get(0).user().id().value());
+        assertEquals(Boolean.TRUE, batch.updates().get(0).channel());
         assertEquals(2L, batch.nextMarker());
     }
 

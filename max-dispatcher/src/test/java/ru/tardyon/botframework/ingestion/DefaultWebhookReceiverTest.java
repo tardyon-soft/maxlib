@@ -124,6 +124,31 @@ class DefaultWebhookReceiverTest {
     }
 
     @Test
+    void validBotAddedTransportPayloadIsAcceptedAndMapped() {
+        UpdateSink sink = Mockito.mock(UpdateSink.class);
+        when(sink.handle(any())).thenReturn(CompletableFuture.completedFuture(UpdateHandlingResult.success()));
+
+        DefaultWebhookReceiver receiver = new DefaultWebhookReceiver(
+                new DefaultWebhookSecretValidator("secret-1"),
+                new JacksonJsonCodec(),
+                sink
+        );
+
+        WebhookReceiveResult result = receiver.receive(request(validBotAddedTransportPayload(), "secret-1"))
+                .toCompletableFuture()
+                .join();
+
+        ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
+        assertEquals(WebhookReceiveStatus.ACCEPTED, result.status());
+        verify(sink).handle(updateCaptor.capture());
+        Update update = updateCaptor.getValue();
+        assertEquals(UpdateType.BOT_ADDED, update.type());
+        assertEquals("2001", update.chatId().value());
+        assertEquals("1001", update.user().id().value());
+        assertEquals(Boolean.TRUE, update.channel());
+    }
+
+    @Test
     void sinkFailureReturnsInternalError() {
         UpdateSink sink = Mockito.mock(UpdateSink.class);
         when(sink.handle(any())).thenReturn(
@@ -229,6 +254,23 @@ class DefaultWebhookReceiverTest {
                       "is_bot": true
                     }
                   }
+                }
+                """;
+    }
+
+    private static String validBotAddedTransportPayload() {
+        return """
+                {
+                  "update_type": "bot_added",
+                  "timestamp": 1735689600,
+                  "chat_id": 2001,
+                  "user": {
+                    "user_id": 1001,
+                    "first_name": "Alice",
+                    "username": "alice",
+                    "is_bot": false
+                  },
+                  "is_channel": true
                 }
                 """;
     }

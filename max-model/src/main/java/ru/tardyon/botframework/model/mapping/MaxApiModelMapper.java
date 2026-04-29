@@ -129,6 +129,8 @@ public final class MaxApiModelMapper {
         Message message = source.message() == null ? null : toNormalized(source.message());
         Callback callback = source.callback() == null ? null : toNormalized(source.callback());
         ChatMember chatMember = source.chatMember() == null ? null : toNormalized(source.chatMember());
+        ChatId chatId = source.chatId() == null ? null : new ChatId(source.chatId().toString());
+        User user = source.user() == null ? null : toNormalized(source.user());
         if (callback != null && callback.message() == null && message != null) {
             callback = new Callback(
                     callback.callbackId(),
@@ -145,6 +147,9 @@ public final class MaxApiModelMapper {
                 message,
                 callback,
                 chatMember,
+                chatId,
+                user,
+                source.isChannel(),
                 toInstant(source.timestamp())
         );
     }
@@ -283,6 +288,8 @@ public final class MaxApiModelMapper {
         return switch (value) {
             case "message_created" -> UpdateType.MESSAGE;
             case "message_callback" -> UpdateType.CALLBACK;
+            case "bot_added" -> UpdateType.BOT_ADDED;
+            case "bot_removed" -> UpdateType.BOT_REMOVED;
             case "chat_member" -> UpdateType.CHAT_MEMBER;
             default -> UpdateType.UNKNOWN;
         };
@@ -316,6 +323,10 @@ public final class MaxApiModelMapper {
         String messageId = extractMessageId(source.message());
         if (messageId != null && !messageId.isBlank()) {
             return "upd-msg-" + messageId;
+        }
+        if (source.chatId() != null && source.updateType() != null && !source.updateType().isBlank()) {
+            long ts = source.timestamp() == null ? 0L : source.timestamp();
+            return "upd-" + source.updateType() + "-" + source.chatId() + "-" + ts;
         }
         String type = source.updateType();
         Long timestamp = source.timestamp();

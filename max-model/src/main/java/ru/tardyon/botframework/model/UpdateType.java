@@ -9,6 +9,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum UpdateType {
     MESSAGE("message"),
     CALLBACK("callback"),
+    BOT_ADDED("bot_added"),
+    BOT_REMOVED("bot_removed"),
     CHAT_MEMBER("chat_member"),
     UNKNOWN("unknown");
 

@@ -14,10 +14,24 @@ public record Update(
         Message message,
         Callback callback,
         ChatMember chatMember,
+        ChatId chatId,
+        User user,
+        Boolean channel,
         Instant eventAt
 ) {
     public Update {
         Objects.requireNonNull(updateId, "updateId");
         Objects.requireNonNull(type, "type");
+    }
+
+    public Update(
+            UpdateId updateId,
+            UpdateType type,
+            Message message,
+            Callback callback,
+            ChatMember chatMember,
+            Instant eventAt
+    ) {
+        this(updateId, type, message, callback, chatMember, null, null, null, eventAt);
     }
 }

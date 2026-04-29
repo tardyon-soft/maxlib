@@ -154,6 +154,34 @@ class MaxApiModelMapperTest {
     }
 
     @Test
+    void mapsApiBotAddedUpdateToNormalizedUpdate() throws IOException {
+        ApiUpdate api = objectMapper.readValue("""
+                {
+                  "update_type": "bot_added",
+                  "timestamp": 1735689600,
+                  "chat_id": 2001,
+                  "user": {
+                    "user_id": 1001,
+                    "first_name": "Alice",
+                    "username": "alice",
+                    "is_bot": false
+                  },
+                  "is_channel": true
+                }
+                """, ApiUpdate.class);
+
+        var update = MaxApiModelMapper.toNormalized(api);
+
+        assertThat(update.updateId().value()).isEqualTo("upd-bot_added-2001-1735689600");
+        assertThat(update.type()).isEqualTo(UpdateType.BOT_ADDED);
+        assertThat(update.chatId()).isNotNull();
+        assertThat(update.chatId().value()).isEqualTo("2001");
+        assertThat(update.user()).isNotNull();
+        assertThat(update.user().id().value()).isEqualTo("1001");
+        assertThat(update.channel()).isTrue();
+    }
+
+    @Test
     void mapsApiNewMessageBodyToNormalizedAndBack() throws IOException {
         ApiNewMessageBody api = readFixture("new-message-body.json", ApiNewMessageBody.class);
 
