@@ -169,7 +169,7 @@ public final class ApiSmokeService {
             steps.add(run("GET /chats/{chatId}/members", () ->
                     "members=" + client.getChatMembersApi(targetChatId, GetChatMembersApiRequest.defaults()).members().size()));
             steps.add(run("GET /chats/{chatId}/members/admins", () ->
-                    "admins=" + client.getChatAdminsApi(targetChatId).admins().size()));
+                    "admins=" + client.getChatAdminsApi(targetChatId).members().size()));
             steps.add(run("GET /chats/{chatId}/members/me", () -> {
                 ApiUser me = client.getMyChatMembershipApi(targetChatId);
                 return "user_id=" + me.userId();

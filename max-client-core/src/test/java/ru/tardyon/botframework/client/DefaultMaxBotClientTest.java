@@ -24,6 +24,7 @@ import ru.tardyon.botframework.client.http.MaxHttpResponse;
 import ru.tardyon.botframework.client.test.MockHttpClientTestContext;
 import ru.tardyon.botframework.model.BotInfo;
 import ru.tardyon.botframework.model.ChatAction;
+import ru.tardyon.botframework.model.ChatAdminPermission;
 import ru.tardyon.botframework.model.ChatId;
 import ru.tardyon.botframework.model.Message;
 import ru.tardyon.botframework.model.MessageId;
@@ -568,9 +569,26 @@ class DefaultMaxBotClientTest {
                 .setHeader("Content-Type", "application/json")
                 .setBody("""
                         {
-                          "admins": [
-                            { "user_id": 7, "chat_id": 100, "status": "admin" }
-                          ]
+                          "members": [
+                            {
+                              "user_id": 7,
+                              "first_name": "Alice",
+                              "last_name": "Admin",
+                              "username": "alice",
+                              "is_bot": false,
+                              "last_activity_time": 1735689600000,
+                              "description": "Chat owner",
+                              "avatar_url": "https://example.com/avatar-small.png",
+                              "full_avatar_url": "https://example.com/avatar-full.png",
+                              "last_access_time": 1735689601000,
+                              "is_owner": true,
+                              "is_admin": true,
+                              "join_time": 1735689602000,
+                              "permissions": ["read_all_messages", "add_admins", "write"],
+                              "alias": "Owner"
+                            }
+                          ],
+                          "marker": 10
                         }
                         """));
         http.enqueueJsonFixture("operation-success-response.json");
@@ -596,7 +614,15 @@ class DefaultMaxBotClientTest {
         assertThat(remove.getMethod()).isEqualTo("DELETE");
         assertThat(remove.getPath()).isEqualTo("/chats/100/members/admins/7");
 
-        assertThat(admins.admins()).hasSize(1);
+        assertThat(admins.members()).hasSize(1);
+        assertThat(admins.members().get(0).userId()).isEqualTo(7L);
+        assertThat(admins.members().get(0).firstName()).isEqualTo("Alice");
+        assertThat(admins.members().get(0).isOwner()).isTrue();
+        assertThat(admins.members().get(0).isAdmin()).isTrue();
+        assertThat(admins.members().get(0).permissions())
+                .contains(ChatAdminPermission.READ_ALL_MESSAGES, ChatAdminPermission.ADD_ADMINS, ChatAdminPermission.WRITE);
+        assertThat(admins.members().get(0).alias()).isEqualTo("Owner");
+        assertThat(admins.marker()).isEqualTo(10L);
         assertThat(added).isTrue();
         assertThat(removed).isTrue();
     }
