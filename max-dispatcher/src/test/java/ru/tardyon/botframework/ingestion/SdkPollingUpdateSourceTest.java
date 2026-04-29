@@ -21,6 +21,7 @@ import ru.tardyon.botframework.model.UpdateId;
 import ru.tardyon.botframework.model.UpdateType;
 import ru.tardyon.botframework.model.request.GetUpdatesRequest;
 import ru.tardyon.botframework.model.response.GetUpdatesResponse;
+import ru.tardyon.botframework.model.transport.ApiChatMember;
 import ru.tardyon.botframework.model.transport.ApiGetUpdatesResponse;
 import ru.tardyon.botframework.model.transport.ApiMessage;
 import ru.tardyon.botframework.model.transport.ApiMessageBody;
@@ -82,6 +83,7 @@ class SdkPollingUpdateSourceTest {
                         null
                 ),
                 null,
+                null,
                 "ru-RU"
         );
         when(client.getUpdatesApi(new GetUpdatesRequest(1L, 10, 10, List.of(UpdateEventType.MESSAGE_CREATED))))
@@ -92,6 +94,37 @@ class SdkPollingUpdateSourceTest {
         assertEquals(1, batch.updates().size());
         assertEquals("upd-msg-101", batch.updates().get(0).updateId().value());
         assertEquals(UpdateType.MESSAGE, batch.updates().get(0).type());
+        assertEquals(2L, batch.nextMarker());
+    }
+
+    @Test
+    void pollMapsTransportChatMemberUpdates() {
+        MaxBotClient client = Mockito.mock(MaxBotClient.class);
+        SdkPollingUpdateSource source = new SdkPollingUpdateSource(client);
+        PollingFetchRequest request = new PollingFetchRequest(1L, 10, 10, List.of(UpdateEventType.CHAT_MEMBER));
+
+        ApiUpdate apiUpdate = new ApiUpdate(
+                "chat_member",
+                1735689600L,
+                null,
+                null,
+                new ApiChatMember(
+                        7L,
+                        100L,
+                        "admin",
+                        new ApiUser(7L, "Helper", null, "helper_bot", true, null, "Helper")
+                ),
+                "ru-RU"
+        );
+        when(client.getUpdatesApi(new GetUpdatesRequest(1L, 10, 10, List.of(UpdateEventType.CHAT_MEMBER))))
+                .thenReturn(new ApiGetUpdatesResponse(List.of(apiUpdate), 2L));
+
+        PollingBatch batch = source.poll(request);
+
+        assertEquals(1, batch.updates().size());
+        assertEquals(UpdateType.CHAT_MEMBER, batch.updates().get(0).type());
+        assertEquals("7", batch.updates().get(0).chatMember().user().id().value());
+        assertEquals("100", batch.updates().get(0).chatMember().chat().id().value());
         assertEquals(2L, batch.nextMarker());
     }
 

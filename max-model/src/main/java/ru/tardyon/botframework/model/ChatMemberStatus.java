@@ -31,6 +31,12 @@ public enum ChatMemberStatus {
         if (value == null) {
             return UNKNOWN;
         }
+        if ("admin".equalsIgnoreCase(value)) {
+            return ADMINISTRATOR;
+        }
+        if ("owner".equalsIgnoreCase(value)) {
+            return CREATOR;
+        }
         for (ChatMemberStatus status : values()) {
             if (status.value.equalsIgnoreCase(value)) {
                 return status;

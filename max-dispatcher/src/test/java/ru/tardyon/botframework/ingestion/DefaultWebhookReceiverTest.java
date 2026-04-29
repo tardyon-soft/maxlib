@@ -14,9 +14,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import ru.tardyon.botframework.client.serialization.JacksonJsonCodec;
+import ru.tardyon.botframework.model.ChatMemberStatus;
 import ru.tardyon.botframework.model.Update;
+import ru.tardyon.botframework.model.UpdateType;
 
 class DefaultWebhookReceiverTest {
 
@@ -93,6 +96,31 @@ class DefaultWebhookReceiverTest {
 
         assertEquals(WebhookReceiveStatus.ACCEPTED, result.status());
         verify(sink).handle(any(Update.class));
+    }
+
+    @Test
+    void validChatMemberTransportPayloadIsAcceptedAndMapped() {
+        UpdateSink sink = Mockito.mock(UpdateSink.class);
+        when(sink.handle(any())).thenReturn(CompletableFuture.completedFuture(UpdateHandlingResult.success()));
+
+        DefaultWebhookReceiver receiver = new DefaultWebhookReceiver(
+                new DefaultWebhookSecretValidator("secret-1"),
+                new JacksonJsonCodec(),
+                sink
+        );
+
+        WebhookReceiveResult result = receiver.receive(request(validChatMemberTransportPayload(), "secret-1"))
+                .toCompletableFuture()
+                .join();
+
+        ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
+        assertEquals(WebhookReceiveStatus.ACCEPTED, result.status());
+        verify(sink).handle(updateCaptor.capture());
+        Update update = updateCaptor.getValue();
+        assertEquals(UpdateType.CHAT_MEMBER, update.type());
+        assertEquals(ChatMemberStatus.ADMINISTRATOR, update.chatMember().status());
+        assertEquals("1001", update.chatMember().user().id().value());
+        assertEquals("2001", update.chatMember().chat().id().value());
     }
 
     @Test
@@ -179,6 +207,26 @@ class DefaultWebhookReceiverTest {
                     "body": {
                       "mid": "3001",
                       "text": "hello"
+                    }
+                  }
+                }
+                """;
+    }
+
+    private static String validChatMemberTransportPayload() {
+        return """
+                {
+                  "update_type": "chat_member",
+                  "timestamp": 1735689600,
+                  "chat_member": {
+                    "user_id": 1001,
+                    "chat_id": 2001,
+                    "status": "admin",
+                    "user": {
+                      "user_id": 1001,
+                      "first_name": "Helper",
+                      "username": "helper_bot",
+                      "is_bot": true
                     }
                   }
                 }

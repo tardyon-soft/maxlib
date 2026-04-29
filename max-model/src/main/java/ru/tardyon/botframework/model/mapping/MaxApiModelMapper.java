@@ -8,6 +8,8 @@ import ru.tardyon.botframework.model.Callback;
 import ru.tardyon.botframework.model.CallbackId;
 import ru.tardyon.botframework.model.Chat;
 import ru.tardyon.botframework.model.ChatId;
+import ru.tardyon.botframework.model.ChatMember;
+import ru.tardyon.botframework.model.ChatMemberStatus;
 import ru.tardyon.botframework.model.ChatType;
 import ru.tardyon.botframework.model.Message;
 import ru.tardyon.botframework.model.MessageId;
@@ -23,6 +25,7 @@ import ru.tardyon.botframework.model.request.InlineKeyboardButtonRequest;
 import ru.tardyon.botframework.model.transport.ApiCallback;
 import ru.tardyon.botframework.model.transport.ApiAttachmentRequest;
 import ru.tardyon.botframework.model.transport.ApiChat;
+import ru.tardyon.botframework.model.transport.ApiChatMember;
 import ru.tardyon.botframework.model.transport.ApiInlineKeyboardButton;
 import ru.tardyon.botframework.model.transport.ApiInlineKeyboardPayload;
 import ru.tardyon.botframework.model.transport.ApiMessage;
@@ -61,6 +64,27 @@ public final class MaxApiModelMapper {
                 source.title(),
                 null,
                 source.description()
+        );
+    }
+
+    public static ChatMember toNormalized(ApiChatMember source) {
+        Objects.requireNonNull(source, "source");
+        Chat chat = new Chat(
+                new ChatId(stringId(source.chatId(), "chat")),
+                ChatType.UNKNOWN,
+                null,
+                null,
+                null
+        );
+        User user = source.user() == null
+                ? new User(new UserId(stringId(source.userId(), "user")), null, null, null, null, null, null)
+                : toNormalized(source.user());
+        return new ChatMember(
+                chat,
+                user,
+                ChatMemberStatus.fromValue(source.status()),
+                null,
+                null
         );
     }
 
@@ -104,6 +128,7 @@ public final class MaxApiModelMapper {
         UpdateType type = updateType(source.updateType());
         Message message = source.message() == null ? null : toNormalized(source.message());
         Callback callback = source.callback() == null ? null : toNormalized(source.callback());
+        ChatMember chatMember = source.chatMember() == null ? null : toNormalized(source.chatMember());
         if (callback != null && callback.message() == null && message != null) {
             callback = new Callback(
                     callback.callbackId(),
@@ -119,7 +144,7 @@ public final class MaxApiModelMapper {
                 type,
                 message,
                 callback,
-                null,
+                chatMember,
                 toInstant(source.timestamp())
         );
     }

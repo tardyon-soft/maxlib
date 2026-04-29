@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
+import ru.tardyon.botframework.model.ChatMemberStatus;
 import ru.tardyon.botframework.model.ChatType;
 import ru.tardyon.botframework.model.TextFormat;
 import ru.tardyon.botframework.model.UpdateType;
@@ -120,6 +121,36 @@ class MaxApiModelMapperTest {
         assertThat(update.message()).isNotNull();
         assertThat(update.message().messageId().value()).isEqualTo("3001");
         assertThat(update.eventAt()).isEqualTo(Instant.ofEpochSecond(1735689600L));
+    }
+
+    @Test
+    void mapsApiChatMemberUpdateToNormalizedUpdate() throws IOException {
+        ApiUpdate api = objectMapper.readValue("""
+                {
+                  "update_type": "chat_member",
+                  "timestamp": 1735689600,
+                  "chat_member": {
+                    "user_id": 1001,
+                    "chat_id": 2001,
+                    "status": "admin",
+                    "user": {
+                      "user_id": 1001,
+                      "first_name": "Helper",
+                      "username": "helper_bot",
+                      "is_bot": true
+                    }
+                  }
+                }
+                """, ApiUpdate.class);
+
+        var update = MaxApiModelMapper.toNormalized(api);
+
+        assertThat(update.type()).isEqualTo(UpdateType.CHAT_MEMBER);
+        assertThat(update.chatMember()).isNotNull();
+        assertThat(update.chatMember().status()).isEqualTo(ChatMemberStatus.ADMINISTRATOR);
+        assertThat(update.chatMember().chat().id().value()).isEqualTo("2001");
+        assertThat(update.chatMember().user().id().value()).isEqualTo("1001");
+        assertThat(update.chatMember().user().bot()).isTrue();
     }
 
     @Test

@@ -12,6 +12,7 @@ public record ApiUpdate(
         @JsonProperty("timestamp") Long timestamp,
         @JsonProperty("message") ApiMessage message,
         @JsonProperty("callback") ApiCallback callback,
+        @JsonProperty("chat_member") ApiChatMember chatMember,
         @JsonProperty("user_locale") String userLocale
 ) {
 }

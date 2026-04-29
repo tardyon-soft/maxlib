@@ -139,7 +139,8 @@ public final class DefaultWebhookReceiver implements WebhookReceiver {
                 && (update.updateType() != null
                 || update.timestamp() != null
                 || hasMeaningfulApiMessage(update.message())
-                || hasMeaningfulApiCallback(update.callback()));
+                || hasMeaningfulApiCallback(update.callback())
+                || update.chatMember() != null);
     }
 
     private static boolean hasMeaningfulApiMessage(ru.tardyon.botframework.model.transport.ApiMessage message) {
