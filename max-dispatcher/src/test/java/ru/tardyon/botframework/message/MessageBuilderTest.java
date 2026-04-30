@@ -210,7 +210,7 @@ class MessageBuilderTest {
 
         assertEquals("hello", body.text());
         assertEquals(2, body.attachments().size());
-        assertEquals(MessageAttachmentType.PHOTO, body.attachments().get(0).type());
+        assertEquals(MessageAttachmentType.IMAGE, body.attachments().get(0).type());
         assertEquals("ref-media-1", body.attachments().get(0).input().uploadRef());
         assertEquals(MessageAttachmentType.INLINE_KEYBOARD, body.attachments().get(1).type());
     }

@@ -39,6 +39,14 @@ public final class Widgets {
         return attachment(attachment.toNewMessageAttachment());
     }
 
+    public static Widget image(String url) {
+        Objects.requireNonNull(url, "url");
+        if (url.isBlank()) {
+            throw new IllegalArgumentException("url must not be blank");
+        }
+        return attachment(NewMessageAttachment.imageUrl(url));
+    }
+
     public static Widget attachment(NewMessageAttachment attachment) {
         Objects.requireNonNull(attachment, "attachment");
         return context -> CompletableFuture.completedFuture(WidgetRender.of(List.of(), List.of(), List.of(attachment)));

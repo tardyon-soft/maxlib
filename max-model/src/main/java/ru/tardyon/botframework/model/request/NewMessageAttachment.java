@@ -42,4 +42,12 @@ public record NewMessageAttachment(
     public static NewMessageAttachment inlineKeyboard(InlineKeyboardAttachment keyboard) {
         return new NewMessageAttachment(MessageAttachmentType.INLINE_KEYBOARD, null, keyboard, null, null, null);
     }
+
+    public static NewMessageAttachment imageUrl(String url) {
+        return media(MessageAttachmentType.IMAGE, new AttachmentInput(null, null, url), null, null, null);
+    }
+
+    public static NewMessageAttachment imageToken(String token) {
+        return media(MessageAttachmentType.IMAGE, new AttachmentInput(null, token, null), null, null, null);
+    }
 }

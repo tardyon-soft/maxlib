@@ -57,7 +57,7 @@ class MediaMessagingFacadeTest {
         SendMessageRequest request = sendCaptor.getValue();
         assertEquals("chat-1", request.chatId().value());
         assertEquals(1, request.body().attachments().size());
-        assertEquals(MessageAttachmentType.PHOTO, request.body().attachments().get(0).type());
+        assertEquals(MessageAttachmentType.IMAGE, request.body().attachments().get(0).type());
         assertEquals("ref-image", request.body().attachments().get(0).input().uploadRef());
     }
 

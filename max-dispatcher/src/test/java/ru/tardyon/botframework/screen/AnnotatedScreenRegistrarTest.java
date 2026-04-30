@@ -49,6 +49,15 @@ class AnnotatedScreenRegistrarTest {
         assertTrue(render.textLines().isEmpty());
     }
 
+    @Test
+    void widgetsSupportImageUrlAttachments() {
+        Widget widget = Widgets.image("https://example.com/image.png");
+        WidgetRender render = widget.render(new TestScreenContext(Map.of())).toCompletableFuture().join();
+
+        assertEquals(1, render.attachments().size());
+        assertEquals("https://example.com/image.png", render.attachments().get(0).input().url());
+    }
+
     @Screen("profile")
     static final class SampleScreen {
         private String lastMode;

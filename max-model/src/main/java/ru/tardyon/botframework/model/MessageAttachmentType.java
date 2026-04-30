@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public enum MessageAttachmentType {
     INLINE_KEYBOARD("inline_keyboard"),
+    IMAGE("image"),
     PHOTO("photo"),
     VIDEO("video"),
     AUDIO("audio"),

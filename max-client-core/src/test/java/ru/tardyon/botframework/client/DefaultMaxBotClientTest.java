@@ -285,6 +285,23 @@ class DefaultMaxBotClientTest {
     }
 
     @Test
+    void shouldSerializeImageUrlAsPayloadAttachment() throws Exception {
+        http.enqueueJsonFixture("message-envelope-response.json");
+
+        client.sendMessage(new SendMessageRequest(
+                new ChatId("c-100"),
+                new NewMessageBody("image", TextFormat.PLAIN, List.of(NewMessageAttachment.imageUrl("https://example.com/image.png"))),
+                false,
+                null
+        ));
+
+        RecordedRequest recorded = http.takeRequest();
+        String body = recorded.getBody().readUtf8();
+        assertThat(body).contains("\"attachments\":[{\"type\":\"image\",\"payload\":{\"url\":\"https://example.com/image.png\"}}]");
+        assertThat(body).doesNotContain("\"input\"");
+    }
+
+    @Test
     void shouldEditMessageViaDomainMethod() {
         http.enqueueJsonFixture("operation-success-response.json");
 

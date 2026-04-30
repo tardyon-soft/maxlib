@@ -17,6 +17,8 @@ import ru.tardyon.botframework.model.ChatMemberStatus;
 import ru.tardyon.botframework.model.ChatType;
 import ru.tardyon.botframework.model.TextFormat;
 import ru.tardyon.botframework.model.UpdateType;
+import ru.tardyon.botframework.model.MessageAttachmentType;
+import ru.tardyon.botframework.model.request.AttachmentInput;
 import ru.tardyon.botframework.model.request.InlineKeyboardAttachment;
 import ru.tardyon.botframework.model.request.InlineKeyboardButtonRequest;
 import ru.tardyon.botframework.model.request.NewMessageBody;
@@ -211,6 +213,43 @@ class MaxApiModelMapperTest {
         assertThat(json).contains("\"type\":\"clipboard\"");
         assertThat(json).contains("\"payload\":\"PROMO-2026\"");
         assertThat(json).contains("\"type\":\"inline_keyboard\"");
+    }
+
+    @Test
+    void mapsImageUrlAttachmentToDocsPayload() throws IOException {
+        NewMessageBody normalized = new NewMessageBody(
+                "Image demo",
+                TextFormat.PLAIN,
+                List.of(NewMessageAttachment.imageUrl("https://example.com/image.png"))
+        );
+
+        var mapped = MaxApiModelMapper.toApiOutgoing(normalized, true, null);
+        String json = objectMapper.writeValueAsString(mapped);
+
+        assertThat(json).contains("\"type\":\"image\"");
+        assertThat(json).contains("\"payload\":{\"url\":\"https://example.com/image.png\"}");
+        assertThat(json).doesNotContain("\"input\"");
+    }
+
+    @Test
+    void mapsLegacyPhotoAttachmentToImagePayload() throws IOException {
+        NewMessageBody normalized = new NewMessageBody(
+                "Image demo",
+                TextFormat.PLAIN,
+                List.of(NewMessageAttachment.media(
+                        MessageAttachmentType.PHOTO,
+                        new AttachmentInput(null, "image-token-1", null),
+                        null,
+                        null,
+                        null
+                ))
+        );
+
+        var mapped = MaxApiModelMapper.toApiOutgoing(normalized, true, null);
+        String json = objectMapper.writeValueAsString(mapped);
+
+        assertThat(json).contains("\"type\":\"image\"");
+        assertThat(json).contains("\"payload\":{\"token\":\"image-token-1\"}");
     }
 
     @Test

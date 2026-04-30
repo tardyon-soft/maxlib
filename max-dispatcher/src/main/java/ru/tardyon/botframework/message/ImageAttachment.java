@@ -36,7 +36,7 @@ public record ImageAttachment(UploadResult uploadResult, String caption) impleme
     @Override
     public NewMessageAttachment toNewMessageAttachment() {
         return NewMessageAttachment.media(
-                MessageAttachmentType.PHOTO,
+                MessageAttachmentType.IMAGE,
                 new AttachmentInput(null, uploadResult.ref().value(), null),
                 caption,
                 uploadResult.contentTypeOptional().orElse(null),

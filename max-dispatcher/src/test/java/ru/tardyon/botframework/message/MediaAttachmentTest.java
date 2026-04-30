@@ -14,7 +14,7 @@ import ru.tardyon.botframework.upload.UploadResult;
 class MediaAttachmentTest {
 
     @Test
-    void mapsImageAttachmentToLowLevelPhotoAttachment() {
+    void mapsImageAttachmentToLowLevelImageAttachment() {
         UploadResult upload = new UploadResult(
                 new UploadRef("ref-image"),
                 UploadFlowType.MULTIPART,
@@ -28,7 +28,7 @@ class MediaAttachmentTest {
                 .caption("photo")
                 .toNewMessageAttachment();
 
-        assertEquals(MessageAttachmentType.PHOTO, lowLevel.type());
+        assertEquals(MessageAttachmentType.IMAGE, lowLevel.type());
         assertEquals("ref-image", lowLevel.input().uploadRef());
         assertEquals("photo", lowLevel.caption());
         assertEquals("image/png", lowLevel.mimeType());
@@ -95,7 +95,7 @@ class MediaAttachmentTest {
                 Map.of()
         );
 
-        assertEquals(MessageAttachmentType.PHOTO, ImageAttachment.from(upload).toNewMessageAttachment().type());
+        assertEquals(MessageAttachmentType.IMAGE, ImageAttachment.from(upload).toNewMessageAttachment().type());
         assertEquals(MessageAttachmentType.FILE, FileAttachment.from(upload).toNewMessageAttachment().type());
     }
 
@@ -129,7 +129,7 @@ class MediaAttachmentTest {
                 .toNewMessageBody();
 
         assertEquals(1, body.attachments().size());
-        assertEquals(MessageAttachmentType.PHOTO, body.attachments().get(0).type());
+        assertEquals(MessageAttachmentType.IMAGE, body.attachments().get(0).type());
         assertEquals("ref-bld", body.attachments().get(0).input().uploadRef());
     }
 }

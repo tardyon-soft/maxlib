@@ -2,6 +2,8 @@ package ru.tardyon.botframework.model.mapping;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import ru.tardyon.botframework.model.MessageAttachmentType;
 import ru.tardyon.botframework.model.Callback;
@@ -21,6 +23,7 @@ import ru.tardyon.botframework.model.User;
 import ru.tardyon.botframework.model.UserId;
 import ru.tardyon.botframework.model.request.NewMessageBody;
 import ru.tardyon.botframework.model.request.NewMessageAttachment;
+import ru.tardyon.botframework.model.request.AttachmentInput;
 import ru.tardyon.botframework.model.request.InlineKeyboardButtonRequest;
 import ru.tardyon.botframework.model.transport.ApiCallback;
 import ru.tardyon.botframework.model.transport.ApiAttachmentRequest;
@@ -203,7 +206,31 @@ public final class MaxApiModelMapper {
                     .toList();
             return new ApiAttachmentRequest(MessageAttachmentType.INLINE_KEYBOARD.value(), new ApiInlineKeyboardPayload(buttons));
         }
+        if (attachment.input() != null) {
+            return new ApiAttachmentRequest(outgoingAttachmentType(attachment.type()), mapAttachmentInput(attachment.input()));
+        }
         return attachment;
+    }
+
+    private static String outgoingAttachmentType(MessageAttachmentType type) {
+        if (type == MessageAttachmentType.PHOTO || type == MessageAttachmentType.IMAGE) {
+            return MessageAttachmentType.IMAGE.value();
+        }
+        return type.value();
+    }
+
+    private static Map<String, Object> mapAttachmentInput(AttachmentInput input) {
+        LinkedHashMap<String, Object> payload = new LinkedHashMap<>();
+        if (input.url() != null && !input.url().isBlank()) {
+            payload.put("url", input.url());
+        }
+        if (input.uploadRef() != null && !input.uploadRef().isBlank()) {
+            payload.put("token", input.uploadRef());
+        }
+        if (input.fileId() != null) {
+            payload.put("file_id", input.fileId().value());
+        }
+        return Map.copyOf(payload);
     }
 
     private static ApiInlineKeyboardButton mapInlineButton(InlineKeyboardButtonRequest button) {
