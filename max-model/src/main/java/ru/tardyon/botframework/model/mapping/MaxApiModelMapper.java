@@ -15,6 +15,8 @@ import ru.tardyon.botframework.model.ChatMemberStatus;
 import ru.tardyon.botframework.model.ChatType;
 import ru.tardyon.botframework.model.Message;
 import ru.tardyon.botframework.model.MessageId;
+import ru.tardyon.botframework.model.FileId;
+import ru.tardyon.botframework.model.MessageAttachment;
 import ru.tardyon.botframework.model.TextFormat;
 import ru.tardyon.botframework.model.Update;
 import ru.tardyon.botframework.model.UpdateId;
@@ -110,7 +112,7 @@ public final class MaxApiModelMapper {
                 toInstant(source.timestamp()),
                 replyTo,
                 java.util.List.of(),
-                java.util.List.of()
+                source.body() == null ? java.util.List.of() : mapIncomingAttachments(source.body().attachments())
         );
     }
 
@@ -153,7 +155,11 @@ public final class MaxApiModelMapper {
                 chatId,
                 user,
                 source.isChannel(),
-                toInstant(source.timestamp())
+                toInstant(source.timestamp()),
+                source.updateType(),
+                source.payload(),
+                source.title(),
+                source.userLocale()
         );
     }
 
@@ -209,6 +215,9 @@ public final class MaxApiModelMapper {
         if (attachment.input() != null) {
             return new ApiAttachmentRequest(outgoingAttachmentType(attachment.type()), mapAttachmentInput(attachment.input()));
         }
+        if (attachment.payload() != null) {
+            return new ApiAttachmentRequest(outgoingAttachmentType(attachment.type()), attachment.payload());
+        }
         return attachment;
     }
 
@@ -231,6 +240,91 @@ public final class MaxApiModelMapper {
             payload.put("file_id", input.fileId().value());
         }
         return Map.copyOf(payload);
+    }
+
+    private static List<MessageAttachment> mapIncomingAttachments(List<Object> attachments) {
+        if (attachments == null || attachments.isEmpty()) {
+            return List.of();
+        }
+        return attachments.stream()
+                .map(MaxApiModelMapper::mapIncomingAttachment)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private static MessageAttachment mapIncomingAttachment(Object attachment) {
+        if (attachment instanceof MessageAttachment messageAttachment) {
+            return messageAttachment;
+        }
+        if (!(attachment instanceof Map<?, ?> map)) {
+            return null;
+        }
+
+        MessageAttachmentType type = MessageAttachmentType.fromValue(stringValue(map.get("type")));
+        Object payload = map.get("payload");
+        String fileId = firstNonBlank(
+                stringValue(map.get("fileId")),
+                stringValue(map.get("file_id")),
+                payloadValue(payload, "fileId"),
+                payloadValue(payload, "file_id")
+        );
+        String url = firstNonBlank(stringValue(map.get("url")), payloadValue(payload, "url"));
+        String mimeType = firstNonBlank(
+                stringValue(map.get("mimeType")),
+                stringValue(map.get("mime_type")),
+                payloadValue(payload, "mimeType"),
+                payloadValue(payload, "mime_type")
+        );
+        Long size = longValue(map.get("size"));
+        if (size == null) {
+            size = longValue(payloadMapValue(payload, "size"));
+        }
+        return new MessageAttachment(
+                type,
+                fileId == null ? null : new FileId(fileId),
+                url,
+                mimeType,
+                size,
+                payload
+        );
+    }
+
+    private static String payloadValue(Object payload, String key) {
+        return stringValue(payloadMapValue(payload, key));
+    }
+
+    private static Object payloadMapValue(Object payload, String key) {
+        if (payload instanceof Map<?, ?> map) {
+            return map.get(key);
+        }
+        return null;
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static String stringValue(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private static Long longValue(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof String string && !string.isBlank()) {
+            try {
+                return Long.parseLong(string);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private static ApiInlineKeyboardButton mapInlineButton(InlineKeyboardButtonRequest button) {
@@ -315,8 +409,22 @@ public final class MaxApiModelMapper {
         return switch (value) {
             case "message_created" -> UpdateType.MESSAGE;
             case "message_callback" -> UpdateType.CALLBACK;
+            case "message_edited" -> UpdateType.MESSAGE_EDITED;
+            case "message_removed" -> UpdateType.MESSAGE_REMOVED;
             case "bot_added" -> UpdateType.BOT_ADDED;
             case "bot_removed" -> UpdateType.BOT_REMOVED;
+            case "bot_started" -> UpdateType.BOT_STARTED;
+            case "bot_stopped" -> UpdateType.BOT_STOPPED;
+            case "user_added" -> UpdateType.USER_ADDED;
+            case "user_removed" -> UpdateType.USER_REMOVED;
+            case "chat_title_changed" -> UpdateType.CHAT_TITLE_CHANGED;
+            case "message_chat_created" -> UpdateType.MESSAGE_CHAT_CREATED;
+            case "message_construction_request" -> UpdateType.MESSAGE_CONSTRUCTION_REQUEST;
+            case "message_constructed" -> UpdateType.MESSAGE_CONSTRUCTED;
+            case "dialog_muted" -> UpdateType.DIALOG_MUTED;
+            case "dialog_unmuted" -> UpdateType.DIALOG_UNMUTED;
+            case "dialog_cleared" -> UpdateType.DIALOG_CLEARED;
+            case "dialog_removed" -> UpdateType.DIALOG_REMOVED;
             case "chat_member" -> UpdateType.CHAT_MEMBER;
             default -> UpdateType.UNKNOWN;
         };

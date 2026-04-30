@@ -17,11 +17,29 @@ public record Update(
         ChatId chatId,
         User user,
         Boolean channel,
-        Instant eventAt
+        Instant eventAt,
+        String rawUpdateType,
+        String payload,
+        String title,
+        String userLocale
 ) {
     public Update {
         Objects.requireNonNull(updateId, "updateId");
         Objects.requireNonNull(type, "type");
+    }
+
+    public Update(
+            UpdateId updateId,
+            UpdateType type,
+            Message message,
+            Callback callback,
+            ChatMember chatMember,
+            ChatId chatId,
+            User user,
+            Boolean channel,
+            Instant eventAt
+    ) {
+        this(updateId, type, message, callback, chatMember, chatId, user, channel, eventAt, null, null, null, null);
     }
 
     public Update(

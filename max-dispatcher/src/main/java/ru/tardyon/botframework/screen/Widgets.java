@@ -47,6 +47,18 @@ public final class Widgets {
         return attachment(NewMessageAttachment.imageUrl(url));
     }
 
+    public static Widget sticker(String code) {
+        return attachment(NewMessageAttachment.sticker(code));
+    }
+
+    public static Widget location(double latitude, double longitude) {
+        return attachment(NewMessageAttachment.location(latitude, longitude));
+    }
+
+    public static Widget share(String url) {
+        return attachment(NewMessageAttachment.shareUrl(url));
+    }
+
     public static Widget attachment(NewMessageAttachment attachment) {
         Objects.requireNonNull(attachment, "attachment");
         return context -> CompletableFuture.completedFuture(WidgetRender.of(List.of(), List.of(), List.of(attachment)));

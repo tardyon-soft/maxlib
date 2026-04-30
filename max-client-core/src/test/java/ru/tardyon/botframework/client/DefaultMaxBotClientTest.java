@@ -302,6 +302,33 @@ class DefaultMaxBotClientTest {
     }
 
     @Test
+    void shouldSerializeSpecialAttachmentsAsPayloadAttachments() throws Exception {
+        http.enqueueJsonFixture("message-envelope-response.json");
+
+        client.sendMessage(new SendMessageRequest(
+                new ChatId("c-100"),
+                new NewMessageBody(
+                        "special",
+                        TextFormat.PLAIN,
+                        List.of(
+                                NewMessageAttachment.sticker("sticker-code-1"),
+                                NewMessageAttachment.location(55.7558, 37.6173),
+                                NewMessageAttachment.shareUrl("https://max.ru/post/1")
+                        )
+                ),
+                false,
+                null
+        ));
+
+        RecordedRequest recorded = http.takeRequest();
+        String body = recorded.getBody().readUtf8();
+        assertThat(body).contains("\"type\":\"sticker\",\"payload\":{\"code\":\"sticker-code-1\"}");
+        assertThat(body).contains("\"type\":\"location\",\"payload\":{\"lat\":55.7558,\"lon\":37.6173}");
+        assertThat(body).contains("\"type\":\"share\",\"payload\":{\"url\":\"https://max.ru/post/1\"}");
+        assertThat(body).doesNotContain("\"input\"");
+    }
+
+    @Test
     void shouldEditMessageViaDomainMethod() {
         http.enqueueJsonFixture("operation-success-response.json");
 
@@ -833,6 +860,21 @@ class DefaultMaxBotClientTest {
     }
 
     @Test
+    void shouldGetUpdatesWithLifecyclePollingTypes() {
+        http.enqueueJsonFixture("updates-response.json");
+
+        client.getUpdates(new GetUpdatesRequest(
+                100L,
+                30,
+                50,
+                List.of(UpdateEventType.BOT_STARTED, UpdateEventType.CHAT_TITLE_CHANGED, UpdateEventType.USER_ADDED)
+        ));
+
+        RecordedRequest recorded = http.takeRequest();
+        assertThat(recorded.getPath()).contains("types=bot_started%2Cchat_title_changed%2Cuser_added");
+    }
+
+    @Test
     void shouldGetWebhookSubscriptions() {
         http.enqueueJsonFixture("subscriptions-response.json");
 
@@ -853,7 +895,7 @@ class DefaultMaxBotClientTest {
 
         boolean success = client.createSubscription(new CreateSubscriptionRequest(
                 "https://example.com/webhook",
-                List.of(UpdateEventType.MESSAGE_CREATED),
+                List.of(UpdateEventType.MESSAGE_CREATED, UpdateEventType.BOT_STARTED),
                 "secret-1"
         ));
 
@@ -862,7 +904,7 @@ class DefaultMaxBotClientTest {
         assertThat(recorded.getPath()).isEqualTo("/subscriptions");
         String body = recorded.getBody().readUtf8();
         assertThat(body).contains("\"url\":\"https://example.com/webhook\"");
-        assertThat(body).contains("\"update_types\":[\"message_created\"]");
+        assertThat(body).contains("\"update_types\":[\"message_created\",\"bot_started\"]");
         assertThat(body).contains("\"secret\":\"secret-1\"");
         assertThat(success).isTrue();
     }

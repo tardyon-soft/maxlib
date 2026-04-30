@@ -16,6 +16,21 @@ public record ApiUpdate(
         @JsonProperty("chat_member") ApiChatMember chatMember,
         @JsonProperty("user") ApiUser user,
         @JsonProperty("is_channel") Boolean isChannel,
+        @JsonProperty("payload") String payload,
+        @JsonProperty("title") String title,
         @JsonProperty("user_locale") String userLocale
 ) {
+    public ApiUpdate(
+            String updateType,
+            Long timestamp,
+            Long chatId,
+            ApiMessage message,
+            ApiCallback callback,
+            ApiChatMember chatMember,
+            ApiUser user,
+            Boolean isChannel,
+            String userLocale
+    ) {
+        this(updateType, timestamp, chatId, message, callback, chatMember, user, isChannel, null, null, userLocale);
+    }
 }

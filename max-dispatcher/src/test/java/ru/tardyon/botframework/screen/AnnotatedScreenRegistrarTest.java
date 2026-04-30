@@ -58,6 +58,20 @@ class AnnotatedScreenRegistrarTest {
         assertEquals("https://example.com/image.png", render.attachments().get(0).input().url());
     }
 
+    @Test
+    void widgetsSupportSpecialAttachments() {
+        Widget sticker = Widgets.sticker("sticker-code-1");
+        Widget location = Widgets.location(55.7558, 37.6173);
+        Widget share = Widgets.share("https://max.ru/post/1");
+
+        assertEquals(ru.tardyon.botframework.model.MessageAttachmentType.STICKER,
+                sticker.render(new TestScreenContext(Map.of())).toCompletableFuture().join().attachments().get(0).type());
+        assertEquals(ru.tardyon.botframework.model.MessageAttachmentType.LOCATION,
+                location.render(new TestScreenContext(Map.of())).toCompletableFuture().join().attachments().get(0).type());
+        assertEquals(ru.tardyon.botframework.model.MessageAttachmentType.SHARE,
+                share.render(new TestScreenContext(Map.of())).toCompletableFuture().join().attachments().get(0).type());
+    }
+
     @Screen("profile")
     static final class SampleScreen {
         private String lastMode;

@@ -14,6 +14,9 @@ public enum MessageAttachmentType {
     AUDIO("audio"),
     DOCUMENT("document"),
     FILE("file"),
+    STICKER("sticker"),
+    LOCATION("location"),
+    SHARE("share"),
     UNKNOWN("unknown");
 
     private final String value;

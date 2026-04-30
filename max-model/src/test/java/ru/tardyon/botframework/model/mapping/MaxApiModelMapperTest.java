@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import ru.tardyon.botframework.model.ChatMemberStatus;
@@ -113,6 +114,59 @@ class MaxApiModelMapperTest {
     }
 
     @Test
+    void mapsIncomingApiMessageAttachments() throws IOException {
+        ApiMessage api = objectMapper.readValue("""
+                {
+                  "sender": {
+                    "user_id": 1001,
+                    "first_name": "Alice",
+                    "is_bot": false
+                  },
+                  "recipient": {
+                    "chat_id": 2001,
+                    "chat_type": "chat"
+                  },
+                  "timestamp": 1735689600,
+                  "body": {
+                    "mid": "3001",
+                    "text": "with attachments",
+                    "attachments": [
+                      {
+                        "type": "image",
+                        "payload": {
+                          "url": "https://example.com/image.png",
+                          "token": "image-token-1"
+                        }
+                      },
+                      {
+                        "type": "sticker",
+                        "payload": {
+                          "code": "sticker-code-1"
+                        }
+                      },
+                      {
+                        "type": "location",
+                        "payload": {
+                          "lat": 55.7558,
+                          "lon": 37.6173
+                        }
+                      }
+                    ]
+                  }
+                }
+                """, ApiMessage.class);
+
+        var message = MaxApiModelMapper.toNormalized(api);
+
+        assertThat(message.attachments()).hasSize(3);
+        assertThat(message.attachments().get(0).type()).isEqualTo(MessageAttachmentType.IMAGE);
+        assertThat(message.attachments().get(0).url()).isEqualTo("https://example.com/image.png");
+        assertThat(message.attachments().get(1).type()).isEqualTo(MessageAttachmentType.STICKER);
+        assertThat(message.attachments().get(1).payload()).isInstanceOf(Map.class);
+        assertThat(message.attachments().get(2).type()).isEqualTo(MessageAttachmentType.LOCATION);
+    }
+
+    @Test
     void mapsApiUpdateToNormalizedUpdate() throws IOException {
         ApiUpdate api = readFixture("update-message.json", ApiUpdate.class);
 
@@ -184,6 +238,74 @@ class MaxApiModelMapperTest {
     }
 
     @Test
+    void mapsBotStartedUpdateWithPayload() throws IOException {
+        ApiUpdate api = objectMapper.readValue("""
+                {
+                  "update_type": "bot_started",
+                  "timestamp": 1573226679188,
+                  "chat_id": 1234567890,
+                  "payload": "promo_summer2025",
+                  "user_locale": "ru-RU",
+                  "user": {
+                    "user_id": 1234567890,
+                    "first_name": "Ivan",
+                    "username": "ivan_petrov",
+                    "is_bot": false
+                  }
+                }
+                """, ApiUpdate.class);
+
+        var update = MaxApiModelMapper.toNormalized(api);
+
+        assertThat(update.type()).isEqualTo(UpdateType.BOT_STARTED);
+        assertThat(update.rawUpdateType()).isEqualTo("bot_started");
+        assertThat(update.chatId().value()).isEqualTo("1234567890");
+        assertThat(update.payload()).isEqualTo("promo_summer2025");
+        assertThat(update.userLocale()).isEqualTo("ru-RU");
+        assertThat(update.user().id().value()).isEqualTo("1234567890");
+    }
+
+    @Test
+    void mapsLifecycleUpdateTypes() throws IOException {
+        assertThatUpdateType("message_edited").isEqualTo(UpdateType.MESSAGE_EDITED);
+        assertThatUpdateType("message_removed").isEqualTo(UpdateType.MESSAGE_REMOVED);
+        assertThatUpdateType("bot_stopped").isEqualTo(UpdateType.BOT_STOPPED);
+        assertThatUpdateType("user_added").isEqualTo(UpdateType.USER_ADDED);
+        assertThatUpdateType("user_removed").isEqualTo(UpdateType.USER_REMOVED);
+        assertThatUpdateType("message_chat_created").isEqualTo(UpdateType.MESSAGE_CHAT_CREATED);
+        assertThatUpdateType("message_construction_request").isEqualTo(UpdateType.MESSAGE_CONSTRUCTION_REQUEST);
+        assertThatUpdateType("message_constructed").isEqualTo(UpdateType.MESSAGE_CONSTRUCTED);
+        assertThatUpdateType("dialog_muted").isEqualTo(UpdateType.DIALOG_MUTED);
+        assertThatUpdateType("dialog_unmuted").isEqualTo(UpdateType.DIALOG_UNMUTED);
+        assertThatUpdateType("dialog_cleared").isEqualTo(UpdateType.DIALOG_CLEARED);
+        assertThatUpdateType("dialog_removed").isEqualTo(UpdateType.DIALOG_REMOVED);
+    }
+
+    @Test
+    void mapsChatTitleChangedUpdate() throws IOException {
+        ApiUpdate api = objectMapper.readValue("""
+                {
+                  "update_type": "chat_title_changed",
+                  "timestamp": 1735689600,
+                  "chat_id": 2001,
+                  "title": "New title",
+                  "user": {
+                    "user_id": 1001,
+                    "first_name": "Alice",
+                    "is_bot": false
+                  }
+                }
+                """, ApiUpdate.class);
+
+        var update = MaxApiModelMapper.toNormalized(api);
+
+        assertThat(update.type()).isEqualTo(UpdateType.CHAT_TITLE_CHANGED);
+        assertThat(update.title()).isEqualTo("New title");
+        assertThat(update.chatId().value()).isEqualTo("2001");
+        assertThat(update.user().id().value()).isEqualTo("1001");
+    }
+
+    @Test
     void mapsApiNewMessageBodyToNormalizedAndBack() throws IOException {
         ApiNewMessageBody api = readFixture("new-message-body.json", ApiNewMessageBody.class);
 
@@ -250,6 +372,29 @@ class MaxApiModelMapperTest {
 
         assertThat(json).contains("\"type\":\"image\"");
         assertThat(json).contains("\"payload\":{\"token\":\"image-token-1\"}");
+    }
+
+    @Test
+    void mapsSpecialAttachmentsToDocsPayload() throws IOException {
+        NewMessageBody normalized = new NewMessageBody(
+                "Special demo",
+                TextFormat.PLAIN,
+                List.of(
+                        NewMessageAttachment.sticker("sticker-code-1"),
+                        NewMessageAttachment.location(55.7558, 37.6173),
+                        NewMessageAttachment.share("https://max.ru/post/1", "share-token-1")
+                )
+        );
+
+        var mapped = MaxApiModelMapper.toApiOutgoing(normalized, true, null);
+        String json = objectMapper.writeValueAsString(mapped);
+
+        assertThat(json).contains("\"type\":\"sticker\"");
+        assertThat(json).contains("\"payload\":{\"code\":\"sticker-code-1\"}");
+        assertThat(json).contains("\"type\":\"location\"");
+        assertThat(json).contains("\"payload\":{\"lat\":55.7558,\"lon\":37.6173}");
+        assertThat(json).contains("\"type\":\"share\"");
+        assertThat(json).contains("\"payload\":{\"url\":\"https://max.ru/post/1\",\"token\":\"share-token-1\"}");
     }
 
     @Test
@@ -352,5 +497,15 @@ class MaxApiModelMapperTest {
         )) {
             return objectMapper.readValue(stream, type);
         }
+    }
+
+    private org.assertj.core.api.AbstractObjectAssert<?, UpdateType> assertThatUpdateType(String rawType) throws IOException {
+        ApiUpdate api = objectMapper.readValue("""
+                {
+                  "update_type": "%s",
+                  "timestamp": 1735689600
+                }
+                """.formatted(rawType), ApiUpdate.class);
+        return assertThat(MaxApiModelMapper.toNormalized(api).type());
     }
 }
