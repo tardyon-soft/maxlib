@@ -14,6 +14,7 @@ import ru.tardyon.botframework.message.Messages;
 import ru.tardyon.botframework.model.ChatId;
 import ru.tardyon.botframework.model.Message;
 import ru.tardyon.botframework.model.MessageId;
+import ru.tardyon.botframework.model.TextFormat;
 import ru.tardyon.botframework.model.Update;
 import ru.tardyon.botframework.model.request.NewMessageAttachment;
 
@@ -50,18 +51,25 @@ public final class DefaultScreenRenderer implements ScreenRenderer {
             if (model.showBackButton() && context.session().canGoBack()) {
                 buttonRows.add(List.of(ScreenButton.of("Назад", "__nav_back")));
             }
-            return new RenderPayload(composeText(lines), buttonRows, attachments);
-        }).thenApply(payload -> sendOrEdit(context, payload.text(), payload.buttons(), payload.attachments()));
+            return new RenderPayload(composeText(lines), buttonRows, attachments, model.format());
+        }).thenApply(payload -> sendOrEdit(
+                context,
+                payload.text(),
+                payload.buttons(),
+                payload.attachments(),
+                payload.format()
+        ));
     }
 
     private RenderResult sendOrEdit(
             ScreenContext context,
             String text,
             List<List<ScreenButton>> buttons,
-            List<NewMessageAttachment> attachments
+            List<NewMessageAttachment> attachments,
+            TextFormat format
     ) {
         ChatId chatId = currentChatId(context.runtime().update());
-        MessageBuilder builder = Messages.text(text);
+        MessageBuilder builder = Messages.text(text).format(format == null ? TextFormat.PLAIN : format);
         for (NewMessageAttachment attachment : attachments) {
             builder = builder.attachment(attachment);
         }
@@ -150,7 +158,8 @@ public final class DefaultScreenRenderer implements ScreenRenderer {
     private record RenderPayload(
             String text,
             List<List<ScreenButton>> buttons,
-            List<NewMessageAttachment> attachments
+            List<NewMessageAttachment> attachments,
+            TextFormat format
     ) {
     }
 }

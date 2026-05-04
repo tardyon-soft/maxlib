@@ -2,6 +2,7 @@ package ru.tardyon.botframework.screen;
 
 import java.util.List;
 import java.util.Objects;
+import ru.tardyon.botframework.model.TextFormat;
 
 /**
  * High-level screen view model.
@@ -9,10 +10,16 @@ import java.util.Objects;
 public record ScreenModel(
         String title,
         List<Widget> widgets,
-        boolean showBackButton
+        boolean showBackButton,
+        TextFormat format
 ) {
     public ScreenModel {
         widgets = widgets == null ? List.of() : List.copyOf(widgets);
+        format = format == null ? TextFormat.PLAIN : format;
+    }
+
+    public ScreenModel(String title, List<Widget> widgets, boolean showBackButton) {
+        this(title, widgets, showBackButton, TextFormat.PLAIN);
     }
 
     public static Builder builder() {
@@ -23,6 +30,7 @@ public record ScreenModel(
         private String title;
         private final java.util.ArrayList<Widget> widgets = new java.util.ArrayList<>();
         private boolean showBackButton;
+        private TextFormat format = TextFormat.PLAIN;
 
         public Builder title(String value) {
             this.title = value;
@@ -55,8 +63,25 @@ public record ScreenModel(
             return this;
         }
 
+        public Builder format(TextFormat value) {
+            this.format = Objects.requireNonNull(value, "value");
+            return this;
+        }
+
+        public Builder plain() {
+            return format(TextFormat.PLAIN);
+        }
+
+        public Builder markdown() {
+            return format(TextFormat.MARKDOWN);
+        }
+
+        public Builder html() {
+            return format(TextFormat.HTML);
+        }
+
         public ScreenModel build() {
-            return new ScreenModel(title, widgets, showBackButton);
+            return new ScreenModel(title, widgets, showBackButton, format);
         }
     }
 }

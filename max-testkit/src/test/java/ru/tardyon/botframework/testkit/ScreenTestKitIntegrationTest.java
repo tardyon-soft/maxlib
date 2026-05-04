@@ -7,6 +7,8 @@ import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import ru.tardyon.botframework.dispatcher.BuiltInFilters;
 import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.model.TextFormat;
+import ru.tardyon.botframework.model.transport.ApiOutgoingMessageBody;
 import ru.tardyon.botframework.screen.InMemoryScreenRegistry;
 import ru.tardyon.botframework.screen.ScreenButton;
 import ru.tardyon.botframework.screen.ScreenContext;
@@ -37,6 +39,13 @@ class ScreenTestKitIntegrationTest {
                 .assertLastHasCall("/messages")
                 .assertTopScreen("home")
                 .assertLastRenderedPayload(kit.actionPayload("open_profile"));
+        ApiOutgoingMessageBody rendered = (ApiOutgoingMessageBody) startProbe.lastStep()
+                .probe()
+                .sideEffects()
+                .get(0)
+                .body()
+                .orElseThrow();
+        assertEquals(TextFormat.MARKDOWN, rendered.format());
 
         String openProfilePayload = ScreenFixtures.actionPayload("open_profile");
         ScreenFlowProbe callbackProbe = kit.feed(
@@ -70,6 +79,7 @@ class ScreenTestKitIntegrationTest {
             return CompletableFuture.completedFuture(
                     ScreenModel.builder()
                             .title("Home")
+                            .markdown()
                             .widget(Widgets.buttonRow(ScreenButton.of("Open profile", "open_profile")))
                             .showBackButton(false)
                             .build()
