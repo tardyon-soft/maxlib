@@ -130,7 +130,6 @@ public final class ScreenRouter {
             ScreenRegistry registry,
             String text
     ) {
-        tryDeleteIncomingUserMessage(context);
         ScreenNavigator navigator;
         try {
             navigator = Screens.navigator(context, registry);
@@ -140,21 +139,6 @@ public final class ScreenRouter {
         }
         DefaultScreenNavigator defaultNavigator = (DefaultScreenNavigator) navigator;
         return defaultNavigator.handleText(text);
-    }
-
-    private static void tryDeleteIncomingUserMessage(ru.tardyon.botframework.dispatcher.RuntimeContext context) {
-        if (context.update().message() == null || context.update().message().messageId() == null) {
-            return;
-        }
-        String messageId = context.update().message().messageId().value();
-        try {
-            boolean deleted = context.messaging().delete(context.update().message().messageId());
-            if (!deleted) {
-                log.debug("Screen text: user message delete returned false (messageId={})", messageId);
-            }
-        } catch (RuntimeException runtimeException) {
-            log.debug("Screen text: failed to delete user message (messageId={})", messageId, runtimeException);
-        }
     }
 
     private static Filter<Message> activeScreenTextFilter(ScreenRegistry registry) {

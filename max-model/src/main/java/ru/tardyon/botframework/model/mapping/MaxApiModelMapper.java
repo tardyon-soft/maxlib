@@ -14,6 +14,8 @@ import ru.tardyon.botframework.model.ChatMember;
 import ru.tardyon.botframework.model.ChatMemberStatus;
 import ru.tardyon.botframework.model.ChatType;
 import ru.tardyon.botframework.model.Message;
+import ru.tardyon.botframework.model.MessageEntity;
+import ru.tardyon.botframework.model.MessageEntityType;
 import ru.tardyon.botframework.model.MessageId;
 import ru.tardyon.botframework.model.FileId;
 import ru.tardyon.botframework.model.MessageAttachment;
@@ -111,7 +113,7 @@ public final class MaxApiModelMapper {
                 source.body() == null ? null : source.body().text(),
                 toInstant(source.timestamp()),
                 replyTo,
-                java.util.List.of(),
+                source.body() == null ? java.util.List.of() : mapIncomingMarkup(source.body().markup()),
                 source.body() == null ? java.util.List.of() : mapIncomingAttachments(source.body().attachments())
         );
     }
@@ -289,6 +291,84 @@ public final class MaxApiModelMapper {
         );
     }
 
+    private static List<MessageEntity> mapIncomingMarkup(List<Object> markup) {
+        if (markup == null || markup.isEmpty()) {
+            return List.of();
+        }
+        return markup.stream()
+                .map(MaxApiModelMapper::mapIncomingEntity)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private static MessageEntity mapIncomingEntity(Object entity) {
+        if (entity instanceof MessageEntity messageEntity) {
+            return messageEntity;
+        }
+        if (!(entity instanceof Map<?, ?> map)) {
+            return null;
+        }
+
+        Object payload = map.get("payload");
+        MessageEntityType type = incomingEntityType(
+                firstNonBlank(
+                        stringValue(map.get("type")),
+                        payloadValue(payload, "type")
+                ),
+                firstNonBlank(
+                        stringValue(map.get("url")),
+                        stringValue(map.get("link")),
+                        payloadValue(payload, "url"),
+                        payloadValue(payload, "link")
+                )
+        );
+        Integer offset = intValue(firstNonNull(
+                map.get("offset"),
+                map.get("from"),
+                map.get("start"),
+                payloadMapValue(payload, "offset"),
+                payloadMapValue(payload, "from"),
+                payloadMapValue(payload, "start")
+        ));
+        Integer length = intValue(firstNonNull(
+                map.get("length"),
+                map.get("len"),
+                payloadMapValue(payload, "length"),
+                payloadMapValue(payload, "len")
+        ));
+        if (offset == null || length == null) {
+            return null;
+        }
+        String value = firstNonBlank(
+                stringValue(map.get("value")),
+                stringValue(map.get("url")),
+                stringValue(map.get("link")),
+                stringValue(map.get("user_id")),
+                stringValue(map.get("userId")),
+                payloadValue(payload, "value"),
+                payloadValue(payload, "url"),
+                payloadValue(payload, "link"),
+                payloadValue(payload, "user_id"),
+                payloadValue(payload, "userId")
+        );
+        return new MessageEntity(type, offset, length, value);
+    }
+
+    private static MessageEntityType incomingEntityType(String rawType, String linkValue) {
+        String normalized = rawType == null ? null : rawType.trim().toLowerCase(java.util.Locale.ROOT);
+        if (normalized == null || normalized.isBlank()) {
+            return MessageEntityType.UNKNOWN;
+        }
+        return switch (normalized) {
+            case "strong" -> MessageEntityType.BOLD;
+            case "em", "emphasis", "emphasized" -> MessageEntityType.ITALIC;
+            case "pre", "monospace", "monospaced" -> MessageEntityType.CODE;
+            case "link" -> MessageEntityType.TEXT_LINK;
+            case "user_mention" -> MessageEntityType.MENTION;
+            default -> MessageEntityType.fromValue(normalized);
+        };
+    }
+
     private static String payloadValue(Object payload, String key) {
         return stringValue(payloadMapValue(payload, key));
     }
@@ -300,6 +380,15 @@ public final class MaxApiModelMapper {
         return null;
     }
 
+    private static Object firstNonNull(Object... values) {
+        for (Object value : values) {
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     private static String firstNonBlank(String... values) {
         for (String value : values) {
             if (value != null && !value.isBlank()) {
@@ -307,6 +396,14 @@ public final class MaxApiModelMapper {
             }
         }
         return null;
+    }
+
+    private static Integer intValue(Object value) {
+        Long longValue = longValue(value);
+        if (longValue == null || longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
+            return null;
+        }
+        return longValue.intValue();
     }
 
     private static String stringValue(Object value) {

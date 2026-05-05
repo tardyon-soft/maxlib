@@ -19,6 +19,7 @@ import ru.tardyon.botframework.model.ChatType;
 import ru.tardyon.botframework.model.TextFormat;
 import ru.tardyon.botframework.model.UpdateType;
 import ru.tardyon.botframework.model.MessageAttachmentType;
+import ru.tardyon.botframework.model.MessageEntityType;
 import ru.tardyon.botframework.model.request.AttachmentInput;
 import ru.tardyon.botframework.model.request.InlineKeyboardAttachment;
 import ru.tardyon.botframework.model.request.InlineKeyboardButtonRequest;
@@ -164,6 +165,74 @@ class MaxApiModelMapperTest {
         assertThat(message.attachments().get(1).type()).isEqualTo(MessageAttachmentType.STICKER);
         assertThat(message.attachments().get(1).payload()).isInstanceOf(Map.class);
         assertThat(message.attachments().get(2).type()).isEqualTo(MessageAttachmentType.LOCATION);
+    }
+
+    @Test
+    void mapsIncomingApiMessageMarkupToEntities() throws IOException {
+        ApiMessage api = objectMapper.readValue("""
+                {
+                  "sender": {
+                    "user_id": 1001,
+                    "first_name": "Alice",
+                    "is_bot": false
+                  },
+                  "recipient": {
+                    "chat_id": 2001,
+                    "chat_type": "chat"
+                  },
+                  "timestamp": 1735689600,
+                  "body": {
+                    "mid": "3001",
+                    "text": "bold link code",
+                    "markup": [
+                      {
+                        "type": "strong",
+                        "from": 0,
+                        "length": 4
+                      },
+                      {
+                        "type": "link",
+                        "offset": 5,
+                        "length": 4,
+                        "url": "https://example.com"
+                      },
+                      {
+                        "type": "monospaced",
+                        "payload": {
+                          "start": 10,
+                          "len": 4
+                        }
+                      },
+                      {
+                        "type": "emphasized",
+                        "from": 0,
+                        "length": 4
+                      },
+                      {
+                        "type": "user_mention",
+                        "from": 5,
+                        "length": 4,
+                        "user_id": 1001
+                      }
+                    ]
+                  }
+                }
+                """, ApiMessage.class);
+
+        var message = MaxApiModelMapper.toNormalized(api);
+
+        assertThat(message.entities()).hasSize(5);
+        assertThat(message.entities().get(0).type()).isEqualTo(MessageEntityType.BOLD);
+        assertThat(message.entities().get(0).offset()).isZero();
+        assertThat(message.entities().get(0).length()).isEqualTo(4);
+        assertThat(message.entities().get(1).type()).isEqualTo(MessageEntityType.TEXT_LINK);
+        assertThat(message.entities().get(1).value()).isEqualTo("https://example.com");
+        assertThat(message.entities().get(2).type()).isEqualTo(MessageEntityType.CODE);
+        assertThat(message.entities().get(2).offset()).isEqualTo(10);
+        assertThat(message.entities().get(2).length()).isEqualTo(4);
+        assertThat(message.entities().get(3).type()).isEqualTo(MessageEntityType.ITALIC);
+        assertThat(message.entities().get(4).type()).isEqualTo(MessageEntityType.MENTION);
+        assertThat(message.entities().get(4).value()).isEqualTo("1001");
     }
 
     @Test

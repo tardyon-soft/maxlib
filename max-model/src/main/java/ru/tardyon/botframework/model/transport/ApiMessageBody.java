@@ -1,6 +1,7 @@
 package ru.tardyon.botframework.model.transport;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
@@ -13,6 +14,7 @@ public record ApiMessageBody(
         @JsonProperty("seq") Long seq,
         @JsonProperty("text") String text,
         @JsonProperty("attachments") List<Object> attachments,
+        @JsonAlias("entities")
         @JsonProperty("markup") List<Object> markup
 ) {
     public ApiMessageBody {

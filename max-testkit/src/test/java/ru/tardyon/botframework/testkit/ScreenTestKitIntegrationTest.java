@@ -1,10 +1,12 @@
 package ru.tardyon.botframework.testkit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
+import ru.tardyon.botframework.client.http.HttpMethod;
 import ru.tardyon.botframework.dispatcher.BuiltInFilters;
 import ru.tardyon.botframework.dispatcher.Router;
 import ru.tardyon.botframework.model.TextFormat;
@@ -64,6 +66,8 @@ class ScreenTestKitIntegrationTest {
         textProbe.assertLastHandled()
                 .assertTopScreen("profile")
                 .assertTopParam("name", "Alice");
+        assertFalse(textProbe.lastStep().probe().sideEffects().stream()
+                .anyMatch(call -> call.method() == HttpMethod.DELETE && "/messages".equals(call.path())));
 
         assertEquals(1, textProbe.steps().size());
     }
