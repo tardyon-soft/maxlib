@@ -83,12 +83,6 @@ public final class FsmScreenStorage implements ScreenStorage {
     }
 
     private static String cacheKey(FSMContext fsm) {
-        if (fsm.scope().chatId() != null && fsm.scope().chatId().value() != null) {
-            return "chat:" + fsm.scope().chatId().value();
-        }
-        if (fsm.scope().userId() != null && fsm.scope().userId().value() != null) {
-            return "user:" + fsm.scope().userId().value();
-        }
         return "scope:" + fsm.scope();
     }
 }

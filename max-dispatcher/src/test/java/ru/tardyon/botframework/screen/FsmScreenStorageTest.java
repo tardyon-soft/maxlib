@@ -61,4 +61,28 @@ class FsmScreenStorageTest {
         assertTrue(legacyFsm.data().toCompletableFuture().join().get(FsmScreenStorage.SCREEN_SESSION_KEY).isPresent());
         assertTrue(screenFsm.data().toCompletableFuture().join().get(FsmScreenStorage.SCREEN_SESSION_KEY).isPresent());
     }
+
+    @Test
+    void cacheDoesNotLeakScreenSessionBetweenUsersInSameChat() {
+        MemoryStorage storage = new MemoryStorage();
+        FsmScreenStorage screenStorage = new FsmScreenStorage();
+        FSMContext firstUser = FSMContext.of(storage, StateKey.userInChat(
+                new UserId("screen::u-1"),
+                new ChatId("screen::c-1")
+        ));
+        FSMContext secondUserSameChat = FSMContext.of(storage, StateKey.userInChat(
+                new UserId("screen::u-2"),
+                new ChatId("screen::c-1")
+        ));
+
+        ScreenSession firstSession = new ScreenSession(
+                firstUser.scope().toString(),
+                List.of(new ScreenStackEntry("home", Map.of(), Instant.parse("2026-03-26T12:00:00Z"))),
+                "msg-first",
+                Instant.parse("2026-03-26T12:00:01Z")
+        );
+        screenStorage.set(firstUser, firstSession).toCompletableFuture().join();
+
+        assertTrue(screenStorage.get(secondUserSameChat).toCompletableFuture().join().isEmpty());
+    }
 }

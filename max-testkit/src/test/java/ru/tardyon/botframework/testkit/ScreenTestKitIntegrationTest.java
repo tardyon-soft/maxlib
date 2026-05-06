@@ -9,7 +9,19 @@ import org.junit.jupiter.api.Test;
 import ru.tardyon.botframework.client.http.HttpMethod;
 import ru.tardyon.botframework.dispatcher.BuiltInFilters;
 import ru.tardyon.botframework.dispatcher.Router;
+import ru.tardyon.botframework.model.Callback;
+import ru.tardyon.botframework.model.CallbackId;
+import ru.tardyon.botframework.model.Chat;
+import ru.tardyon.botframework.model.ChatId;
+import ru.tardyon.botframework.model.ChatType;
+import ru.tardyon.botframework.model.Message;
+import ru.tardyon.botframework.model.MessageId;
 import ru.tardyon.botframework.model.TextFormat;
+import ru.tardyon.botframework.model.Update;
+import ru.tardyon.botframework.model.UpdateId;
+import ru.tardyon.botframework.model.UpdateType;
+import ru.tardyon.botframework.model.User;
+import ru.tardyon.botframework.model.UserId;
 import ru.tardyon.botframework.model.transport.ApiOutgoingMessageBody;
 import ru.tardyon.botframework.screen.InMemoryScreenRegistry;
 import ru.tardyon.botframework.screen.ScreenButton;
@@ -19,6 +31,8 @@ import ru.tardyon.botframework.screen.ScreenMiddleware;
 import ru.tardyon.botframework.screen.ScreenModel;
 import ru.tardyon.botframework.screen.Screens;
 import ru.tardyon.botframework.screen.Widgets;
+import java.time.Instant;
+import java.util.List;
 
 class ScreenTestKitIntegrationTest {
 
@@ -164,6 +178,42 @@ class ScreenTestKitIntegrationTest {
         assertEquals(1, screenEdits);
     }
 
+    @Test
+    void screenSessionSurvivesCallbackRenderedByBotAndNextUserText() {
+        InMemoryScreenRegistry registry = new InMemoryScreenRegistry();
+        registry.register(new HomeScreen()).register(new ProfileScreen());
+
+        Router entryRouter = new Router("entry-bot-callback");
+        entryRouter.message(BuiltInFilters.command("screen"), (message, context) ->
+                Screens.navigator(context, registry).start("home", Map.of())
+        );
+
+        ScreenTestKit kit = ScreenTestKit.builder()
+                .registry(registry)
+                .includeRouter(entryRouter)
+                .build();
+
+        kit.feed(TestUpdates.message("user-1", "chat-1", "/screen"))
+                .assertLastHandled()
+                .assertTopScreen("home");
+
+        ScreenFlowProbe callbackProbe = kit.feed(callbackFromUserOnBotMessage(
+                "user-1",
+                "bot-1",
+                "chat-1",
+                kit.actionPayload("open_profile")
+        ));
+        callbackProbe.assertLastHandled()
+                .assertTopScreen("profile")
+                .assertTopParam("name", "Guest");
+
+        ScreenFlowProbe textProbe = kit.feed(TestUpdates.message("user-1", "chat-1", "Alice"));
+
+        textProbe.assertLastHandled()
+                .assertTopScreen("profile")
+                .assertTopParam("name", "Alice");
+    }
+
 
     private static final class HomeScreen implements ScreenDefinition {
         @Override
@@ -265,5 +315,39 @@ class ScreenTestKitIntegrationTest {
         public java.util.concurrent.CompletionStage<Void> onText(ScreenContext context, String text) {
             return CompletableFuture.completedFuture(null);
         }
+    }
+
+    private static Update callbackFromUserOnBotMessage(
+            String userId,
+            String botUserId,
+            String chatId,
+            String data
+    ) {
+        Instant timestamp = Instant.parse("2026-03-13T00:00:00Z");
+        Message source = new Message(
+                new MessageId("screen-message"),
+                new Chat(new ChatId(chatId), ChatType.PRIVATE, "Test Chat", null, null),
+                new User(new UserId(botUserId), "bot", "Test", "Bot", "Test Bot", true, "en"),
+                "screen",
+                timestamp,
+                null,
+                List.of(),
+                List.of()
+        );
+        Callback callback = new Callback(
+                new CallbackId("callback-1"),
+                data,
+                new User(new UserId(userId), "user", "Test", "User", "Test User", false, "en"),
+                source,
+                timestamp
+        );
+        return new Update(
+                new UpdateId("update-callback-1"),
+                UpdateType.CALLBACK,
+                null,
+                callback,
+                null,
+                timestamp
+        );
     }
 }

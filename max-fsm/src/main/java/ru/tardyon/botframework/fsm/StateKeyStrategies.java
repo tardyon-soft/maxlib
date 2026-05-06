@@ -84,17 +84,17 @@ public final class StateKeyStrategies {
         }
 
         private static UserId extractUserId(Update update) {
-            Message message = update.message();
-            if (message != null && message.from() != null) {
-                return message.from().id();
-            }
-
             Callback callback = update.callback();
             if (callback != null && callback.from() != null) {
                 return callback.from().id();
             }
             if (callback != null && callback.message() != null && callback.message().from() != null) {
                 return callback.message().from().id();
+            }
+
+            Message message = update.message();
+            if (message != null && message.from() != null) {
+                return message.from().id();
             }
 
             return null;

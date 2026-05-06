@@ -48,6 +48,49 @@ class StateKeyStrategiesTest {
     }
 
     @Test
+    void callbackUserWinsOverTopLevelMessageUser() {
+        Message message = new Message(
+                new MessageId("msg-user"),
+                new Chat(new ChatId("c-3"), ChatType.PRIVATE, null, null, null),
+                new User(new UserId("message-user"), null, null, null, null, false, null),
+                "text",
+                Instant.parse("2026-01-01T00:00:00Z"),
+                null,
+                null,
+                null
+        );
+        Callback callback = new Callback(
+                new CallbackId("cb-user"),
+                "action:user",
+                new User(new UserId("callback-user"), null, null, null, null, false, null),
+                new Message(
+                        new MessageId("msg-callback"),
+                        new Chat(new ChatId("c-3"), ChatType.PRIVATE, null, null, null),
+                        new User(new UserId("bot-user"), null, null, null, null, true, null),
+                        "callback",
+                        Instant.parse("2026-01-01T00:00:01Z"),
+                        null,
+                        null,
+                        null
+                ),
+                Instant.parse("2026-01-01T00:00:02Z")
+        );
+        Update update = new Update(
+                new UpdateId("upd-cb-user"),
+                UpdateType.CALLBACK,
+                message,
+                callback,
+                null,
+                Instant.parse("2026-01-01T00:00:02Z")
+        );
+
+        StateKey key = StateKeyStrategies.userInChat().resolve(update);
+
+        assertEquals(new UserId("callback-user"), key.userId());
+        assertEquals(new ChatId("c-3"), key.chatId());
+    }
+
+    @Test
     void resolvesUserFromCallbackSourceMessageWhenCallbackUserIsMissing() {
         Message callbackMessage = new Message(
                 new MessageId("msg-cb-fallback"),
