@@ -5,12 +5,13 @@ import java.util.concurrent.CompletionStage;
 import ru.tardyon.botframework.dispatcher.DispatchResult;
 import ru.tardyon.botframework.dispatcher.InnerMiddleware;
 import ru.tardyon.botframework.dispatcher.MiddlewareNext;
+import ru.tardyon.botframework.dispatcher.OuterMiddleware;
 import ru.tardyon.botframework.dispatcher.RuntimeContext;
 
 /**
  * Optional middleware adapter for screen callback/text handling.
  */
-public final class ScreenMiddleware implements InnerMiddleware {
+public final class ScreenMiddleware implements InnerMiddleware, OuterMiddleware {
     private final ScreenRegistry registry;
     private final ScreenActionCodec actionCodec;
 

@@ -15,6 +15,7 @@ import ru.tardyon.botframework.screen.InMemoryScreenRegistry;
 import ru.tardyon.botframework.screen.ScreenButton;
 import ru.tardyon.botframework.screen.ScreenContext;
 import ru.tardyon.botframework.screen.ScreenDefinition;
+import ru.tardyon.botframework.screen.ScreenMiddleware;
 import ru.tardyon.botframework.screen.ScreenModel;
 import ru.tardyon.botframework.screen.Screens;
 import ru.tardyon.botframework.screen.Widgets;
@@ -122,6 +123,45 @@ class ScreenTestKitIntegrationTest {
                 .filter(call -> "/messages".equals(call.path()))
                 .count();
         assertEquals(0, messageMutations);
+    }
+
+    @Test
+    void screenOuterMiddlewareHandlesActiveScreenBeforeGenericRoutes() {
+        InMemoryScreenRegistry registry = new InMemoryScreenRegistry();
+        registry.register(new RerenderingTextScreen());
+
+        Router entryRouter = new Router("entry-outer");
+        entryRouter.message(BuiltInFilters.command("wait"), (message, context) ->
+                Screens.navigator(context, registry).start("wait", Map.of())
+        );
+        entryRouter.message(message -> CompletableFuture.completedFuture(
+                message != null && message.text() != null
+                        ? ru.tardyon.botframework.dispatcher.FilterResult.matched()
+                        : ru.tardyon.botframework.dispatcher.FilterResult.notMatched()
+        ), (message, context) -> {
+            context.messaging().send(message.chat().id(), ru.tardyon.botframework.message.Messages.text("generic"));
+            return CompletableFuture.completedFuture(null);
+        });
+
+        DispatcherTestKit dispatcher = DispatcherTestKit.builder()
+                .fsmStorage(new ru.tardyon.botframework.fsm.MemoryStorage())
+                .stateScope(ru.tardyon.botframework.fsm.StateScope.USER_IN_CHAT)
+                .includeRouter(entryRouter)
+                .build();
+        dispatcher.runtime().outerMiddleware(new ScreenMiddleware(registry));
+
+        dispatcher.feed(TestUpdates.message("u-1", "c-1", "/wait"));
+
+        DispatcherTestKit.DispatchProbe textProbe = dispatcher.feedAndCapture(TestUpdates.message("u-1", "c-1", "hello"));
+
+        long genericSends = textProbe.sideEffects().stream()
+                .filter(call -> call.method() == HttpMethod.POST && "/messages".equals(call.path()))
+                .count();
+        long screenEdits = textProbe.sideEffects().stream()
+                .filter(call -> call.method() == HttpMethod.PUT && "/messages".equals(call.path()))
+                .count();
+        assertEquals(0, genericSends);
+        assertEquals(1, screenEdits);
     }
 
 

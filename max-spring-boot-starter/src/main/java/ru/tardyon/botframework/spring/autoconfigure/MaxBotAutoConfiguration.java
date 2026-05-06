@@ -56,6 +56,7 @@ import ru.tardyon.botframework.screen.AnnotatedScreenRegistrar;
 import ru.tardyon.botframework.screen.InMemoryScreenRegistry;
 import ru.tardyon.botframework.screen.LegacyStringScreenActionCodec;
 import ru.tardyon.botframework.screen.ScreenActionCodec;
+import ru.tardyon.botframework.screen.ScreenMiddleware;
 import ru.tardyon.botframework.screen.ScreenRegistry;
 import ru.tardyon.botframework.screen.Screens;
 import ru.tardyon.botframework.screen.TypedV1ScreenActionCodec;
@@ -303,6 +304,12 @@ public class MaxBotAutoConfiguration {
         ScreenActionCodec screenActionCodec = screenActionCodecProvider.getIfAvailable();
         if (screenActionCodec != null) {
             dispatcher.registerService(ScreenActionCodec.class, screenActionCodec);
+        }
+        if (screenRegistry != null) {
+            dispatcher.outerMiddleware(new ScreenMiddleware(
+                    screenRegistry,
+                    screenActionCodec == null ? new LegacyStringScreenActionCodec() : screenActionCodec
+            ));
         }
         dispatcher.registerApplicationData(Screens.SCREEN_FSM_NAMESPACE_KEY, properties.getScreen().getNamespace());
         WidgetViewResolver widgetViewResolver = widgetViewResolverProvider.getIfAvailable();
