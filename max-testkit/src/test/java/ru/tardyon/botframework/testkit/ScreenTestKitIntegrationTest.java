@@ -72,6 +72,59 @@ class ScreenTestKitIntegrationTest {
         assertEquals(1, textProbe.steps().size());
     }
 
+    @Test
+    void screenTextDoesNotAutoRerenderAfterHandlerNavigation() {
+        InMemoryScreenRegistry registry = new InMemoryScreenRegistry();
+        registry.register(new RerenderingTextScreen());
+
+        Router entryRouter = new Router("entry-rerender");
+        entryRouter.message(BuiltInFilters.command("wait"), (message, context) ->
+                Screens.navigator(context, registry).start("wait", Map.of())
+        );
+
+        ScreenTestKit kit = ScreenTestKit.builder()
+                .registry(registry)
+                .includeRouter(entryRouter)
+                .build();
+
+        kit.feed(TestUpdates.message("u-1", "c-1", "/wait")).assertLastHandled().assertTopScreen("wait");
+
+        ScreenFlowProbe textProbe = kit.feed(TestUpdates.message("u-1", "c-1", "hello"));
+
+        textProbe.assertLastHandled().assertTopScreen("wait");
+        long editCalls = textProbe.lastStep().probe().sideEffects().stream()
+                .filter(call -> call.method() == HttpMethod.PUT && "/messages".equals(call.path()))
+                .count();
+        assertEquals(1, editCalls);
+    }
+
+    @Test
+    void screenTextHandlerDoesNotRerenderImplicitly() {
+        InMemoryScreenRegistry registry = new InMemoryScreenRegistry();
+        registry.register(new HandledOnlyTextScreen());
+
+        Router entryRouter = new Router("entry-handled-only");
+        entryRouter.message(BuiltInFilters.command("handled"), (message, context) ->
+                Screens.navigator(context, registry).start("handled", Map.of())
+        );
+
+        ScreenTestKit kit = ScreenTestKit.builder()
+                .registry(registry)
+                .includeRouter(entryRouter)
+                .build();
+
+        kit.feed(TestUpdates.message("u-1", "c-1", "/handled")).assertLastHandled().assertTopScreen("handled");
+
+        ScreenFlowProbe textProbe = kit.feed(TestUpdates.message("u-1", "c-1", "hello"));
+
+        textProbe.assertLastHandled().assertTopScreen("handled");
+        long messageMutations = textProbe.lastStep().probe().sideEffects().stream()
+                .filter(call -> "/messages".equals(call.path()))
+                .count();
+        assertEquals(0, messageMutations);
+    }
+
+
     private static final class HomeScreen implements ScreenDefinition {
         @Override
         public String id() {
@@ -125,6 +178,52 @@ class ScreenTestKitIntegrationTest {
         public java.util.concurrent.CompletionStage<Void> onText(ScreenContext context, String text) {
             String next = text == null || text.isBlank() ? "Guest" : text.trim();
             return context.nav().replace("profile", Map.of("name", next));
+        }
+    }
+
+    private static final class RerenderingTextScreen implements ScreenDefinition {
+        @Override
+        public String id() {
+            return "wait";
+        }
+
+        @Override
+        public java.util.concurrent.CompletionStage<ScreenModel> render(ScreenContext context) {
+            return CompletableFuture.completedFuture(
+                    ScreenModel.builder()
+                            .title("Wait")
+                            .widget(Widgets.text("Type text"))
+                            .showBackButton(false)
+                            .build()
+            );
+        }
+
+        @Override
+        public java.util.concurrent.CompletionStage<Void> onText(ScreenContext context, String text) {
+            return context.nav().rerender();
+        }
+    }
+
+    private static final class HandledOnlyTextScreen implements ScreenDefinition {
+        @Override
+        public String id() {
+            return "handled";
+        }
+
+        @Override
+        public java.util.concurrent.CompletionStage<ScreenModel> render(ScreenContext context) {
+            return CompletableFuture.completedFuture(
+                    ScreenModel.builder()
+                            .title("Handled")
+                            .widget(Widgets.text("Type text"))
+                            .showBackButton(false)
+                            .build()
+            );
+        }
+
+        @Override
+        public java.util.concurrent.CompletionStage<Void> onText(ScreenContext context, String text) {
+            return CompletableFuture.completedFuture(null);
         }
     }
 }

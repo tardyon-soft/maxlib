@@ -135,8 +135,7 @@ public final class DefaultScreenNavigator implements ScreenNavigator {
             log.debug("Screen session before action: stackSize={}, rootMessageId={}", current.stack().size(), current.rootMessageId());
             return current.top()
                     .map(top -> resolve(top.screenId())
-                            .onAction(screenContext(current, top.params()), action, Map.copyOf(args))
-                            .thenCompose(ignored -> rerender()))
+                            .onAction(screenContext(current, top.params()), action, Map.copyOf(args)))
                     .orElseGet(() -> CompletableFuture.completedFuture(null));
         });
     }
@@ -145,8 +144,7 @@ public final class DefaultScreenNavigator implements ScreenNavigator {
         log.debug("Screen text requested: {}", text);
         return session().thenCompose(current -> current.top()
                 .map(top -> resolve(top.screenId())
-                        .onText(screenContext(current, top.params()), text)
-                        .thenCompose(ignored -> rerender()))
+                        .onText(screenContext(current, top.params()), text))
                 .orElseGet(() -> CompletableFuture.completedFuture(null)));
     }
 
