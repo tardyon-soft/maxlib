@@ -4,19 +4,19 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * Supported entity types for message text markup.
+ * Supported MAX message markup element types.
  */
 public enum MessageEntityType {
-    MENTION("mention"),
-    HASHTAG("hashtag"),
-    BOT_COMMAND("bot_command"),
-    URL("url"),
-    EMAIL("email"),
-    PHONE("phone"),
-    BOLD("bold"),
-    ITALIC("italic"),
-    CODE("code"),
-    TEXT_LINK("text_link"),
+    STRONG("strong"),
+    EMPHASIZED("emphasized"),
+    MONOSPACED("monospaced"),
+    LINK("link"),
+    STRIKETHROUGH("strikethrough"),
+    UNDERLINE("underline"),
+    USER_MENTION("user_mention"),
+    HEADING("heading"),
+    HIGHLIGHTED("highlighted"),
+    QUOTE("quote"),
     UNKNOWN("unknown");
 
     private final String value;

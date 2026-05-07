@@ -61,7 +61,7 @@ class MaxModelJsonDeserializationTest {
         assertThat(message.messageId().value()).isEqualTo("m-100");
         assertThat(message.entities()).hasSize(1);
         assertThat(message.attachments()).hasSize(1);
-        assertThat(message.entities().get(0).type()).isEqualTo(MessageEntityType.BOT_COMMAND);
+        assertThat(message.entities().get(0).type()).isEqualTo(MessageEntityType.STRONG);
         assertThat(message.attachments().get(0).type()).isEqualTo(MessageAttachmentType.DOCUMENT);
     }
 

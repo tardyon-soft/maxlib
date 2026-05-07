@@ -213,6 +213,31 @@ class MaxApiModelMapperTest {
                         "from": 5,
                         "length": 4,
                         "user_id": 1001
+                      },
+                      {
+                        "type": "strikethrough",
+                        "from": 0,
+                        "length": 4
+                      },
+                      {
+                        "type": "underline",
+                        "from": 0,
+                        "length": 4
+                      },
+                      {
+                        "type": "heading",
+                        "from": 0,
+                        "length": 4
+                      },
+                      {
+                        "type": "highlighted",
+                        "from": 0,
+                        "length": 4
+                      },
+                      {
+                        "type": "quote",
+                        "from": 0,
+                        "length": 4
                       }
                     ]
                   }
@@ -221,18 +246,25 @@ class MaxApiModelMapperTest {
 
         var message = MaxApiModelMapper.toNormalized(api);
 
-        assertThat(message.entities()).hasSize(5);
-        assertThat(message.entities().get(0).type()).isEqualTo(MessageEntityType.BOLD);
+        assertThat(message.entities()).hasSize(10);
+        assertThat(message.entities().get(0).type()).isEqualTo(MessageEntityType.STRONG);
         assertThat(message.entities().get(0).offset()).isZero();
         assertThat(message.entities().get(0).length()).isEqualTo(4);
-        assertThat(message.entities().get(1).type()).isEqualTo(MessageEntityType.TEXT_LINK);
+        assertThat(message.entities().get(1).type()).isEqualTo(MessageEntityType.LINK);
+        assertThat(message.entities().get(1).url()).isEqualTo("https://example.com");
         assertThat(message.entities().get(1).value()).isEqualTo("https://example.com");
-        assertThat(message.entities().get(2).type()).isEqualTo(MessageEntityType.CODE);
+        assertThat(message.entities().get(2).type()).isEqualTo(MessageEntityType.MONOSPACED);
         assertThat(message.entities().get(2).offset()).isEqualTo(10);
         assertThat(message.entities().get(2).length()).isEqualTo(4);
-        assertThat(message.entities().get(3).type()).isEqualTo(MessageEntityType.ITALIC);
-        assertThat(message.entities().get(4).type()).isEqualTo(MessageEntityType.MENTION);
+        assertThat(message.entities().get(3).type()).isEqualTo(MessageEntityType.EMPHASIZED);
+        assertThat(message.entities().get(4).type()).isEqualTo(MessageEntityType.USER_MENTION);
+        assertThat(message.entities().get(4).userId()).isEqualTo(1001L);
         assertThat(message.entities().get(4).value()).isEqualTo("1001");
+        assertThat(message.entities().get(5).type()).isEqualTo(MessageEntityType.STRIKETHROUGH);
+        assertThat(message.entities().get(6).type()).isEqualTo(MessageEntityType.UNDERLINE);
+        assertThat(message.entities().get(7).type()).isEqualTo(MessageEntityType.HEADING);
+        assertThat(message.entities().get(8).type()).isEqualTo(MessageEntityType.HIGHLIGHTED);
+        assertThat(message.entities().get(9).type()).isEqualTo(MessageEntityType.QUOTE);
     }
 
     @Test

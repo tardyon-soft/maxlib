@@ -15,8 +15,8 @@
   "createdAt": "2026-01-01T11:00:00Z",
   "entities": [
     {
-      "type": "bot_command",
-      "offset": 0,
+      "type": "strong",
+      "from": 0,
       "length": 4,
       "value": "/pay"
     }

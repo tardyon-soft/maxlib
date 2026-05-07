@@ -310,24 +310,16 @@ public final class MaxApiModelMapper {
         }
 
         Object payload = map.get("payload");
-        MessageEntityType type = incomingEntityType(
-                firstNonBlank(
-                        stringValue(map.get("type")),
-                        payloadValue(payload, "type")
-                ),
-                firstNonBlank(
-                        stringValue(map.get("url")),
-                        stringValue(map.get("link")),
-                        payloadValue(payload, "url"),
-                        payloadValue(payload, "link")
-                )
-        );
+        MessageEntityType type = MessageEntityType.fromValue(firstNonBlank(
+                stringValue(map.get("type")),
+                payloadValue(payload, "type")
+        ));
         Integer offset = intValue(firstNonNull(
-                map.get("offset"),
                 map.get("from"),
+                map.get("offset"),
                 map.get("start"),
-                payloadMapValue(payload, "offset"),
                 payloadMapValue(payload, "from"),
+                payloadMapValue(payload, "offset"),
                 payloadMapValue(payload, "start")
         ));
         Integer length = intValue(firstNonNull(
@@ -339,34 +331,25 @@ public final class MaxApiModelMapper {
         if (offset == null || length == null) {
             return null;
         }
-        String value = firstNonBlank(
-                stringValue(map.get("value")),
+        String url = firstNonBlank(
                 stringValue(map.get("url")),
                 stringValue(map.get("link")),
-                stringValue(map.get("user_id")),
-                stringValue(map.get("userId")),
-                payloadValue(payload, "value"),
                 payloadValue(payload, "url"),
-                payloadValue(payload, "link"),
-                payloadValue(payload, "user_id"),
-                payloadValue(payload, "userId")
+                payloadValue(payload, "link")
         );
-        return new MessageEntity(type, offset, length, value);
-    }
-
-    private static MessageEntityType incomingEntityType(String rawType, String linkValue) {
-        String normalized = rawType == null ? null : rawType.trim().toLowerCase(java.util.Locale.ROOT);
-        if (normalized == null || normalized.isBlank()) {
-            return MessageEntityType.UNKNOWN;
-        }
-        return switch (normalized) {
-            case "strong" -> MessageEntityType.BOLD;
-            case "em", "emphasis", "emphasized" -> MessageEntityType.ITALIC;
-            case "pre", "monospace", "monospaced" -> MessageEntityType.CODE;
-            case "link" -> MessageEntityType.TEXT_LINK;
-            case "user_mention" -> MessageEntityType.MENTION;
-            default -> MessageEntityType.fromValue(normalized);
-        };
+        String userLink = firstNonBlank(
+                stringValue(map.get("user_link")),
+                stringValue(map.get("userLink")),
+                payloadValue(payload, "user_link"),
+                payloadValue(payload, "userLink")
+        );
+        Long userId = longValue(firstNonNull(
+                map.get("user_id"),
+                map.get("userId"),
+                payloadMapValue(payload, "user_id"),
+                payloadMapValue(payload, "userId")
+        ));
+        return new MessageEntity(type, offset, length, url, userLink, userId);
     }
 
     private static String payloadValue(Object payload, String key) {
