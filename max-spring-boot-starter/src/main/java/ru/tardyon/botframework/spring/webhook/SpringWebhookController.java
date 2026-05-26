@@ -1,10 +1,5 @@
 package ru.tardyon.botframework.spring.webhook;
 
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import org.springframework.http.HttpStatus;
@@ -37,19 +32,10 @@ public final class SpringWebhookController {
     )
     public CompletionStage<ResponseEntity<Void>> handle(
             @RequestBody byte[] body,
-            HttpServletRequest request
+            @RequestHeader org.springframework.http.HttpHeaders headers
     ) {
-        Map<String, List<String>> headers = extractHeaders(request);
         log.debug("Webhook HTTP request received: bodyBytes={}, headerCount={}", body.length, headers.size());
         return adapter.receive(body, headers).thenApply(this::mapResponse);
-    }
-
-    private static Map<String, List<String>> extractHeaders(HttpServletRequest request) {
-        Map<String, List<String>> headers = new LinkedHashMap<>();
-        for (String headerName : Collections.list(request.getHeaderNames())) {
-            headers.put(headerName, Collections.list(request.getHeaders(headerName)));
-        }
-        return headers;
     }
 
     private ResponseEntity<Void> mapResponse(WebhookReceiveResult result) {
