@@ -29,6 +29,7 @@ class DefaultMaxApiErrorDecoderTest {
         assertThat(exception.errorPayload().message()).isEqualTo("invalid payload");
         assertThat(exception.errorPayload().details()).isInstanceOf(Map.class);
         assertThat(exception.errorPayload().rawBody()).contains("VALIDATION_FAILED");
+        assertThat(exception.getMessage()).contains("VALIDATION_FAILED - invalid payload");
     }
 
     @Test

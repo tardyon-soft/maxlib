@@ -20,15 +20,40 @@ public class MaxServerErrorException extends MaxApiException {
                 responseBody,
                 requestMethod,
                 requestPath,
-                buildMessage(statusCode, requestMethod, requestPath),
+                buildMessage(statusCode, requestMethod, requestPath, errorPayload),
                 errorPayload
         );
     }
 
-    private static String buildMessage(int statusCode, String requestMethod, String requestPath) {
+    private static String buildMessage(int statusCode, String requestMethod, String requestPath, MaxApiErrorPayload errorPayload) {
+        StringBuilder message = new StringBuilder();
         if (requestMethod == null || requestPath == null) {
-            return "MAX API request failed with status " + statusCode;
+            message.append("MAX API request failed with status ").append(statusCode);
+        } else {
+            message.append("MAX API request failed with status ")
+                    .append(statusCode)
+                    .append(" for ")
+                    .append(requestMethod)
+                    .append(' ')
+                    .append(requestPath);
         }
-        return "MAX API request failed with status " + statusCode + " for " + requestMethod + " " + requestPath;
+        appendPayloadSummary(message, errorPayload);
+        return message.toString();
+    }
+
+    private static void appendPayloadSummary(StringBuilder message, MaxApiErrorPayload errorPayload) {
+        if (errorPayload == null) {
+            return;
+        }
+        if (errorPayload.errorCode() != null && !errorPayload.errorCode().isBlank()) {
+            message.append(": ").append(errorPayload.errorCode());
+            if (errorPayload.message() != null && !errorPayload.message().isBlank()) {
+                message.append(" - ").append(errorPayload.message());
+            }
+            return;
+        }
+        if (errorPayload.message() != null && !errorPayload.message().isBlank()) {
+            message.append(": ").append(errorPayload.message());
+        }
     }
 }
