@@ -28,10 +28,23 @@ public final class FacadeScreenController {
         return ScreenModel.builder()
                 .title("Facade Screen: Home")
                 .widget(Widgets.text("Это пример @ScreenController + @ScreenView + @OnScreenAction + @OnScreenText"))
+                .widget(Widgets.text("Ниже пример всех типов inline-кнопок в screen API"))
                 .widget(Widgets.ref("demo.counter"))
                 .widget(Widgets.buttonRow(
                         ScreenButton.of("Открыть профиль", "open_profile"),
                         ScreenButton.of("Мониторинг задачи", "open_monitor")
+                ))
+                .widget(Widgets.buttonRow(
+                        ScreenButton.clipboard("Скопировать код", "invoice-42"),
+                        ScreenButton.link("Документация", "https://example.com/docs")
+                ))
+                .widget(Widgets.buttonRow(
+                        ScreenButton.requestContact("Поделиться контактом"),
+                        ScreenButton.requestGeoLocation("Поделиться гео")
+                ))
+                .widget(Widgets.buttonRow(
+                        ScreenButton.openApp("Открыть mini app", "app:orders"),
+                        ScreenButton.message("Отправить шаблон", "hello-from-screen")
                 ))
                 .showBackButton(false)
                 .build();

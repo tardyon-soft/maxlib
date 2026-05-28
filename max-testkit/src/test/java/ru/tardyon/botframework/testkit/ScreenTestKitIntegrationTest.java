@@ -15,6 +15,7 @@ import ru.tardyon.botframework.model.Chat;
 import ru.tardyon.botframework.model.ChatId;
 import ru.tardyon.botframework.model.ChatType;
 import ru.tardyon.botframework.model.Message;
+import ru.tardyon.botframework.model.MessageAttachmentType;
 import ru.tardyon.botframework.model.MessageId;
 import ru.tardyon.botframework.model.TextFormat;
 import ru.tardyon.botframework.model.Update;
@@ -22,6 +23,8 @@ import ru.tardyon.botframework.model.UpdateId;
 import ru.tardyon.botframework.model.UpdateType;
 import ru.tardyon.botframework.model.User;
 import ru.tardyon.botframework.model.UserId;
+import ru.tardyon.botframework.model.transport.ApiAttachmentRequest;
+import ru.tardyon.botframework.model.transport.ApiInlineKeyboardPayload;
 import ru.tardyon.botframework.model.transport.ApiOutgoingMessageBody;
 import ru.tardyon.botframework.screen.InMemoryScreenRegistry;
 import ru.tardyon.botframework.screen.ScreenButton;
@@ -214,6 +217,46 @@ class ScreenTestKitIntegrationTest {
                 .assertTopParam("name", "Alice");
     }
 
+    @Test
+    void screenRendererSupportsAllInlineButtonKinds() {
+        InMemoryScreenRegistry registry = new InMemoryScreenRegistry();
+        registry.register(new AllButtonsScreen());
+
+        Router entryRouter = new Router("entry-all-buttons");
+        entryRouter.message(BuiltInFilters.command("buttons"), (message, context) ->
+                Screens.navigator(context, registry).start("all-buttons", Map.of())
+        );
+
+        ScreenTestKit kit = ScreenTestKit.builder()
+                .registry(registry)
+                .includeRouter(entryRouter)
+                .build();
+
+        ScreenFlowProbe probe = kit.feed(TestUpdates.message("u-1", "c-1", "/buttons"));
+        probe.assertLastHandled()
+                .assertTopScreen("all-buttons");
+
+        ApiOutgoingMessageBody body = (ApiOutgoingMessageBody) probe.lastStep()
+                .probe()
+                .sideEffects()
+                .get(0)
+                .body()
+                .orElseThrow();
+        assertEquals(1, body.attachments().size());
+
+        ApiAttachmentRequest keyboard = (ApiAttachmentRequest) body.attachments().get(0);
+        assertEquals(MessageAttachmentType.INLINE_KEYBOARD.value(), keyboard.type());
+        ApiInlineKeyboardPayload payload = (ApiInlineKeyboardPayload) keyboard.payload();
+        assertEquals(7, payload.buttons().size());
+        assertEquals(ScreenFixtures.actionPayload("open_profile"), payload.buttons().get(0).get(0).payload());
+        assertEquals("invoice-42", payload.buttons().get(1).get(0).payload());
+        assertEquals("https://example.com/docs", payload.buttons().get(2).get(0).url());
+        assertEquals(Boolean.TRUE, payload.buttons().get(3).get(0).requestContact());
+        assertEquals(Boolean.TRUE, payload.buttons().get(4).get(0).requestGeoLocation());
+        assertEquals("app:orders", payload.buttons().get(5).get(0).openApp());
+        assertEquals("hello-from-screen", payload.buttons().get(6).get(0).message());
+    }
+
 
     private static final class HomeScreen implements ScreenDefinition {
         @Override
@@ -314,6 +357,30 @@ class ScreenTestKitIntegrationTest {
         @Override
         public java.util.concurrent.CompletionStage<Void> onText(ScreenContext context, String text) {
             return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private static final class AllButtonsScreen implements ScreenDefinition {
+        @Override
+        public String id() {
+            return "all-buttons";
+        }
+
+        @Override
+        public java.util.concurrent.CompletionStage<ScreenModel> render(ScreenContext context) {
+            return CompletableFuture.completedFuture(
+                    ScreenModel.builder()
+                            .title("All Buttons")
+                            .widget(Widgets.buttonRow(ScreenButton.of("Open profile", "open_profile")))
+                            .widget(Widgets.buttonRow(ScreenButton.clipboard("Copy", "invoice-42")))
+                            .widget(Widgets.buttonRow(ScreenButton.link("Docs", "https://example.com/docs")))
+                            .widget(Widgets.buttonRow(ScreenButton.requestContact("Contact")))
+                            .widget(Widgets.buttonRow(ScreenButton.requestGeoLocation("Location")))
+                            .widget(Widgets.buttonRow(ScreenButton.openApp("Open app", "app:orders")))
+                            .widget(Widgets.buttonRow(ScreenButton.message("Send", "hello-from-screen")))
+                            .showBackButton(false)
+                            .build()
+            );
         }
     }
 

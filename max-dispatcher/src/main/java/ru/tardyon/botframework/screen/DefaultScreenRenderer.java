@@ -78,10 +78,7 @@ public final class DefaultScreenRenderer implements ScreenRenderer {
                 for (List<ScreenButton> row : buttons) {
                     ArrayList<InlineKeyboardButton> mapped = new ArrayList<>();
                     for (ScreenButton button : row) {
-                        String payload = "__nav_back".equals(button.action())
-                                ? callbackCodec.navBack()
-                                : callbackCodec.action(button.action(), button.args());
-                        mapped.add(Buttons.callback(button.text(), payload));
+                        mapped.add(mapButton(button));
                     }
                     keyboard.row(mapped);
                 }
@@ -153,6 +150,23 @@ public final class DefaultScreenRenderer implements ScreenRenderer {
 
     private static boolean isUnknownMessageId(String value) {
         return value.endsWith("-unknown");
+    }
+
+    private InlineKeyboardButton mapButton(ScreenButton button) {
+        return switch (button.kind()) {
+            case CALLBACK -> {
+                String payload = "__nav_back".equals(button.action())
+                        ? callbackCodec.navBack()
+                        : callbackCodec.action(button.action(), button.args());
+                yield Buttons.callback(button.text(), payload);
+            }
+            case CLIPBOARD -> Buttons.clipboard(button.text(), button.payload());
+            case LINK -> Buttons.link(button.text(), button.payload());
+            case REQUEST_CONTACT -> Buttons.requestContact(button.text());
+            case REQUEST_GEO_LOCATION -> Buttons.requestGeoLocation(button.text());
+            case OPEN_APP -> Buttons.openApp(button.text(), button.payload());
+            case MESSAGE -> Buttons.message(button.text(), button.payload());
+        };
     }
 
     private record RenderPayload(

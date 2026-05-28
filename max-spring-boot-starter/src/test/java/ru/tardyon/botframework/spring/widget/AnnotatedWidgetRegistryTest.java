@@ -56,6 +56,19 @@ class AnnotatedWidgetRegistryTest {
     }
 
     @Test
+    void keepsNonCallbackButtonsUntouched() {
+        AnnotatedWidgetRegistry registry = new AnnotatedWidgetRegistry();
+        registry.register(new MixedButtonsWidgetController());
+
+        WidgetView view = registry.resolve(widgetContext("demo.mixed"), Map.of()).toCompletableFuture().join();
+
+        assertEquals("https://example.com/docs", view.buttons().get(0).get(1).payload());
+        assertEquals(ScreenButton.Kind.LINK, view.buttons().get(0).get(1).kind());
+        assertEquals("hello", view.buttons().get(0).get(2).payload());
+        assertEquals(ScreenButton.Kind.MESSAGE, view.buttons().get(0).get(2).kind());
+    }
+
+    @Test
     void validatesDuplicateWidgetAndActionMappings() {
         AnnotatedWidgetRegistry registry = new AnnotatedWidgetRegistry();
         assertThrows(IllegalStateException.class, () -> registry.register(new DuplicateWidgetController()));
@@ -78,6 +91,25 @@ class AnnotatedWidgetRegistryTest {
         public CompletionStage<WidgetEffect> increment(Map<String, String> args) {
             actionCalls.incrementAndGet();
             return CompletableFuture.completedFuture(WidgetEffect.RERENDER);
+        }
+    }
+
+    @WidgetController
+    static final class MixedButtonsWidgetController {
+        @Widget(id = "demo.mixed")
+        public WidgetView render() {
+            return WidgetView.of(
+                    List.of("Mixed"),
+                    List.of(List.of(
+                            ScreenButton.of("Increment", "increment"),
+                            ScreenButton.link("Docs", "https://example.com/docs"),
+                            ScreenButton.message("Send", "hello")
+                    ))
+            );
+        }
+
+        @OnWidgetAction(widget = "demo.mixed", action = "increment")
+        public void increment() {
         }
     }
 
@@ -164,4 +196,3 @@ class AnnotatedWidgetRegistryTest {
         return new WidgetContext(screenContext, widgetId, Map.of(), runtimeContext.update().message(), runtimeContext.update().callback());
     }
 }
-

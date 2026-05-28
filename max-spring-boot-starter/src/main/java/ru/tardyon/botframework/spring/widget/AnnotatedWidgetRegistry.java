@@ -156,11 +156,15 @@ public final class AnnotatedWidgetRegistry implements WidgetViewResolver, Widget
         for (java.util.List<ScreenButton> row : view.buttons()) {
             java.util.ArrayList<ScreenButton> mappedRow = new java.util.ArrayList<>();
             for (ScreenButton button : row) {
-                mappedRow.add(new ScreenButton(
-                        button.text(),
-                        WidgetActions.callbackAction(widgetId, button.action()),
-                        button.args()
-                ));
+                if (button.kind() == ScreenButton.Kind.CALLBACK) {
+                    mappedRow.add(ScreenButton.callback(
+                            button.text(),
+                            WidgetActions.callbackAction(widgetId, button.action()),
+                            button.args()
+                    ));
+                } else {
+                    mappedRow.add(button);
+                }
             }
             rows.add(java.util.List.copyOf(mappedRow));
         }
@@ -274,4 +278,3 @@ public final class AnnotatedWidgetRegistry implements WidgetViewResolver, Widget
     ) {
     }
 }
-

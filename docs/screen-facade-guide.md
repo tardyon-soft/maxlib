@@ -58,6 +58,33 @@ public final class ProfileController {
 - Когда один класс должен описывать несколько экранов.
 - Когда хотите постепенно мигрировать с legacy аннотаций.
 
+## Inline-кнопки в ScreenButton
+
+В facade/screen API `ScreenButton` поддерживает не только callback-action, но и остальные inline-типы:
+
+```java
+ScreenModel.builder()
+        .title("Buttons")
+        .widget(Widgets.buttonRow(
+                ScreenButton.of("Открыть профиль", "open_profile"),
+                ScreenButton.clipboard("Скопировать код", "invoice-42")
+        ))
+        .widget(Widgets.buttonRow(
+                ScreenButton.link("Документация", "https://example.com/docs"),
+                ScreenButton.requestContact("Поделиться контактом")
+        ))
+        .widget(Widgets.buttonRow(
+                ScreenButton.requestGeoLocation("Поделиться гео"),
+                ScreenButton.openApp("Открыть mini app", "app:orders")
+        ))
+        .widget(Widgets.buttonRow(
+                ScreenButton.message("Отправить шаблон", "hello-from-screen")
+        ))
+        .build();
+```
+
+`@OnScreenAction` и `@OnWidgetAction` обрабатывают только callback-кнопки (`ScreenButton.of(...)` / `ScreenButton.callback(...)`). Остальные типы рендерятся как inline-кнопки MAX API и не возвращаются в callback pipeline.
+
 ## Когда можно оставить старый API
 
 - Если текущий `@Screen/@Render/@OnAction/@OnText` код стабилен и понятен.
