@@ -256,7 +256,7 @@ class DefaultMaxBotClientTest {
         String body = recorded.getBody().readUtf8();
         assertThat(body).contains("\"text\":\"hello docs\"");
         assertThat(body).contains("\"notify\":false");
-        assertThat(body).contains("\"link\":{\"type\":\"reply\",\"message\":\"m-100\"}");
+        assertThat(body).contains("\"link\":{\"type\":\"reply\",\"mid\":\"m-100\"}");
         assertThat(message.messageId().value()).isEqualTo("m-101");
     }
 
