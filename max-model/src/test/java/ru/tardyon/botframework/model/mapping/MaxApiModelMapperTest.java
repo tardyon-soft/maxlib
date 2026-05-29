@@ -16,6 +16,7 @@ import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import ru.tardyon.botframework.model.ChatMemberStatus;
 import ru.tardyon.botframework.model.ChatType;
+import ru.tardyon.botframework.model.MessageId;
 import ru.tardyon.botframework.model.TextFormat;
 import ru.tardyon.botframework.model.UpdateType;
 import ru.tardyon.botframework.model.MessageAttachmentType;
@@ -112,6 +113,20 @@ class MaxApiModelMapperTest {
         assertThat(message.messageId().value()).isEqualTo("3001");
         assertThat(message.replyToMessageId()).isNotNull();
         assertThat(message.replyToMessageId().value()).isEqualTo("3000");
+    }
+
+    @Test
+    void mapsOutgoingReplyLinkToTopLevelMidField() throws IOException {
+        ApiNewMessageBody body = MaxApiModelMapper.toApi(
+                new NewMessageBody("hello", TextFormat.PLAIN, List.of()),
+                true,
+                new MessageId("mid.ffffbcde7cda77f3019e74224a4314c0")
+        );
+
+        String json = objectMapper.writeValueAsString(body);
+
+        assertThat(json).contains("\"link\":{\"type\":\"reply\",\"mid\":\"mid.ffffbcde7cda77f3019e74224a4314c0\"}");
+        assertThat(json).doesNotContain("\"message\":");
     }
 
     @Test

@@ -9,6 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ApiNewMessageLink(
         @JsonProperty("type") String type,
-        @JsonProperty("message") String message
+        @JsonProperty("mid") String mid
 ) {
 }
