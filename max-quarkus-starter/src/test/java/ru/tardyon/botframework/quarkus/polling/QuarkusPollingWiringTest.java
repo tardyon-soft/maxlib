@@ -72,6 +72,7 @@ class QuarkusPollingWiringTest {
     @BeforeEach
     void resetState() {
         TrackingBeans.FIRST_REQUEST.set(new CountDownLatch(1));
+        TrackingBeans.FIRST_HANDLED_UPDATE.set(new CountDownLatch(1));
         TrackingBeans.LAST_REQUEST.set(null);
         TrackingBeans.POLL_CALLS.set(0);
         TrackingBeans.HANDLED_UPDATES.set(0);
@@ -91,6 +92,7 @@ class QuarkusPollingWiringTest {
     @Test
     void runtimeFeedThroughUsesAssembledRequest() throws Exception {
         assertTrue(TrackingBeans.FIRST_REQUEST.get().await(2, TimeUnit.SECONDS));
+        assertTrue(TrackingBeans.FIRST_HANDLED_UPDATE.get().await(2, TimeUnit.SECONDS));
         assertTrue(TrackingBeans.LAST_REQUEST.get() != null);
         assertEquals(Integer.valueOf(45), TrackingBeans.LAST_REQUEST.get().timeout());
         assertEquals(Integer.valueOf(20), TrackingBeans.LAST_REQUEST.get().limit());
@@ -102,6 +104,7 @@ class QuarkusPollingWiringTest {
     @Singleton
     static final class TrackingBeans {
         static final AtomicReference<CountDownLatch> FIRST_REQUEST = new AtomicReference<>(new CountDownLatch(1));
+        static final AtomicReference<CountDownLatch> FIRST_HANDLED_UPDATE = new AtomicReference<>(new CountDownLatch(1));
         static final AtomicReference<PollingFetchRequest> LAST_REQUEST = new AtomicReference<>();
         static final AtomicInteger POLL_CALLS = new AtomicInteger();
         static final AtomicInteger HANDLED_UPDATES = new AtomicInteger();
@@ -128,6 +131,7 @@ class QuarkusPollingWiringTest {
             dispatcher.includeRouter(new ru.tardyon.botframework.dispatcher.Router("polling")
                     .message((message, context) -> {
                         HANDLED_UPDATES.incrementAndGet();
+                        FIRST_HANDLED_UPDATE.get().countDown();
                         return CompletableFuture.completedFuture(null);
                     }));
             return dispatcher;
