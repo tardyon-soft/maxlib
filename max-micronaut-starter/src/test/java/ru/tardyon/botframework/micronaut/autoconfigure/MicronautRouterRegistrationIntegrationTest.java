@@ -139,6 +139,22 @@ class MicronautRouterRegistrationIntegrationTest {
         }
     }
 
+    @Test
+    void scannedRouteBeanWithConstructorDependencyUsesMicronautBeanInstance() {
+        BeanBackedAutoDetectedRouteFactory.CALLS.set(0);
+
+        try (ApplicationContext context = context("bean-backed-autodetected-route-scan", Map.of(
+                "max.bot.polling.enabled", "false",
+                "max.bot.route-component-scan.enabled", "true"
+        ))) {
+            Dispatcher dispatcher = context.getBean(Dispatcher.class);
+            DispatchResult result = dispatcher.feedUpdate(sampleUpdate("/beanbacked")).toCompletableFuture().join();
+
+            assertEquals(DispatchStatus.HANDLED, result.status());
+            assertEquals(1, BeanBackedAutoDetectedRouteFactory.CALLS.get());
+        }
+    }
+
     private static ApplicationContext context(String specName, Map<String, Object> extraProperties) {
         LinkedHashMap<String, Object> properties = new LinkedHashMap<>();
         properties.put("spec.name", specName);
@@ -283,6 +299,41 @@ class MicronautRouterRegistrationIntegrationTest {
         @Singleton
         Object packageMarker() {
             return new Object();
+        }
+    }
+
+    @Factory
+    @Requires(property = "spec.name", value = "bean-backed-autodetected-route-scan")
+    static final class BeanBackedAutoDetectedRouteFactory {
+        static final AtomicInteger CALLS = new AtomicInteger();
+
+        @Singleton
+        RouteDependency routeDependency() {
+            return new RouteDependency();
+        }
+
+        @Singleton
+        BeanBackedAutoDetectedRouteController beanBackedAutoDetectedRouteController(RouteDependency routeDependency) {
+            return new BeanBackedAutoDetectedRouteController(routeDependency);
+        }
+    }
+
+    static final class RouteDependency {
+    }
+
+    @Route(value = "bean-backed-autodetected-route", autoRegister = true)
+    static final class BeanBackedAutoDetectedRouteController {
+        private final RouteDependency routeDependency;
+
+        BeanBackedAutoDetectedRouteController(RouteDependency routeDependency) {
+            this.routeDependency = routeDependency;
+        }
+
+        @Command("beanbacked")
+        public java.util.concurrent.CompletionStage<Void> onBeanBackedStart() {
+            assertSame(RouteDependency.class, routeDependency.getClass());
+            BeanBackedAutoDetectedRouteFactory.CALLS.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
         }
     }
 }

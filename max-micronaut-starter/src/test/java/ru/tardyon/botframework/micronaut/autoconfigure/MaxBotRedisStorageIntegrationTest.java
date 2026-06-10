@@ -11,14 +11,14 @@ import static org.mockito.Mockito.when;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
 import jakarta.inject.Singleton;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import ru.tardyon.botframework.fsm.FSMStorage;
 import ru.tardyon.botframework.fsm.MemoryStorage;
 import ru.tardyon.botframework.fsm.StateKey;
@@ -62,7 +62,7 @@ class MaxBotRedisStorageIntegrationTest {
             }
         });
 
-        assertTrue(failure.getMessage().contains("RedisConnectionFactory is missing"));
+        assertTrue(failure.getMessage().contains("StatefulRedisConnection is missing"));
     }
 
     @Test
@@ -82,10 +82,10 @@ class MaxBotRedisStorageIntegrationTest {
                     "form:name"
             ).toCompletableFuture().join();
 
-            verify(RedisTemplateFactory.VALUES).set(
+            verify(RedisTemplateFactory.VALUES).psetex(
                     eq("max:test:fsm:user_in_chat:u:u1:c:c1:state"),
-                    eq("form:name"),
-                    eq(Duration.ofSeconds(120))
+                    eq(Duration.ofSeconds(120).toMillis()),
+                    eq("form:name")
             );
         }
     }
@@ -127,18 +127,19 @@ class MaxBotRedisStorageIntegrationTest {
     @Factory
     @Requires(property = "spec.name", value = "redis-template")
     static final class RedisTemplateFactory {
-        static final StringRedisTemplate TEMPLATE = Mockito.mock(StringRedisTemplate.class);
         @SuppressWarnings("unchecked")
-        static final ValueOperations<String, String> VALUES = Mockito.mock(ValueOperations.class);
+        static final StatefulRedisConnection<String, String> CONNECTION = Mockito.mock(StatefulRedisConnection.class);
+        @SuppressWarnings("unchecked")
+        static final RedisCommands<String, String> VALUES = Mockito.mock(RedisCommands.class);
 
         static void reset() {
-            Mockito.reset(TEMPLATE, VALUES);
-            when(TEMPLATE.opsForValue()).thenReturn(VALUES);
+            Mockito.reset(CONNECTION, VALUES);
+            when(CONNECTION.sync()).thenReturn(VALUES);
         }
 
         @Singleton
-        StringRedisTemplate stringRedisTemplate() {
-            return TEMPLATE;
+        StatefulRedisConnection<String, String> statefulRedisConnection() {
+            return CONNECTION;
         }
     }
 }

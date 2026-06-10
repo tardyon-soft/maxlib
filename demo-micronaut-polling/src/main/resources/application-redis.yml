@@ -1,0 +1,11 @@
+max:
+  bot:
+    storage:
+      type: REDIS
+      state-scope: USER_IN_CHAT
+      redis:
+        key-prefix: demo:max:fsm
+        ttl: 12h
+
+redis:
+  uri: ${REDIS_URI:`redis://127.0.0.1:6379/0`}

@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
 import ru.tardyon.botframework.client.serialization.JsonCodec;
 import ru.tardyon.botframework.fsm.FSMStorage;
 import ru.tardyon.botframework.fsm.FsmStorageException;
@@ -18,13 +18,13 @@ import ru.tardyon.botframework.fsm.StateKey;
  * Redis-backed {@link FSMStorage} implementation for Micronaut starter.
  */
 public final class RedisFSMStorage implements FSMStorage {
-    private final StringRedisTemplate redis;
+    private final StatefulRedisConnection<String, String> redis;
     private final JsonCodec jsonCodec;
     private final String keyPrefix;
     private final Duration ttl;
 
     public RedisFSMStorage(
-            StringRedisTemplate redis,
+            StatefulRedisConnection<String, String> redis,
             JsonCodec jsonCodec,
             String keyPrefix,
             Duration ttl
@@ -38,7 +38,7 @@ public final class RedisFSMStorage implements FSMStorage {
     @Override
     public CompletionStage<Optional<String>> getState(StateKey key) {
         try {
-            String value = values().get(stateKey(key));
+            String value = commands().get(stateKey(key));
             return CompletableFuture.completedFuture(Optional.ofNullable(value));
         } catch (RuntimeException e) {
             return CompletableFuture.failedFuture(new FsmStorageException("redis.getState", e));
@@ -58,7 +58,7 @@ public final class RedisFSMStorage implements FSMStorage {
     @Override
     public CompletionStage<Void> clearState(StateKey key) {
         try {
-            redis.delete(stateKey(key));
+            commands().del(stateKey(key));
             return CompletableFuture.completedFuture(null);
         } catch (RuntimeException e) {
             return CompletableFuture.failedFuture(new FsmStorageException("redis.clearState", e));
@@ -68,7 +68,7 @@ public final class RedisFSMStorage implements FSMStorage {
     @Override
     public CompletionStage<StateData> getStateData(StateKey key) {
         try {
-            String raw = values().get(dataKey(key));
+            String raw = commands().get(dataKey(key));
             if (raw == null || raw.isBlank()) {
                 return CompletableFuture.completedFuture(StateData.empty());
             }
@@ -84,7 +84,7 @@ public final class RedisFSMStorage implements FSMStorage {
     public CompletionStage<Void> setStateData(StateKey key, StateData data) {
         try {
             if (data.values().isEmpty()) {
-                redis.delete(dataKey(key));
+                commands().del(dataKey(key));
             } else {
                 writeValue(dataKey(key), jsonCodec.write(new LinkedHashMap<>(data.values())));
             }
@@ -97,7 +97,7 @@ public final class RedisFSMStorage implements FSMStorage {
     @Override
     public CompletionStage<Void> clearStateData(StateKey key) {
         try {
-            redis.delete(dataKey(key));
+            commands().del(dataKey(key));
             return CompletableFuture.completedFuture(null);
         } catch (RuntimeException e) {
             return CompletableFuture.failedFuture(new FsmStorageException("redis.clearStateData", e));
@@ -107,7 +107,7 @@ public final class RedisFSMStorage implements FSMStorage {
     @Override
     public CompletionStage<Void> clear(StateKey key) {
         try {
-            redis.delete(java.util.List.of(stateKey(key), dataKey(key)));
+            commands().del(stateKey(key), dataKey(key));
             return CompletableFuture.completedFuture(null);
         } catch (RuntimeException e) {
             return CompletableFuture.failedFuture(new FsmStorageException("redis.clear", e));
@@ -115,16 +115,15 @@ public final class RedisFSMStorage implements FSMStorage {
     }
 
     private void writeValue(String key, String value) {
-        ValueOperations<String, String> ops = values();
         if (ttl == null || ttl.isZero() || ttl.isNegative()) {
-            ops.set(key, value);
+            commands().set(key, value);
             return;
         }
-        ops.set(key, value, ttl);
+        commands().psetex(key, ttl.toMillis(), value);
     }
 
-    private ValueOperations<String, String> values() {
-        return redis.opsForValue();
+    private RedisCommands<String, String> commands() {
+        return redis.sync();
     }
 
     private String stateKey(StateKey key) {

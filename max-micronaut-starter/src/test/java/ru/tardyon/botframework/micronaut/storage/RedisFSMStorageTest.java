@@ -7,13 +7,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import ru.tardyon.botframework.client.serialization.JacksonJsonCodec;
 import ru.tardyon.botframework.fsm.StateData;
 import ru.tardyon.botframework.fsm.StateKey;
@@ -24,10 +24,11 @@ class RedisFSMStorageTest {
 
     @Test
     void readsStateDataAndStateFromRedis() {
-        StringRedisTemplate redis = Mockito.mock(StringRedisTemplate.class);
         @SuppressWarnings("unchecked")
-        ValueOperations<String, String> values = Mockito.mock(ValueOperations.class);
-        when(redis.opsForValue()).thenReturn(values);
+        StatefulRedisConnection<String, String> redis = Mockito.mock(StatefulRedisConnection.class);
+        @SuppressWarnings("unchecked")
+        RedisCommands<String, String> values = Mockito.mock(RedisCommands.class);
+        when(redis.sync()).thenReturn(values);
         when(values.get("max:test:user_in_chat:u:u1:c:c1:state")).thenReturn("form:name");
         when(values.get("max:test:user_in_chat:u:u1:c:c1:data")).thenReturn("{\"name\":\"Alice\"}");
 
@@ -43,41 +44,44 @@ class RedisFSMStorageTest {
 
     @Test
     void writesWithTtlWhenConfigured() {
-        StringRedisTemplate redis = Mockito.mock(StringRedisTemplate.class);
         @SuppressWarnings("unchecked")
-        ValueOperations<String, String> values = Mockito.mock(ValueOperations.class);
-        when(redis.opsForValue()).thenReturn(values);
+        StatefulRedisConnection<String, String> redis = Mockito.mock(StatefulRedisConnection.class);
+        @SuppressWarnings("unchecked")
+        RedisCommands<String, String> values = Mockito.mock(RedisCommands.class);
+        when(redis.sync()).thenReturn(values);
 
         RedisFSMStorage storage = new RedisFSMStorage(redis, new JacksonJsonCodec(), "max:test", Duration.ofSeconds(60));
         StateKey key = StateKey.userInChat(new UserId("u1"), new ChatId("c1"));
 
         storage.setState(key, "form:name").toCompletableFuture().join();
 
-        verify(values).set(eq("max:test:user_in_chat:u:u1:c:c1:state"), eq("form:name"), eq(Duration.ofSeconds(60)));
+        verify(values).psetex(eq("max:test:user_in_chat:u:u1:c:c1:state"), eq(Duration.ofSeconds(60).toMillis()), eq("form:name"));
     }
 
     @Test
     void clearsDataKeyWhenEmptyPayloadProvided() {
-        StringRedisTemplate redis = Mockito.mock(StringRedisTemplate.class);
         @SuppressWarnings("unchecked")
-        ValueOperations<String, String> values = Mockito.mock(ValueOperations.class);
-        when(redis.opsForValue()).thenReturn(values);
+        StatefulRedisConnection<String, String> redis = Mockito.mock(StatefulRedisConnection.class);
+        @SuppressWarnings("unchecked")
+        RedisCommands<String, String> values = Mockito.mock(RedisCommands.class);
+        when(redis.sync()).thenReturn(values);
 
         RedisFSMStorage storage = new RedisFSMStorage(redis, new JacksonJsonCodec(), "max:test", null);
         StateKey key = StateKey.userInChat(new UserId("u1"), new ChatId("c1"));
 
         storage.setStateData(key, StateData.of(Map.of())).toCompletableFuture().join();
 
-        verify(redis).delete("max:test:user_in_chat:u:u1:c:c1:data");
+        verify(values).del("max:test:user_in_chat:u:u1:c:c1:data");
         verify(values, Mockito.never()).set(eq("max:test:user_in_chat:u:u1:c:c1:data"), any(String.class));
     }
 
     @Test
     void returnsEmptyStateWhenKeyAbsent() {
-        StringRedisTemplate redis = Mockito.mock(StringRedisTemplate.class);
         @SuppressWarnings("unchecked")
-        ValueOperations<String, String> values = Mockito.mock(ValueOperations.class);
-        when(redis.opsForValue()).thenReturn(values);
+        StatefulRedisConnection<String, String> redis = Mockito.mock(StatefulRedisConnection.class);
+        @SuppressWarnings("unchecked")
+        RedisCommands<String, String> values = Mockito.mock(RedisCommands.class);
+        when(redis.sync()).thenReturn(values);
         when(values.get("max:test:user_in_chat:u:u1:c:c1:state")).thenReturn(null);
 
         RedisFSMStorage storage = new RedisFSMStorage(redis, new JacksonJsonCodec(), "max:test", null);

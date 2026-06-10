@@ -1,0 +1,12 @@
+max:
+  bot:
+    storage:
+      type: REDIS
+      state-scope: USER_IN_CHAT
+      redis:
+        key-prefix: demo:max:fsm
+        ttl: 12h
+
+quarkus:
+  redis:
+    hosts: ${QUARKUS_REDIS_HOSTS:redis://127.0.0.1:6379/0}

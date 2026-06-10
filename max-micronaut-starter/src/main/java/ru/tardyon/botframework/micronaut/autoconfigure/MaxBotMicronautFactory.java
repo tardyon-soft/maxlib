@@ -329,13 +329,8 @@ public final class MaxBotMicronautFactory {
     ) {
         try {
             ClassLoader classLoader = MaxBotMicronautFactory.class.getClassLoader();
-            Class<?> connectionFactoryClass = Class.forName(
-                    "org.springframework.data.redis.connection.RedisConnectionFactory",
-                    true,
-                    classLoader
-            );
-            Class<?> templateClass = Class.forName(
-                    "org.springframework.data.redis.core.StringRedisTemplate",
+            Class<?> connectionClass = Class.forName(
+                    "io.lettuce.core.api.StatefulRedisConnection",
                     true,
                     classLoader
             );
@@ -345,22 +340,18 @@ public final class MaxBotMicronautFactory {
                     classLoader
             );
 
-            Object template = findBean(applicationContext, templateClass);
-            if (template == null) {
-                Object factory = findBean(applicationContext, connectionFactoryClass);
-                if (factory == null) {
-                    throw new IllegalStateException(
-                            "Redis storage is configured but RedisConnectionFactory is missing. "
-                                    + "Add dependency: org.springframework.data:spring-data-redis and Redis connection properties."
-                    );
-                }
-                template = templateClass.getConstructor(connectionFactoryClass).newInstance(factory);
+            Object connection = findBean(applicationContext, connectionClass);
+            if (connection == null) {
+                throw new IllegalStateException(
+                        "Redis storage is configured but StatefulRedisConnection is missing. "
+                                + "Add dependency: io.micronaut.redis:micronaut-redis-lettuce and Redis connection properties."
+                );
             }
 
             return (FSMStorage) storageClass
-                    .getConstructor(templateClass, JsonCodec.class, String.class, Duration.class)
+                    .getConstructor(connectionClass, JsonCodec.class, String.class, Duration.class)
                     .newInstance(
-                            template,
+                            connection,
                             jsonCodec,
                             properties.getStorage().getRedis().getKeyPrefix(),
                             properties.getStorage().getRedis().getTtl()
@@ -369,8 +360,8 @@ public final class MaxBotMicronautFactory {
             throw e;
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(
-                    "Redis storage is configured but spring-data-redis is not on classpath. "
-                            + "Add dependency: org.springframework.data:spring-data-redis",
+                    "Redis storage is configured but micronaut-redis-lettuce is not on classpath. "
+                            + "Add dependency: io.micronaut.redis:micronaut-redis-lettuce",
                     e
             );
         } catch (ReflectiveOperationException e) {

@@ -49,7 +49,12 @@ public final class MicronautRouteBeanRegistrar {
                 if (route == null) {
                     continue;
                 }
-                instances.add(instantiate(candidate));
+                Object bean = findBean(candidate);
+                if (bean != null) {
+                    instances.add(bean);
+                } else if (!isMicronautBeanCandidate(candidate)) {
+                    instances.add(instantiate(candidate));
+                }
             }
         }
         return List.copyOf(instances);
@@ -118,6 +123,17 @@ public final class MicronautRouteBeanRegistrar {
         } catch (LinkageError | ClassNotFoundException ignored) {
             // Skip classes that cannot be resolved in current classpath.
         }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Object findBean(Class<?> type) {
+        return applicationContext.findBean((Class) type).orElse(null);
+    }
+
+    private static boolean isMicronautBeanCandidate(Class<?> type) {
+        return type.isAnnotationPresent(jakarta.inject.Singleton.class)
+                || type.isAnnotationPresent(io.micronaut.context.annotation.Context.class)
+                || type.isAnnotationPresent(io.micronaut.context.annotation.Factory.class);
     }
 
     private Object instantiate(Class<?> type) {

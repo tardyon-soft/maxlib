@@ -1,5 +1,7 @@
 # Micronaut
 
+`max-micronaut-starter` - Micronaut-обертка для MAX framework runtime. По возможностям она повторяет Spring Boot starter: properties, client/runtime wiring, polling, webhook, Redis storage, auto-registration для `@Route`, `@Screen`, `@ScreenController` и `@WidgetController`.
+
 ## Зависимости
 
 Минимально:
@@ -22,7 +24,7 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation("org.springframework.data:spring-data-redis")
+    implementation("io.micronaut.redis:micronaut-redis-lettuce")
 }
 ```
 
@@ -144,7 +146,7 @@ max:
         ttl: 30m
 ```
 
-Для Redis path starter ожидает доступный `RedisConnectionFactory`. Если `type=REDIS`, но нужной Redis integration нет, startup завершается с диагностикой. Memory path при этом не меняется.
+Для Redis path starter ожидает доступный `StatefulRedisConnection<String, String>` из Micronaut Redis Lettuce integration. Если `type=REDIS`, но нужной Redis integration нет, startup завершается с диагностикой. Memory path при этом не меняется.
 
 ## Screen API в Micronaut
 
@@ -267,6 +269,29 @@ public final class CounterWidgetController {
     }
 }
 ```
+
+## Demo project
+
+Готовый пример лежит в [demo-micronaut-polling](../demo-micronaut-polling).
+
+Запуск polling demo:
+
+```bash
+BOT_TOKEN=... ./gradlew :demo-micronaut-polling:run
+```
+
+Запуск с Redis storage:
+
+```bash
+BOT_TOKEN=... MICRONAUT_ENVIRONMENTS=redis REDIS_URI=redis://127.0.0.1:6379/0 ./gradlew :demo-micronaut-polling:run
+```
+
+Что показывает demo:
+
+- manual `Router` bean со shared polling demo logic;
+- auto-registered `@Route` classes, включая constructor-injected `ApiSmokeRoute`;
+- auto-registered `@Screen`, `@ScreenController` и `@WidgetController`;
+- polling runtime и Redis profile через `application-redis.yml`.
 
 Проверенное поведение:
 

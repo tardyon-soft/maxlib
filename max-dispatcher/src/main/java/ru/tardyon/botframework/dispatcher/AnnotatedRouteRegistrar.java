@@ -35,24 +35,25 @@ public final class AnnotatedRouteRegistrar {
 
     public Router register(Object routeObject) {
         Objects.requireNonNull(routeObject, "routeObject");
-        Route route = routeObject.getClass().getAnnotation(Route.class);
+        Class<?> userClass = userClass(routeObject.getClass());
+        Route route = userClass.getAnnotation(Route.class);
         if (route == null) {
             throw new IllegalArgumentException("route object must be annotated with @Route");
         }
         String routeName = normalizeRouteName(route.value());
         Router router = new Router(routeName);
         log.debug("Registering annotated route: type={}, name={}, autoRegister={}",
-                routeObject.getClass().getName(),
+                userClass.getName(),
                 routeName,
                 route.autoRegister());
 
-        for (InnerMiddleware middleware : resolveMiddlewares(routeObject.getClass().getAnnotation(UseMiddleware.class))) {
+        for (InnerMiddleware middleware : resolveMiddlewares(userClass.getAnnotation(UseMiddleware.class))) {
             router.innerMiddleware(middleware);
         }
 
-        Filter<?> classFilter = composeClassFilter(routeObject.getClass().getAnnotation(UseFilters.class));
+        Filter<?> classFilter = composeClassFilter(userClass.getAnnotation(UseFilters.class));
         List<MethodRegistration> registrations = new ArrayList<>();
-        for (Method method : routeObject.getClass().getDeclaredMethods()) {
+        for (Method method : userClass.getDeclaredMethods()) {
             if (method.isSynthetic() || method.isBridge() || Modifier.isStatic(method.getModifiers())) {
                 continue;
             }
@@ -85,6 +86,17 @@ public final class AnnotatedRouteRegistrar {
                 router.messages().handlers().size(),
                 router.callbacks().handlers().size());
         return router;
+    }
+
+    private static Class<?> userClass(Class<?> type) {
+        Class<?> current = type;
+        while (current != null && current != Object.class) {
+            if (current.isAnnotationPresent(Route.class)) {
+                return current;
+            }
+            current = current.getSuperclass();
+        }
+        return type;
     }
 
     @SuppressWarnings("unchecked")

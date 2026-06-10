@@ -9,6 +9,7 @@ import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.core.annotation.Order;
+import io.lettuce.core.api.StatefulRedisConnection;
 import jakarta.inject.Singleton;
 import java.time.Instant;
 import java.util.List;
@@ -17,7 +18,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import ru.tardyon.botframework.action.ChatActionsFacade;
 import ru.tardyon.botframework.callback.CallbackFacade;
 import ru.tardyon.botframework.client.MaxApiClientConfig;
@@ -342,8 +342,9 @@ class MaxBotMicronautFactoryTest {
     @Requires(property = "spec.name", value = "redis")
     static final class RedisFactory {
         @Singleton
-        RedisConnectionFactory redisConnectionFactory() {
-            return Mockito.mock(RedisConnectionFactory.class);
+        @SuppressWarnings("unchecked")
+        StatefulRedisConnection<String, String> statefulRedisConnection() {
+            return Mockito.mock(StatefulRedisConnection.class);
         }
     }
 

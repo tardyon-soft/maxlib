@@ -1,0 +1,20 @@
+quarkus:
+  application:
+    name: demo-quarkus-polling
+
+max:
+  bot:
+    token: ${BOT_TOKEN}
+    mode: POLLING
+    polling:
+      enabled: true
+      limit: 100
+      timeout: 30s
+      types:
+        - message_created
+        - message_callback
+
+demo:
+  smoke:
+    destructive: ${DEMO_SMOKE_DESTRUCTIVE:false}
+    webhook-url: ${DEMO_SMOKE_WEBHOOK_URL:}
