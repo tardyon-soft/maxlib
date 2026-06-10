@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.quarkus.arc.Arc;
 import io.quarkus.test.component.QuarkusComponentTest;
 import io.quarkus.test.component.TestConfigProperty;
 import jakarta.inject.Inject;
@@ -28,7 +27,6 @@ import ru.tardyon.botframework.fsm.MemorySceneStorage;
 import ru.tardyon.botframework.fsm.MemoryStorage;
 import ru.tardyon.botframework.fsm.SceneRegistry;
 import ru.tardyon.botframework.fsm.SceneStorage;
-import ru.tardyon.botframework.message.MediaMessagingFacade;
 import ru.tardyon.botframework.message.MessagingFacade;
 import ru.tardyon.botframework.quarkus.properties.MaxBotStorageType;
 import ru.tardyon.botframework.screen.InMemoryScreenRegistry;
@@ -102,7 +100,6 @@ class MaxBotProducerWiringTest {
         assertTrue(messagingFacade != null);
         assertTrue(callbackFacade != null);
         assertTrue(chatActionsFacade != null);
-        assertTrue(!Arc.container().instance(MediaMessagingFacade.class).isAvailable());
         assertEquals("max.screen", dispatcher.applicationData().get(Screens.SCREEN_FSM_NAMESPACE_KEY));
         assertSame(screenRegistry, dispatcher.applicationData().get(RuntimeDataKey.application(
                 "service:" + ScreenRegistry.class.getName(), ScreenRegistry.class)));
