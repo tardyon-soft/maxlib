@@ -36,7 +36,7 @@ dependencies {
 sourceSets {
     named("main") {
         java {
-            srcDirs("src/main/java", generatedDemoSources)
+            setSrcDirs(listOf("src/main/java", generatedDemoSources))
         }
         resources {
             setSrcDirs(listOf("src/main/resources"))
@@ -45,6 +45,10 @@ sourceSets {
 }
 
 tasks.named<JavaCompile>("compileJava") {
+    dependsOn(syncSharedDemoSources)
+}
+
+tasks.named<Jar>("sourcesJar") {
     dependsOn(syncSharedDemoSources)
 }
 
