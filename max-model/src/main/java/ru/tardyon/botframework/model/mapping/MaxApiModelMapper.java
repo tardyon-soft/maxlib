@@ -133,11 +133,11 @@ public final class MaxApiModelMapper {
     public static Update toNormalized(ApiUpdate source) {
         Objects.requireNonNull(source, "source");
         UpdateType type = updateType(source.updateType());
-        Message message = source.message() == null ? null : toNormalized(source.message());
+        Message message = source.message() == null ? fallbackUpdateMessage(source) : toNormalized(source.message());
         Callback callback = source.callback() == null ? null : toNormalized(source.callback());
         ChatMember chatMember = source.chatMember() == null ? null : toNormalized(source.chatMember());
         ChatId chatId = source.chatId() == null ? null : new ChatId(source.chatId().toString());
-        User user = source.user() == null ? null : toNormalized(source.user());
+        User user = source.user() == null ? fallbackUpdateUser(source) : toNormalized(source.user());
         if (callback != null && callback.message() == null && message != null) {
             callback = new Callback(
                     callback.callbackId(),
@@ -482,6 +482,34 @@ public final class MaxApiModelMapper {
         );
     }
 
+    private static Message fallbackUpdateMessage(ApiUpdate source) {
+        if (source.messageId() == null || source.messageId().isBlank()) {
+            return null;
+        }
+
+        Chat chat = source.chatId() == null
+                ? new Chat(new ChatId("chat-unknown"), ChatType.UNKNOWN, null, null, null)
+                : new Chat(new ChatId(source.chatId().toString()), ChatType.UNKNOWN, null, null, null);
+
+        return new Message(
+                new MessageId(source.messageId()),
+                chat,
+                null,
+                null,
+                toInstant(source.timestamp()),
+                null,
+                List.of(),
+                List.of()
+        );
+    }
+
+    private static User fallbackUpdateUser(ApiUpdate source) {
+        if (source.userId() == null) {
+            return null;
+        }
+        return new User(new UserId(source.userId().toString()), null, null, null, null, null, null);
+    }
+
     private static UpdateType updateType(String value) {
         if (value == null) {
             return UpdateType.UNKNOWN;
@@ -536,6 +564,9 @@ public final class MaxApiModelMapper {
             return "upd-cb-" + source.callback().callbackId();
         }
         String messageId = extractMessageId(source.message());
+        if ((messageId == null || messageId.isBlank()) && source.messageId() != null && !source.messageId().isBlank()) {
+            messageId = source.messageId();
+        }
         if (messageId != null && !messageId.isBlank()) {
             return "upd-msg-" + messageId;
         }

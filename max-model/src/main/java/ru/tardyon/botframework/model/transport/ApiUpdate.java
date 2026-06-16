@@ -10,7 +10,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record ApiUpdate(
         @JsonProperty("update_type") String updateType,
         @JsonProperty("timestamp") Long timestamp,
+        @JsonProperty("message_id") String messageId,
         @JsonProperty("chat_id") Long chatId,
+        @JsonProperty("user_id") Long userId,
         @JsonProperty("message") ApiMessage message,
         @JsonProperty("callback") ApiCallback callback,
         @JsonProperty("chat_member") ApiChatMember chatMember,
@@ -31,6 +33,23 @@ public record ApiUpdate(
             Boolean isChannel,
             String userLocale
     ) {
-        this(updateType, timestamp, chatId, message, callback, chatMember, user, isChannel, null, null, userLocale);
+        this(updateType, timestamp, null, chatId, null, message, callback, chatMember, user, isChannel, null, null, userLocale);
+    }
+
+    public ApiUpdate(
+            String updateType,
+            Long timestamp,
+            String messageId,
+            Long chatId,
+            Long userId,
+            ApiMessage message,
+            ApiCallback callback,
+            ApiChatMember chatMember,
+            ApiUser user,
+            Boolean isChannel,
+            String userLocale
+    ) {
+        this(updateType, timestamp, messageId, chatId, userId, message, callback, chatMember, user, isChannel, null, null,
+                userLocale);
     }
 }

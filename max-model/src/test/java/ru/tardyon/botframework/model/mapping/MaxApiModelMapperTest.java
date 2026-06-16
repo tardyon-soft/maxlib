@@ -422,6 +422,32 @@ class MaxApiModelMapperTest {
     }
 
     @Test
+    void mapsMessageRemovedUpdateFieldsFromTopLevelPayload() throws IOException {
+        ApiUpdate api = objectMapper.readValue("""
+                {
+                  "update_type": "message_removed",
+                  "timestamp": 1735689600,
+                  "message_id": "3001",
+                  "chat_id": 2001,
+                  "user_id": 1001
+                }
+                """, ApiUpdate.class);
+
+        var update = MaxApiModelMapper.toNormalized(api);
+
+        assertThat(update.updateId().value()).isEqualTo("upd-msg-3001");
+        assertThat(update.type()).isEqualTo(UpdateType.MESSAGE_REMOVED);
+        assertThat(update.eventAt()).isEqualTo(Instant.ofEpochSecond(1735689600L));
+        assertThat(update.chatId()).isNotNull();
+        assertThat(update.chatId().value()).isEqualTo("2001");
+        assertThat(update.user()).isNotNull();
+        assertThat(update.user().id().value()).isEqualTo("1001");
+        assertThat(update.message()).isNotNull();
+        assertThat(update.message().messageId().value()).isEqualTo("3001");
+        assertThat(update.message().chat().id().value()).isEqualTo("2001");
+    }
+
+    @Test
     void mapsApiNewMessageBodyToNormalizedAndBack() throws IOException {
         ApiNewMessageBody api = readFixture("new-message-body.json", ApiNewMessageBody.class);
 
